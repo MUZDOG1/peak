@@ -33,31 +33,59 @@
     // Load stored nickname (or default to "Guest")
     let currentNickname = localStorage.getItem("nickname") || "Guest";
 
+    // Load Banned Words from File
+    let bannedWords = [];
+
+    async function loadBannedWords() {
+      try {
+        const response = await fetch("banned_words.txt");
+        const text = await response.text();
+        bannedWords = text.split("\n").map(word => word.trim()).filter(word => word);
+      } catch (error) {
+        console.error("Failed to load banned words:", error);
+      }
+    }
+
+    async function filterMessage(message) {
+      bannedWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, "gi");
+        message = message.replace(regex, "****");
+      });
+      return message;
+    }
+
     // Listen for messages in Firestore
-    const q = query(collection(db, "messages"), orderBy("timestamp"));
-    onSnapshot(q, (snapshot) => {
+    const q = query(collection(db, "messages"), orderBy("timestamp", "desc")); // Order messages by latest first
+    onSnapshot(q, async (snapshot) => {
       chatMessages.innerHTML = "";
-      snapshot.forEach((doc) => {
+      await loadBannedWords(); // Load banned words once per update
+
+      snapshot.forEach(async (doc) => {
         const message = doc.data();
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
+
+        let filteredText = message.text ? await filterMessage(message.text) : "";
+
         messageDiv.innerHTML = `
           <span class="author">${message.nickname}:</span>
-          ${message.text ? `<span class="text">${message.text}</span>` : ""}
+          ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
           ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
         `;
-        chatMessages.appendChild(messageDiv);
+
+        // Add new messages to the top
+        chatMessages.prepend(messageDiv);
       });
-      chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
     // Send Message
     sendBtn.addEventListener("click", async () => {
       const text = chatInput.value.trim();
       if (text) {
+        const filteredText = await filterMessage(text);
         await addDoc(collection(db, "messages"), {
           nickname: currentNickname,
-          text: text,
+          text: filteredText,
           timestamp: serverTimestamp(),
         });
         chatInput.value = "";
@@ -114,7 +142,6 @@
     body {
       font-family: Arial, sans-serif;
       background: #f4f4f4;
-      text-align: center; /* Centers everything */
     }
 
     /* Header */
@@ -149,7 +176,7 @@
     /* Container */
     .container {
       width: 800px;
-      margin: 20px auto; /* Centers the container */
+      margin: 20px auto;
       display: flex;
       background: #fff;
       border: 1px solid #ccc;
@@ -160,7 +187,6 @@
       width: 25%;
       background: #ddd;
       padding: 20px;
-      text-align: left; /* Keeps text inside aligned properly */
     }
     .profile-column h2 {
       color: #ff4500;
@@ -171,7 +197,6 @@
       width: 75%;
       display: flex;
       flex-direction: column;
-      text-align: left; /* Ensures text inside chat is left-aligned */
     }
     .chat-header {
       background: #ddd;
@@ -184,6 +209,8 @@
       padding: 10px;
       overflow-y: auto;
       background: #fff;
+      display: flex;
+      flex-direction: column-reverse; /* Makes chat display latest messages first */
     }
     .message {
       padding: 8px;
@@ -222,8 +249,6 @@
   </style>
 </head>
 <body>
-
-  <!-- HEADER -->
   <header class="muzdog-header">
     <div class="logo">Muzdog Chat</div>
     <div class="login">
@@ -232,16 +257,12 @@
     </div>
   </header>
 
-  <!-- CONTAINER -->
   <div class="container">
-    <!-- PROFILE -->
     <div class="profile-column">
       <h2>Profile</h2>
       <p><strong>Nickname:</strong> <span id="profileNickname">Guest</span></p>
       <p><strong>Status:</strong> Online</p>
     </div>
-
-    <!-- CHAT -->
     <div class="chat-column">
       <div class="chat-header">Live Chat</div>
       <div class="chat-messages" id="chatMessages"></div>
@@ -252,7 +273,7 @@
       </div>
     </div>
   </div>
-
 </body>
 </html>
+
 
