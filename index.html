@@ -55,10 +55,10 @@
     }
 
     // Listen for messages in Firestore
-    const q = query(collection(db, "messages"), orderBy("timestamp", "desc")); // Order messages by latest first
+    const q = query(collection(db, "messages"), orderBy("timestamp", "desc")); // Latest messages first
     onSnapshot(q, async (snapshot) => {
       chatMessages.innerHTML = "";
-      await loadBannedWords(); // Load banned words once per update
+      await loadBannedWords(); // Reload banned words each time messages update
 
       snapshot.forEach(async (doc) => {
         const message = doc.data();
@@ -73,8 +73,7 @@
           ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
         `;
 
-        // Add new messages to the top
-        chatMessages.prepend(messageDiv);
+        chatMessages.prepend(messageDiv); // Add new messages at the top
       });
     });
 
@@ -197,6 +196,7 @@
       width: 75%;
       display: flex;
       flex-direction: column;
+      position: relative;
     }
     .chat-header {
       background: #ddd;
@@ -210,7 +210,8 @@
       overflow-y: auto;
       background: #fff;
       display: flex;
-      flex-direction: column-reverse; /* Makes chat display latest messages first */
+      flex-direction: column-reverse; /* New messages at top */
+      height: 400px;
     }
     .message {
       padding: 8px;
@@ -226,10 +227,15 @@
 
     /* Chat Input */
     .chat-input-area {
-      padding: 10px;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
       background: #ddd;
+      padding: 10px;
       display: flex;
       align-items: center;
+      border-top: 1px solid #ccc;
     }
     .chat-input-area input[type="text"] {
       flex: 1;
@@ -256,7 +262,6 @@
       <button id="loginBtn">Set Nickname</button>
     </div>
   </header>
-
   <div class="container">
     <div class="profile-column">
       <h2>Profile</h2>
@@ -272,8 +277,7 @@
         <button id="sendBtn">Send</button>
       </div>
     </div>
-  </div>
-</body>
-</html>
+ 
+
 
 
