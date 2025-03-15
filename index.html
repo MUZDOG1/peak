@@ -55,12 +55,15 @@
     }
 
     // Listen for messages in Firestore
-    const q = query(collection(db, "messages"), orderBy("timestamp", "asc")); // Oldest first
+    const q = query(collection(db, "messages"), orderBy("timestamp", "asc")); // Oldest first in Firestore
     onSnapshot(q, async (snapshot) => {
       chatMessages.innerHTML = ""; // Clear chat before reloading
       await loadBannedWords(); // Reload banned words each time messages update
+      
+      // Reverse the order so the newest message is at the top.
+      const messages = snapshot.docs.slice().reverse();
 
-      snapshot.forEach(async (doc) => {
+      messages.forEach(async (doc) => {
         const message = doc.data();
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
@@ -76,7 +79,8 @@
         chatMessages.appendChild(messageDiv);
       });
 
-      chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to latest message
+      // Optionally, ensure the container is scrolled to the top
+      chatMessages.scrollTop = 0;
     });
 
     // Send Message
@@ -116,15 +120,19 @@
     const loginNickname = document.getElementById("loginNickname");
     const profileNickname = document.getElementById("profileNickname");
 
-    // Show stored nickname on profile
-    profileNickname.textContent = currentNickname;
+    // Show stored nickname on profile (ensure an element with id "profileNickname" exists in your HTML if you plan to use it)
+    if (profileNickname) {
+      profileNickname.textContent = currentNickname;
+    }
 
     loginBtn.addEventListener("click", () => {
       const newNickname = loginNickname.value.trim();
       if (newNickname) {
         currentNickname = newNickname;
         localStorage.setItem("nickname", currentNickname); // Save nickname
-        profileNickname.textContent = currentNickname;
+        if (profileNickname) {
+          profileNickname.textContent = currentNickname;
+        }
         alert("Nickname set to: " + currentNickname);
       }
     });
@@ -215,7 +223,7 @@
       display: flex;
       align-items: center;
       border-top: 1px solid #ccc;
-      z-index: 1000; /* Ensure it stays on top */
+      z-index: 1000;
     }
     .chat-input-area input[type="text"] {
       flex: 1;
@@ -248,7 +256,7 @@
       <div class="chat-messages" id="chatMessages"></div>
     </div>
   </div>
-  <!-- Chatbox is placed outside of the container to remain fixed -->
+  <!-- Chatbox is fixed at the bottom -->
   <div class="chat-input-area">
     <input type="text" id="chatInput" placeholder="Type a message...">
     <input type="file" id="imageInput" accept="image/*">
