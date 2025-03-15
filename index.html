@@ -72,7 +72,7 @@
           ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
           ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
         `;
-        chatMessages.appendChild(messageDiv);
+        chatMessages.prepend(messageDiv);
       });
 
       chatMessages.scrollTop = chatMessages.scrollHeight;
