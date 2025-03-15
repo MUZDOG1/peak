@@ -55,9 +55,9 @@
     }
 
     // Listen for messages in Firestore
-    const q = query(collection(db, "messages"), orderBy("timestamp", "desc")); // Latest messages first
+    const q = query(collection(db, "messages"), orderBy("timestamp", "asc")); // Oldest first
     onSnapshot(q, async (snapshot) => {
-      chatMessages.innerHTML = "";
+      chatMessages.innerHTML = ""; // Clear chat before reloading
       await loadBannedWords(); // Reload banned words each time messages update
 
       snapshot.forEach(async (doc) => {
@@ -73,8 +73,10 @@
           ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
         `;
 
-        chatMessages.prepend(messageDiv); // Add new messages at the top
+        chatMessages.appendChild(messageDiv);
       });
+
+      chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to latest message
     });
 
     // Send Message
@@ -160,35 +162,14 @@
     .muzdog-header .login {
       margin-right: 10px;
     }
-    .muzdog-header .login input {
-      margin-right: 5px;
-      padding: 5px;
-    }
-    .muzdog-header .login button {
-      padding: 5px 10px;
-      background: #ff4500;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-    }
 
-    /* Container */
+    /* Chat Container */
     .container {
       width: 800px;
       margin: 20px auto;
       display: flex;
       background: #fff;
       border: 1px solid #ccc;
-    }
-
-    /* Profile */
-    .profile-column {
-      width: 25%;
-      background: #ddd;
-      padding: 20px;
-    }
-    .profile-column h2 {
-      color: #ff4500;
     }
 
     /* Chat */
@@ -209,8 +190,6 @@
       padding: 10px;
       overflow-y: auto;
       background: #fff;
-      display: flex;
-      flex-direction: column-reverse; /* New messages at top */
       height: 400px;
     }
     .message {
@@ -227,10 +206,11 @@
 
     /* Chat Input */
     .chat-input-area {
-      position: absolute;
+      position: fixed;
       bottom: 0;
-      left: 0;
-      width: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
       background: #ddd;
       padding: 10px;
       display: flex;
@@ -263,21 +243,19 @@
     </div>
   </header>
   <div class="container">
-    <div class="profile-column">
-      <h2>Profile</h2>
-      <p><strong>Nickname:</strong> <span id="profileNickname">Guest</span></p>
-      <p><strong>Status:</strong> Online</p>
-    </div>
     <div class="chat-column">
       <div class="chat-header">Live Chat</div>
       <div class="chat-messages" id="chatMessages"></div>
-      <div class="chat-input-area">
-        <input type="text" id="chatInput" placeholder="Type a message...">
-        <input type="file" id="imageInput" accept="image/*">
-        <button id="sendBtn">Send</button>
-      </div>
     </div>
- 
+  </div>
+  <div class="chat-input-area">
+    <input type="text" id="chatInput" placeholder="Type a message...">
+    <input type="file" id="imageInput" accept="image/*">
+    <button id="sendBtn">Send</button>
+  </div>
+</body>
+</html>
+
 
 
 
