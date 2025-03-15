@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Muzdog Chat Room</title>
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAr_YalGc9rlZijAY17uQPAT2PyxfMiD-8",
+      authDomain: "chatroom-80c45.firebaseapp.com",
+      projectId: "chatroom-80c45",
+      storageBucket: "chatroom-80c45.firebasestorage.app",
+      messagingSenderId: "810230295758",
+      appId: "1:810230295758:web:d736c80d30f0d83b19749f"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    // DOM Elements
+    const chatMessages = document.getElementById("chatMessages");
+    const chatInput = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const imageInput = document.getElementById("imageInput");
+
+    // Load stored nickname (or default to "Guest")
+    let currentNickname = localStorage.getItem("nickname") || "Guest";
+
+    // Listen for messages in Firestore
+    const q = query(collection(db, "messages"), orderBy("timestamp"));
+    onSnapshot(q, (snapshot) => {
+      chatMessages.innerHTML = "";
+      snapshot.forEach((doc) => {
+        const message = doc.data();
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message");
+        messageDiv.innerHTML = `
+          <span class="author">${message.nickname}:</span>
+          ${message.text ? `<span class="text">${message.text}</span>` : ""}
+          ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
+        `;
+        chatMessages.appendChild(messageDiv);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    // Send Message
+    sendBtn.addEventListener("click", async () => {
+      const text = chatInput.value.trim();
+      if (text) {
+        await addDoc(collection(db, "messages"), {
+          nickname: currentNickname,
+          text: text,
+          timestamp: serverTimestamp(),
+        });
+        chatInput.value = "";
+      }
+    });
+
+    // Upload Image
+    imageInput.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const storageRef = ref(storage, `uploads/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const imageUrl = await getDownloadURL(storageRef);
+
+      await addDoc(collection(db, "messages"), {
+        nickname: currentNickname,
+        image: imageUrl,
+        timestamp: serverTimestamp(),
+      });
+
+      imageInput.value = "";
+    });
+
+    // Nickname Setting
+    const loginBtn = document.getElementById("loginBtn");
+    const loginNickname = document.getElementById("loginNickname");
+    const profileNickname = document.getElementById("profileNickname");
+
+    // Show stored nickname on profile
+    profileNickname.textContent = currentNickname;
+
+    loginBtn.addEventListener("click", () => {
+      const newNickname = loginNickname.value.trim();
+      if (newNickname) {
+        currentNickname = newNickname;
+        localStorage.setItem("nickname", currentNickname); // Save nickname
+        profileNickname.textContent = currentNickname;
+        alert("Nickname set to: " + currentNickname);
+      }
+    });
+
+  </script>
+
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Body */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+    }
+
+    /* Header */
+    .muzdog-header {
+      background: #222;
+      color: #fff;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .muzdog-header .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .muzdog-header .login {
+      margin-right: 10px;
+    }
+    .muzdog-header .login input {
+      margin-right: 5px;
+      padding: 5px;
+    }
+    .muzdog-header .login button {
+      padding: 5px 10px;
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* Container */
+    .container {
+      width: 800px;
+      margin: 20px auto;
+      display: flex;
+      background: #fff;
+      border: 1px solid #ccc;
+    }
+
+    /* Profile */
+    .profile-column {
+      width: 25%;
+      background: #ddd;
+      padding: 20px;
+    }
+    .profile-column h2 {
+      color: #ff4500;
+    }
+
+    /* Chat */
+    .chat-column {
+      width: 75%;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header {
+      background: #ddd;
+      padding: 10px;
+      font-weight: bold;
+      color: #ff4500;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #fff;
+    }
+    .message {
+      padding: 8px;
+      margin-bottom: 8px;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+    }
+    .message img {
+      max-width: 100%;
+      display: block;
+      margin-top: 5px;
+    }
+
+    /* Chat Input */
+    .chat-input-area {
+      padding: 10px;
+      background: #ddd;
+      display: flex;
+      align-items: center;
+    }
+    .chat-input-area input[type="text"] {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #ccc;
+    }
+    .chat-input-area input[type="file"] {
+      margin-left: 10px;
+    }
+    .chat-input-area button {
+      padding: 6px 12px;
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="muzdog-header">
+    <div class="logo">Muzdog Chat</div>
+    <div class="login">
+      <input type="text" id="loginNickname" placeholder="Nickname">
+      <button id="loginBtn">Set Nickname</button>
+    </div>
+  </header>
+
+  <!-- CONTAINER -->
+  <div class="container">
+    <!-- PROFILE -->
+    <div class="profile-column">
+      <h2>Profile</h2>
+      <p><strong>Nickname:</strong> <span id="profileNickname">Guest</span></p>
+      <p><strong>Status:</strong> Online</p>
+    </div>
+
+    <!-- CHAT -->
+    <div class="chat-column">
+      <div class="chat-header">Live Chat</div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type a message...">
+        <input type="file" id="imageInput" accept="image/*">
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
