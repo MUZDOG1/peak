@@ -33,21 +33,49 @@
     // Load stored nickname (or default to "Guest")
     let currentNickname = localStorage.getItem("nickname") || "Guest";
 
+    // Load Banned Words from File
+    let bannedWords = [];
+
+    async function loadBannedWords() {
+      try {
+        const response = await fetch("banned_words.txt");
+        const text = await response.text();
+        bannedWords = text.split("\n").map(word => word.trim()).filter(word => word);
+      } catch (error) {
+        console.error("Failed to load banned words:", error);
+      }
+    }
+
+    async function filterMessage(message) {
+      bannedWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, "gi");
+        message = message.replace(regex, "****");
+      });
+      return message;
+    }
+
+    // Load banned words once when the page loads
+    loadBannedWords();
+
     // Listen for messages in Firestore
     const q = query(collection(db, "messages"), orderBy("timestamp"));
-    onSnapshot(q, (snapshot) => {
+    onSnapshot(q, async (snapshot) => {
       chatMessages.innerHTML = "";
-      snapshot.forEach((doc) => {
+      snapshot.forEach(async (doc) => {
         const message = doc.data();
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
+
+        let filteredText = message.text ? await filterMessage(message.text) : "";
+
         messageDiv.innerHTML = `
           <span class="author">${message.nickname}:</span>
-          ${message.text ? `<span class="text">${message.text}</span>` : ""}
+          ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
           ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
         `;
         chatMessages.appendChild(messageDiv);
       });
+
       chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
@@ -55,9 +83,10 @@
     sendBtn.addEventListener("click", async () => {
       const text = chatInput.value.trim();
       if (text) {
+        const filteredText = await filterMessage(text);
         await addDoc(collection(db, "messages"), {
           nickname: currentNickname,
-          text: text,
+          text: filteredText,
           timestamp: serverTimestamp(),
         });
         chatInput.value = "";
@@ -94,7 +123,7 @@
       const newNickname = loginNickname.value.trim();
       if (newNickname) {
         currentNickname = newNickname;
-        localStorage.setItem("nickname", currentNickname); // Save nickname
+        localStorage.setItem("nickname", currentNickname);
         profileNickname.textContent = currentNickname;
         alert("Nickname set to: " + currentNickname);
       }
@@ -103,20 +132,12 @@
   </script>
 
   <style>
-    /* Reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    /* Body */
+    /* Basic Styles */
     body {
       font-family: Arial, sans-serif;
       background: #f4f4f4;
     }
 
-    /* Header */
     .muzdog-header {
       background: #222;
       color: #fff;
@@ -125,27 +146,7 @@
       align-items: center;
       justify-content: space-between;
     }
-    .muzdog-header .logo {
-      font-size: 24px;
-      font-weight: bold;
-      margin-left: 10px;
-    }
-    .muzdog-header .login {
-      margin-right: 10px;
-    }
-    .muzdog-header .login input {
-      margin-right: 5px;
-      padding: 5px;
-    }
-    .muzdog-header .login button {
-      padding: 5px 10px;
-      background: #ff4500;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-    }
 
-    /* Container */
     .container {
       width: 800px;
       margin: 20px auto;
@@ -154,61 +155,58 @@
       border: 1px solid #ccc;
     }
 
-    /* Profile */
     .profile-column {
       width: 25%;
       background: #ddd;
       padding: 20px;
     }
-    .profile-column h2 {
-      color: #ff4500;
-    }
 
-    /* Chat */
     .chat-column {
       width: 75%;
       display: flex;
       flex-direction: column;
     }
+
     .chat-header {
       background: #ddd;
       padding: 10px;
       font-weight: bold;
       color: #ff4500;
     }
+
     .chat-messages {
       flex: 1;
       padding: 10px;
       overflow-y: auto;
       background: #fff;
     }
+
     .message {
       padding: 8px;
       margin-bottom: 8px;
       background: #f9f9f9;
       border: 1px solid #ccc;
     }
+
     .message img {
       max-width: 100%;
       display: block;
       margin-top: 5px;
     }
 
-    /* Chat Input */
     .chat-input-area {
       padding: 10px;
       background: #ddd;
       display: flex;
       align-items: center;
     }
+
     .chat-input-area input[type="text"] {
       flex: 1;
       padding: 6px;
       border: 1px solid #ccc;
     }
-    .chat-input-area input[type="file"] {
-      margin-left: 10px;
-    }
+
     .chat-input-area button {
       padding: 6px 12px;
       background: #ff4500;
@@ -220,7 +218,6 @@
 </head>
 <body>
 
-  <!-- HEADER -->
   <header class="muzdog-header">
     <div class="logo">Muzdog Chat</div>
     <div class="login">
@@ -229,16 +226,13 @@
     </div>
   </header>
 
-  <!-- CONTAINER -->
   <div class="container">
-    <!-- PROFILE -->
     <div class="profile-column">
       <h2>Profile</h2>
       <p><strong>Nickname:</strong> <span id="profileNickname">Guest</span></p>
       <p><strong>Status:</strong> Online</p>
     </div>
 
-    <!-- CHAT -->
     <div class="chat-column">
       <div class="chat-header">Live Chat</div>
       <div class="chat-messages" id="chatMessages"></div>
