@@ -29,19 +29,20 @@ function updateUserStatus(isOnline) {
     set(userStatusRef, true);
     onDisconnect(userStatusRef).remove();
   } else {
-    // Optionally mark as offline immediately
     set(userStatusRef, false);
   }
 }
 
-// Listen for online users count and update the element with id "onlineCount"
-const onlineCountRef = ref(rtdb, "onlineUsers");
-onValue(onlineCountRef, (snapshot) => {
-  const usersOnline = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+// Set up the online count listener after the DOM is loaded
+document.addEventListener("DOMContentLoaded", () => {
   const onlineCountEl = document.getElementById("onlineCount");
-  if (onlineCountEl) {
-    onlineCountEl.textContent = usersOnline;
-  }
+  const onlineCountRef = ref(rtdb, "onlineUsers");
+  onValue(onlineCountRef, (snapshot) => {
+    const usersOnline = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+    if (onlineCountEl) {
+      onlineCountEl.textContent = usersOnline;
+    }
+  });
 });
 
 export { db, storage, updateUserStatus };
