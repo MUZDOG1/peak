@@ -4,25 +4,10 @@
   <meta charset="UTF-8">
   <title>Muzdog Chat Room</title>
   <script type="module">
-    // Import Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-
-    // Firebase Configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAr_YalGc9rlZijAY17uQPAT2PyxfMiD-8",
-      authDomain: "chatroom-80c45.firebaseapp.com",
-      projectId: "chatroom-80c45",
-      storageBucket: "chatroom-80c45.firebasestorage.app",
-      messagingSenderId: "810230295758",
-      appId: "1:810230295758:web:d736c80d30f0d83b19749f"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const storage = getStorage(app);
+    // Import Firebase functions and our custom methods from firebase.js
+    import { db, storage, updateUserStatus } from "./firebase.js";
+    import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
     // DOM Elements
     const chatMessages = document.getElementById("chatMessages");
@@ -33,9 +18,11 @@
     // Load stored nickname (or default to "Guest")
     let currentNickname = localStorage.getItem("nickname") || "Guest";
 
+    // Mark user as online
+    updateUserStatus(true);
+
     // Load Banned Words from File
     let bannedWords = [];
-
     async function loadBannedWords() {
       try {
         const response = await fetch("banned_words.txt");
@@ -55,31 +42,27 @@
     }
 
     // Listen for messages in Firestore
-    const q = query(collection(db, "messages"), orderBy("timestamp", "asc")); // Oldest first in Firestore
+    const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
     onSnapshot(q, async (snapshot) => {
       chatMessages.innerHTML = ""; // Clear chat before reloading
       await loadBannedWords(); // Reload banned words each time messages update
       
-      // Reverse the order so the newest message is at the top.
+      // Reverse the order so the newest message appears at the top.
       const messages = snapshot.docs.slice().reverse();
-
       messages.forEach(async (doc) => {
         const message = doc.data();
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
 
         let filteredText = message.text ? await filterMessage(message.text) : "";
-
         messageDiv.innerHTML = `
           <span class="author">${message.nickname}:</span>
           ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
           ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
         `;
-
         chatMessages.appendChild(messageDiv);
       });
-
-      // Optionally, ensure the container is scrolled to the top
+      // Optionally, scroll to the top of the chat container
       chatMessages.scrollTop = 0;
     });
 
@@ -97,21 +80,18 @@
       }
     });
 
-    // Upload Image
+    // Upload Image (if needed; currently non-functional as noted)
     imageInput.addEventListener("change", async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
-      const storageRef = ref(storage, `uploads/${file.name}`);
-      await uploadBytes(storageRef, file);
-      const imageUrl = await getDownloadURL(storageRef);
-
+      const imgRef = storageRef(storage, `uploads/${file.name}`);
+      await uploadBytes(imgRef, file);
+      const imageUrl = await getDownloadURL(imgRef);
       await addDoc(collection(db, "messages"), {
         nickname: currentNickname,
         image: imageUrl,
         timestamp: serverTimestamp(),
       });
-
       imageInput.value = "";
     });
 
@@ -120,7 +100,6 @@
     const loginNickname = document.getElementById("loginNickname");
     const profileNickname = document.getElementById("profileNickname");
 
-    // Show stored nickname on profile (ensure an element with id "profileNickname" exists in your HTML if you plan to use it)
     if (profileNickname) {
       profileNickname.textContent = currentNickname;
     }
@@ -129,7 +108,7 @@
       const newNickname = loginNickname.value.trim();
       if (newNickname) {
         currentNickname = newNickname;
-        localStorage.setItem("nickname", currentNickname); // Save nickname
+        localStorage.setItem("nickname", currentNickname);
         if (profileNickname) {
           profileNickname.textContent = currentNickname;
         }
@@ -137,8 +116,12 @@
       }
     });
 
+    // Mark user as offline when leaving the page
+    window.addEventListener("beforeunload", () => {
+      updateUserStatus(false);
+    });
   </script>
-
+  
   <style>
     /* Reset */
     * {
@@ -146,13 +129,13 @@
       padding: 0;
       box-sizing: border-box;
     }
-
+    
     /* Body */
     body {
       font-family: Arial, sans-serif;
       background: #f4f4f4;
     }
-
+    
     /* Header */
     .muzdog-header {
       background: #222;
@@ -167,10 +150,24 @@
       font-weight: bold;
       margin-left: 10px;
     }
+    .users-online {
+      font-size: 14px;
+      margin-left: 15px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .users-online .green-dot {
+      width: 10px;
+      height: 10px;
+      background-color: green;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+    }
     .muzdog-header .login {
       margin-right: 10px;
     }
-
+    
     /* Chat Container */
     .container {
       width: 800px;
@@ -179,7 +176,7 @@
       background: #fff;
       border: 1px solid #ccc;
     }
-
+    
     /* Chat */
     .chat-column {
       width: 75%;
@@ -210,7 +207,7 @@
       display: block;
       margin-top: 5px;
     }
-
+    
     /* Chat Input (Chatbox) */
     .chat-input-area {
       position: fixed;
@@ -244,7 +241,12 @@
 </head>
 <body>
   <header class="muzdog-header">
-    <div class="logo">Muzdog Chat</div>
+    <div class="logo">
+      Muzdog Chat 
+      <span class="users-online">
+        <span class="green-dot"></span> Users online: <span id="onlineCount">0</span>
+      </span>
+    </div>
     <div class="login">
       <input type="text" id="loginNickname" placeholder="Nickname">
       <button id="loginBtn">Set Nickname</button>
@@ -264,6 +266,7 @@
   </div>
 </body>
 </html>
+
 
 
 
