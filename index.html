@@ -44,16 +44,13 @@
     // Listen for messages in Firestore
     const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
     onSnapshot(q, async (snapshot) => {
-      chatMessages.innerHTML = ""; // Clear chat before reloading
-      await loadBannedWords(); // Reload banned words each time messages update
-      
-      // Reverse the order so the newest message appears at the top.
+      chatMessages.innerHTML = "";
+      await loadBannedWords();
       const messages = snapshot.docs.slice().reverse();
       messages.forEach(async (doc) => {
         const message = doc.data();
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
-
         let filteredText = message.text ? await filterMessage(message.text) : "";
         messageDiv.innerHTML = `
           <span class="author">${message.nickname}:</span>
@@ -62,7 +59,6 @@
         `;
         chatMessages.appendChild(messageDiv);
       });
-      // Optionally, scroll to the top of the chat container
       chatMessages.scrollTop = 0;
     });
 
@@ -80,7 +76,7 @@
       }
     });
 
-    // Upload Image (if needed; currently non-functional as noted)
+    // Upload Image (if needed)
     imageInput.addEventListener("change", async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -99,11 +95,9 @@
     const loginBtn = document.getElementById("loginBtn");
     const loginNickname = document.getElementById("loginNickname");
     const profileNickname = document.getElementById("profileNickname");
-
     if (profileNickname) {
       profileNickname.textContent = currentNickname;
     }
-
     loginBtn.addEventListener("click", () => {
       const newNickname = loginNickname.value.trim();
       if (newNickname) {
@@ -266,7 +260,6 @@
   </div>
 </body>
 </html>
-
 
 
 

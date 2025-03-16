@@ -33,16 +33,25 @@ function updateUserStatus(isOnline) {
   }
 }
 
-// Set up the online count listener after the DOM is loaded
-document.addEventListener("DOMContentLoaded", () => {
+// Function to attach online count listener
+function attachOnlineCountListener() {
   const onlineCountEl = document.getElementById("onlineCount");
+  if (!onlineCountEl) {
+    console.error("onlineCount element not found");
+    return;
+  }
   const onlineCountRef = ref(rtdb, "onlineUsers");
   onValue(onlineCountRef, (snapshot) => {
     const usersOnline = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
-    if (onlineCountEl) {
-      onlineCountEl.textContent = usersOnline;
-    }
+    onlineCountEl.textContent = usersOnline;
   });
-});
+}
+
+// Attach listener either immediately or on DOMContentLoaded
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", attachOnlineCountListener);
+} else {
+  attachOnlineCountListener();
+}
 
 export { db, storage, updateUserStatus };
