@@ -1,5 +1,15 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { 
+  initializeApp 
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  setDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -15,38 +25,39 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Generate a random user ID
+// Generate a random user ID (ensuring uniqueness)
 const userId = `user_${Math.floor(Math.random() * 1000000)}`;
-
-// Reference to onlineUsers document for this user
-const onlineUsersRef = doc(db, "onlineUsers", userId);
 
 // Function to update online users count
 function updateOnlineUsersCount() {
   onSnapshot(collection(db, "onlineUsers"), (snapshot) => {
     const onlineCount = snapshot.size;
-    document.getElementById("onlineCount").textContent = onlineCount;
+    const onlineCountEl = document.getElementById("onlineCount");
+    if (onlineCountEl) {
+      onlineCountEl.textContent = onlineCount;
+    }
+    console.log("Online users count updated:", onlineCount);
   });
 }
 
-// Add user to onlineUsers collection
+// Add user to the onlineUsers collection
 async function setUserOnline() {
   try {
-    await setDoc(onlineUsersRef, {
+    await setDoc(doc(db, "onlineUsers", userId), {
       online: true,
-      timestamp: new Date()
+      timestamp: serverTimestamp()
     });
-    console.log("User added to online users.");
+    console.log("User added to online users:", userId);
   } catch (error) {
     console.error("Error adding user:", error);
   }
 }
 
-// Remove user when they leave
+// Remove user when they leave the page
 async function setUserOffline() {
   try {
-    await deleteDoc(onlineUsersRef);
-    console.log("User removed from online users.");
+    await deleteDoc(doc(db, "onlineUsers", userId));
+    console.log("User removed from online users:", userId);
   } catch (error) {
     console.error("Error removing user:", error);
   }
@@ -56,6 +67,8 @@ async function setUserOffline() {
 setUserOnline();
 updateOnlineUsersCount();
 
-// Remove user when they close the page
+// Remove user when the page unloads
 window.addEventListener("beforeunload", setUserOffline);
+
+export { db, setUserOnline, setUserOffline, updateOnlineUsersCount };
 
