@@ -144,20 +144,8 @@
       font-weight: bold;
       margin-left: 10px;
     }
-    .users-online {
-      font-size: 14px;
-      margin-left: 15px;
-      display: inline-flex;
-      align-items: center;
-    }
-    .users-online .green-dot {
-      width: 10px;
-      height: 10px;
-      background-color: green;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 5px;
-    }
+    /* Removed .users-online & .green-dot styling */
+    
     .muzdog-header .login {
       margin-right: 10px;
     }
@@ -235,12 +223,8 @@
 </head>
 <body>
   <header class="muzdog-header">
-    <div class="logo">
-      Muzdog Chat 
-      <span class="users-online">
-        <span class="green-dot"></span> Users online: <span id="onlineCount">0</span>
-      </span>
-    </div>
+    <!-- Removed the 'users online' span -->
+    <div class="logo">Muzdog Chat</div>
     <div class="login">
       <input type="text" id="loginNickname" placeholder="Nickname">
       <button id="loginBtn">Set Nickname</button>
@@ -260,6 +244,7 @@
   </div>
 </body>
 </html>
+
 
 
 
