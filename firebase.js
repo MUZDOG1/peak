@@ -18,21 +18,21 @@ const db = getFirestore(app);
 // Generate a random user ID
 const userId = `user_${Math.floor(Math.random() * 1000000)}`;
 
-// Reference to onlineUsers collection
-const onlineUsersRef = collection(db, "onlineUsers");
+// Reference to onlineUsers document for this user
+const onlineUsersRef = doc(db, "onlineUsers", userId);
 
 // Function to update online users count
 function updateOnlineUsersCount() {
-  onSnapshot(onlineUsersRef, (snapshot) => {
+  onSnapshot(collection(db, "onlineUsers"), (snapshot) => {
     const onlineCount = snapshot.size;
-    document.getElementById("onlineUsersCount").textContent = onlineCount;
+    document.getElementById("onlineCount").textContent = onlineCount;
   });
 }
 
 // Add user to onlineUsers collection
 async function setUserOnline() {
   try {
-    await setDoc(doc(onlineUsersRef, userId), {
+    await setDoc(onlineUsersRef, {
       online: true,
       timestamp: new Date()
     });
@@ -45,7 +45,7 @@ async function setUserOnline() {
 // Remove user when they leave
 async function setUserOffline() {
   try {
-    await deleteDoc(doc(onlineUsersRef, userId));
+    await deleteDoc(onlineUsersRef);
     console.log("User removed from online users.");
   } catch (error) {
     console.error("Error removing user:", error);
@@ -58,3 +58,4 @@ updateOnlineUsersCount();
 
 // Remove user when they close the page
 window.addEventListener("beforeunload", setUserOffline);
+
