@@ -144,10 +144,10 @@
       font-weight: bold;
       margin-left: 10px;
     }
-    .muzdog-header .logo span {
-      font-size: 16px;
-      font-weight: normal;
-      color: #bbb;
+    .muzdog-header .logo .subtitle {
+      font-family: inherit; /* Same font as 'Muzdog Chat' */
+      font-size: 16px; /* Slightly smaller */
+      color: #bbb; /* Lighter color for contrast */
       margin-left: 5px;
     }
     
@@ -229,7 +229,7 @@
 <body>
   <header class="muzdog-header">
     <div class="logo">
-      Muzdog Chat <span>- The Best Chatroom</span>
+      Muzdog Chat <span class="subtitle">- The Best Chatroom</span>
     </div>
     <div class="login">
       <input type="text" id="loginNickname" placeholder="Nickname">
@@ -249,6 +249,7 @@
   </div>
 </body>
 </html>
+
 
 
 
