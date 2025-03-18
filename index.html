@@ -144,7 +144,12 @@
       font-weight: bold;
       margin-left: 10px;
     }
-    /* Removed .users-online & .green-dot styling */
+    .muzdog-header .logo span {
+      font-size: 16px;
+      font-weight: normal;
+      color: #bbb;
+      margin-left: 5px;
+    }
     
     .muzdog-header .login {
       margin-right: 10px;
@@ -223,8 +228,9 @@
 </head>
 <body>
   <header class="muzdog-header">
-    <!-- Removed the 'users online' span -->
-    <div class="logo">Muzdog Chat</div>
+    <div class="logo">
+      Muzdog Chat <span>- The Best Chatroom</span>
+    </div>
     <div class="login">
       <input type="text" id="loginNickname" placeholder="Nickname">
       <button id="loginBtn">Set Nickname</button>
@@ -236,7 +242,6 @@
       <div class="chat-messages" id="chatMessages"></div>
     </div>
   </div>
-  <!-- Chatbox is fixed at the bottom -->
   <div class="chat-input-area">
     <input type="text" id="chatInput" placeholder="Type a message...">
     <input type="file" id="imageInput" accept="image/*">
