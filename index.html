@@ -126,7 +126,7 @@
       }
     });
 
-    // On page load, increment site visits and display the total
+    // On page load, increment site visits and display the total in the chat header
     document.addEventListener("DOMContentLoaded", async () => {
       console.log("DOM fully loaded. Incrementing site visits...");
       await incrementSiteVisits();
@@ -160,7 +160,7 @@
       background: #f4f4f4;
     }
     
-    /* Header */
+    /* Top Header */
     .muzdog-header {
       background: #222;
       color: #fff;
@@ -180,32 +180,36 @@
       color: #bbb;
       margin-left: 5px;
     }
-    
     .muzdog-header .login {
       margin-right: 10px;
     }
     
-    /* Main Container: 2 columns (chat and info) */
+    /* Main Container */
     .container {
       width: 800px;
       margin: 20px auto;
-      display: flex;
       background: #fff;
       border: 1px solid #ccc;
     }
     
     /* Chat Column */
     .chat-column {
-      width: 75%;
+      width: 100%;
       display: flex;
       flex-direction: column;
     }
+    
+    /* Chat Header (now spans full width) */
     .chat-header {
       background: #ddd;
       padding: 10px;
       font-weight: bold;
       color: #ff4500;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
+    
     .chat-messages {
       flex: 1;
       padding: 10px;
@@ -213,6 +217,7 @@
       background: #fff;
       height: 400px;
     }
+    
     .message {
       display: flex;
       justify-content: space-between;
@@ -222,21 +227,15 @@
       background: #f9f9f9;
       border: 1px solid #ccc;
     }
+    
     .message-content {
       flex: 1;
     }
+    
     .message img {
       max-width: 100%;
       display: block;
       margin-top: 5px;
-    }
-
-    /* Info Column (right side) */
-    .info-column {
-      width: 25%;
-      padding: 10px;
-      border-left: 1px solid #ccc;
-      background: #f9f9f9;
     }
     
     /* Chat Input (Chatbox) */
@@ -253,11 +252,13 @@
       border-top: 1px solid #ccc;
       z-index: 1000;
     }
+    
     .chat-input-area input[type="text"] {
       flex: 1;
       padding: 6px;
       border: 1px solid #ccc;
     }
+    
     .chat-input-area button {
       padding: 6px 12px;
       background: #ff4500;
@@ -287,16 +288,12 @@
   </header>
 
   <div class="container">
-    <!-- Left: Chat Column -->
     <div class="chat-column">
-      <div class="chat-header">Live Chat</div>
+      <div class="chat-header">
+        <span class="chat-title">Live Chat</span>
+        <span class="visits">Total Visits: <span id="visitsCount">0</span></span>
+      </div>
       <div class="chat-messages" id="chatMessages"></div>
-    </div>
-
-    <!-- Right: Info Column -->
-    <div class="info-column">
-      <h2>Site Stats</h2>
-      <p>Total Visits: <span id="visitsCount">0</span></p>
     </div>
   </div>
 
@@ -306,5 +303,4 @@
   </div>
 </body>
 </html>
-
 
