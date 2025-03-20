@@ -51,11 +51,27 @@
         const message = doc.data();
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
+
+        // New: Format the timestamp to display a full date and time
+        let timestamp = message.timestamp ? new Date(message.timestamp.toDate()) : null;
+        let formattedTime = timestamp
+          ? timestamp.toLocaleString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "numeric",
+              second: "numeric",
+              hour12: true
+            })
+          : "Unknown time";
+
         let filteredText = message.text ? await filterMessage(message.text) : "";
         messageDiv.innerHTML = `
           <span class="author">${message.nickname}:</span>
           ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
           ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
+          <span class="timestamp">${formattedTime}</span>
         `;
         chatMessages.appendChild(messageDiv);
       });
@@ -145,9 +161,9 @@
       margin-left: 10px;
     }
     .muzdog-header .logo .subtitle {
-      font-family: inherit; /* Same font as 'Muzdog Chat' */
-      font-size: 16px; /* Slightly smaller */
-      color: #bbb; /* Lighter color for contrast */
+      font-family: inherit;
+      font-size: 16px;
+      color: #bbb;
       margin-left: 5px;
     }
     
@@ -224,6 +240,14 @@
       border: none;
       cursor: pointer;
     }
+    
+    /* Timestamp Styling */
+    .timestamp {
+      font-size: 12px;
+      color: gray;
+      margin-left: 10px;
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -249,8 +273,3 @@
   </div>
 </body>
 </html>
-
-
-
-
-
