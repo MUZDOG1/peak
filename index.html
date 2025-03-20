@@ -7,13 +7,14 @@
     // Import Firebase functions and our custom methods from firebase.js
     import { db, storage, updateUserStatus } from "./firebase.js";
     import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+    // Note: Removed Firebase Storage import since image upload is no longer used
+    // import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
     // DOM Elements
     const chatMessages = document.getElementById("chatMessages");
     const chatInput = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendBtn");
-    const imageInput = document.getElementById("imageInput");
+    // Removed imageInput since the send image button is removed
 
     // Load stored nickname (or default to "Guest")
     let currentNickname = localStorage.getItem("nickname") || "Guest";
@@ -52,7 +53,7 @@
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
 
-        // New: Format the timestamp to display a full date and time
+        // Format the timestamp to display a full date and time
         let timestamp = message.timestamp ? new Date(message.timestamp.toDate()) : null;
         let formattedTime = timestamp
           ? timestamp.toLocaleString("en-US", {
@@ -68,7 +69,7 @@
 
         let filteredText = message.text ? await filterMessage(message.text) : "";
 
-        // Updated HTML structure: message content on left, timestamp on right
+        // Note: The image display is still here in case old messages have images.
         messageDiv.innerHTML = `
           <div class="message-content">
             <span class="author">${message.nickname}:</span>
@@ -96,20 +97,7 @@
       }
     });
 
-    // Upload Image (if needed)
-    imageInput.addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const imgRef = storageRef(storage, `uploads/${file.name}`);
-      await uploadBytes(imgRef, file);
-      const imageUrl = await getDownloadURL(imgRef);
-      await addDoc(collection(db, "messages"), {
-        nickname: currentNickname,
-        image: imageUrl,
-        timestamp: serverTimestamp(),
-      });
-      imageInput.value = "";
-    });
+    // Removed image upload event listener since the send image button is removed
 
     // Nickname Setting
     const loginBtn = document.getElementById("loginBtn");
@@ -240,9 +228,7 @@
       padding: 6px;
       border: 1px solid #ccc;
     }
-    .chat-input-area input[type="file"] {
-      margin-left: 10px;
-    }
+    /* Removed file input styling */
     .chat-input-area button {
       padding: 6px 12px;
       background: #ff4500;
@@ -278,7 +264,7 @@
   </div>
   <div class="chat-input-area">
     <input type="text" id="chatInput" placeholder="Type a message...">
-    <input type="file" id="imageInput" accept="image/*">
+    <!-- Removed image input element -->
     <button id="sendBtn">Send</button>
   </div>
 </body>
