@@ -15,7 +15,6 @@
       incrementSiteVisits,
       getSiteVisits
     } from "./firebase.js";
-
     import { 
       collection, 
       addDoc, 
@@ -62,7 +61,6 @@
       chatMessages.innerHTML = "";
       await loadBannedWords();
       const messages = snapshot.docs.slice().reverse();
-
       messages.forEach(async (doc) => {
         const message = doc.data();
         const messageDiv = document.createElement("div");
@@ -84,7 +82,7 @@
 
         let filteredText = message.text ? await filterMessage(message.text) : "";
 
-        // Note: Image display remains in case old messages had images
+        // Image display remains in case old messages had images
         messageDiv.innerHTML = `
           <div class="message-content">
             <span class="author">${message.nickname}:</span>
@@ -133,20 +131,24 @@
 
     // On page load, do the following:
     document.addEventListener("DOMContentLoaded", async () => {
-      // Set user online (Firestore "onlineUsers" collection)
-      setUserOnline();
-
-      // Update the online users count
+      console.log("DOM fully loaded. Setting user online and updating stats...");
+      // Set user online in Firestore (onlineUsers collection)
+      await setUserOnline();
+      // Start listening for online users count changes
       updateOnlineUsersCount();
 
       // Increment the site visits count
       await incrementSiteVisits();
+      console.log("Site visits incremented.");
 
       // Retrieve the latest visits total and display it
       const visits = await getSiteVisits();
       const visitsCountEl = document.getElementById("visitsCount");
       if (visitsCountEl) {
         visitsCountEl.textContent = visits;
+        console.log("Updated site visits displayed:", visits);
+      } else {
+        console.error("visitsCount element not found");
       }
     });
 

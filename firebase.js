@@ -38,17 +38,21 @@ function updateUserStatus(isOnline) {
   const userStatusRef = ref(rtdb, `onlineUsers/${currentNickname}`);
 
   if (isOnline) {
-    set(userStatusRef, true);
+    set(userStatusRef, true)
+      .then(() => console.log(`Realtime DB: ${currentNickname} is online.`))
+      .catch((err) => console.error("RTDB set error:", err));
     onDisconnect(userStatusRef).remove();
   } else {
-    set(userStatusRef, false);
+    set(userStatusRef, false)
+      .then(() => console.log(`Realtime DB: ${currentNickname} is offline.`))
+      .catch((err) => console.error("RTDB set error:", err));
   }
 }
 
-// Generate a random user ID
+// Generate a random user ID for Firestore online users tracking
 const userId = `user_${Math.floor(Math.random() * 1000000)}`;
 
-// Reference to onlineUsers collection in Firestore
+// Reference to Firestore onlineUsers collection
 const onlineUsersRef = collection(db, "onlineUsers");
 
 // Function to update online users count (listens for changes in the Firestore collection)
@@ -58,9 +62,12 @@ function updateOnlineUsersCount() {
     const onlineCountEl = document.getElementById("onlineCount");
     if (onlineCountEl) {
       onlineCountEl.textContent = onlineCount;
+      console.log("Online users updated:", onlineCount);
     } else {
       console.error("onlineCount element not found");
     }
+  }, (error) => {
+    console.error("Error listening to onlineUsers:", error);
   });
 }
 
@@ -71,19 +78,19 @@ async function setUserOnline() {
       online: true,
       timestamp: new Date()
     });
-    console.log("User added to online users.");
+    console.log("Firestore: User added to onlineUsers with ID:", userId);
   } catch (error) {
-    console.error("Error adding user:", error);
+    console.error("Error adding user to onlineUsers:", error);
   }
 }
 
-// Remove user when they leave
+// Remove user from Firestore `onlineUsers` collection when they leave
 async function setUserOffline() {
   try {
     await deleteDoc(doc(onlineUsersRef, userId));
-    console.log("User removed from online users.");
+    console.log("Firestore: User removed from onlineUsers with ID:", userId);
   } catch (error) {
-    console.error("Error removing user:", error);
+    console.error("Error removing user from onlineUsers:", error);
   }
 }
 
@@ -101,29 +108,36 @@ async function incrementSiteVisits() {
     await updateDoc(siteStatsRef, {
       visits: increment(1)
     });
+    console.log("Site visits incremented by 1.");
   } catch (err) {
-    // If doc doesn't exist, create it with visits=1
-    await setDoc(siteStatsRef, {
-      visits: 1
-    });
+    console.warn("Could not update siteStats doc. It might not exist. Creating it...", err);
+    try {
+      await setDoc(siteStatsRef, {
+        visits: 1
+      });
+      console.log("SiteStats document created with visits = 1.");
+    } catch (error) {
+      console.error("Error creating siteStats document:", error);
+    }
   }
 }
 
 /** Retrieves the current total of visits. */
 async function getSiteVisits() {
-  const docSnap = await getDoc(siteStatsRef);
-  if (docSnap.exists()) {
-    return docSnap.data().visits || 0;
+  try {
+    const docSnap = await getDoc(siteStatsRef);
+    if (docSnap.exists()) {
+      const visits = docSnap.data().visits || 0;
+      console.log("Retrieved site visits:", visits);
+      return visits;
+    }
+    console.warn("SiteStats document does not exist.");
+    return 0;
+  } catch (error) {
+    console.error("Error getting siteStats document:", error);
+    return 0;
   }
-  return 0;
 }
-
-// ===============================
-// 3) Setup: DOMContentLoaded & Window events
-// ===============================
-// (Note: We moved these event listeners into index.html to keep logic separate.)
-// You can keep or remove these from firebase.js if desired,
-// but in the above index.html, we already do the final calls.
 
 // Export modules
 export { 
