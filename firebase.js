@@ -1,19 +1,16 @@
-// firebase.js
-
-import { 
-  initializeApp 
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { 
   getFirestore, 
   doc, 
+  getDoc, 
+  updateDoc, 
   setDoc, 
-  deleteDoc, 
-  onSnapshot, 
-  collection, 
-  Timestamp 
+  increment 
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+import { getDatabase, ref, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-// Firebase configuration (replace with your actual config)
+// Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAr_YalGc9rlZijAY17uQPAT2PyxfMiD-8",
   authDomain: "chatroom-80c45.firebaseapp.com",
@@ -27,117 +24,77 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
+const rtdb = getDatabase(app);
 
-// Use the Firestore collection "onlineUsers" for presence tracking
-const onlineUsersRef = collection(db, "onlineUsers");
-
-// Retrieve or create a nickname (stored in localStorage)
-function getNickname() {
-  let nickname = localStorage.getItem("nickname");
-  if (!nickname) {
-    // If no nickname exists, generate one and store it
-    nickname = "Guest" + Math.floor(Math.random() * 10000);
-    localStorage.setItem("nickname", nickname);
+// -------------------------------
+// User Presence (RTDB)
+// -------------------------------
+// Note: Although we're removing the online users UI,
+// the updateUserStatus function can remain for other purposes.
+function updateUserStatus(isOnline) {
+  const currentNickname = localStorage.getItem("nickname") || "Guest";
+  const userStatusRef = ref(rtdb, `onlineUsers/${currentNickname}`);
+  if (isOnline) {
+    set(userStatusRef, true)
+      .then(() => console.log(`${currentNickname} is online (RTDB).`))
+      .catch((err) => console.error("Error updating online status:", err));
+    onDisconnect(userStatusRef).remove();
+  } else {
+    set(userStatusRef, false)
+      .then(() => console.log(`${currentNickname} is offline (RTDB).`))
+      .catch((err) => console.error("Error updating online status:", err));
   }
-  return nickname;
 }
 
-// Set the user as online by creating/updating their document with a timestamp
-async function setUserOnline() {
-  const nickname = getNickname();
+// -------------------------------
+// Site Visits Counter (Firestore)
+// -------------------------------
+const siteStatsRef = doc(db, "analytics", "siteStats");
+
+/**
+ * Increments the site visits count by 1.
+ * If the document doesn't exist, creates it with visits = 1.
+ */
+async function incrementSiteVisits() {
   try {
-    await setDoc(doc(onlineUsersRef, nickname), {
-      online: true,
-      // Use Firestore's Timestamp so we can compare later
-      timestamp: Timestamp.now()
+    await updateDoc(siteStatsRef, {
+      visits: increment(1)
     });
-    console.log("✅ User marked as online:", nickname);
-    // Start sending heartbeat updates so our document stays fresh
-    startHeartbeat();
-  } catch (error) {
-    console.error("❌ Error adding user:", error);
-  }
-}
-
-// Remove the user's online document when they leave
-async function setUserOffline() {
-  const nickname = getNickname();
-  try {
-    await deleteDoc(doc(onlineUsersRef, nickname));
-    console.log("✅ User removed from online users:", nickname);
-    stopHeartbeat();
-  } catch (error) {
-    console.error("❌ Error removing user:", error);
-  }
-}
-
-// Heartbeat variables and functions
-let heartbeatIntervalId;
-
-// Update our online document every 10 seconds so our timestamp stays current
-function startHeartbeat() {
-  // Clear any existing heartbeat first
-  stopHeartbeat();
-  heartbeatIntervalId = setInterval(async () => {
-    const nickname = getNickname();
+    console.log("Site visits incremented by 1.");
+  } catch (err) {
+    console.warn("Could not update siteStats doc. It might not exist. Creating it...", err);
     try {
-      await setDoc(doc(onlineUsersRef, nickname), {
-        online: true,
-        timestamp: Timestamp.now()
-      }, { merge: true });
-      console.log("Heartbeat updated for", nickname);
+      await setDoc(siteStatsRef, {
+        visits: 1
+      });
+      console.log("SiteStats document created with visits = 1.");
     } catch (error) {
-      console.error("Heartbeat error:", error);
+      console.error("Error creating siteStats document:", error);
     }
-  }, 10000); // 10 seconds interval
-}
-
-function stopHeartbeat() {
-  if (heartbeatIntervalId) {
-    clearInterval(heartbeatIntervalId);
-    heartbeatIntervalId = null;
   }
 }
 
-// Listen in real time to the onlineUsers collection and update the count
-function updateOnlineUsersCount() {
-  onSnapshot(onlineUsersRef, (snapshot) => {
-    const now = Date.now();
-    let onlineCount = 0;
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      if (data.timestamp) {
-        // Convert Firestore Timestamp to a JS Date in milliseconds
-        const docTime = data.timestamp.toDate().getTime();
-        // Only count users whose timestamp is within the last 15 seconds
-        if (now - docTime < 15000) {
-          onlineCount++;
-        }
-      }
-    });
-    const onlineCountEl = document.getElementById("onlineCount");
-    if (onlineCountEl) {
-      onlineCountEl.textContent = `Users online: ${onlineCount}`;
-    } else {
-      console.error("❌ onlineCount element not found");
+/**
+ * Retrieves the current total site visits.
+ */
+async function getSiteVisits() {
+  try {
+    const docSnap = await getDoc(siteStatsRef);
+    if (docSnap.exists()) {
+      const visits = docSnap.data().visits || 0;
+      console.log("Retrieved site visits:", visits);
+      return visits;
     }
-  }, (error) => {
-    console.error("❌ Error listening to onlineUsers:", error);
-  });
+    console.warn("SiteStats document does not exist.");
+    return 0;
+  } catch (error) {
+    console.error("Error getting siteStats document:", error);
+    return 0;
+  }
 }
 
-// Automatically mark user online on window load and start listening for changes
-window.addEventListener("load", () => {
-  setUserOnline();
-  updateOnlineUsersCount();
-});
+export { db, storage, updateUserStatus, incrementSiteVisits, getSiteVisits };
 
-// Remove user from online list when the window unloads
-window.addEventListener("beforeunload", () => {
-  setUserOffline();
-});
-
-// Export the modules you need in your other scripts
-export { db, setUserOnline, setUserOffline, updateOnlineUsersCount };
 
 

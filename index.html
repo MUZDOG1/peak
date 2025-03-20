@@ -9,11 +9,8 @@
       db, 
       storage, 
       updateUserStatus, 
-      setUserOnline, 
-      setUserOffline, 
-      updateOnlineUsersCount,
-      incrementSiteVisits,
-      getSiteVisits
+      incrementSiteVisits, 
+      getSiteVisits 
     } from "./firebase.js";
     import { 
       collection, 
@@ -32,10 +29,10 @@
     // Load stored nickname (or default to "Guest")
     let currentNickname = localStorage.getItem("nickname") || "Guest";
 
-    // Mark user as online in the RTDB
+    // Mark user as online (using updateUserStatus for RTDB presence)
     updateUserStatus(true);
 
-    // Load Banned Words from File
+    // Load banned words from file
     let bannedWords = [];
     async function loadBannedWords() {
       try {
@@ -110,7 +107,7 @@
       }
     });
 
-    // Nickname Setting
+    // Nickname setting
     const loginBtn = document.getElementById("loginBtn");
     const loginNickname = document.getElementById("loginNickname");
     const profileNickname = document.getElementById("profileNickname");
@@ -129,19 +126,10 @@
       }
     });
 
-    // On page load, do the following:
+    // On page load, increment site visits and display the total
     document.addEventListener("DOMContentLoaded", async () => {
-      console.log("DOM fully loaded. Setting user online and updating stats...");
-      // Set user online in Firestore (onlineUsers collection)
-      await setUserOnline();
-      // Start listening for online users count changes
-      updateOnlineUsersCount();
-
-      // Increment the site visits count
+      console.log("DOM fully loaded. Incrementing site visits...");
       await incrementSiteVisits();
-      console.log("Site visits incremented.");
-
-      // Retrieve the latest visits total and display it
       const visits = await getSiteVisits();
       const visitsCountEl = document.getElementById("visitsCount");
       if (visitsCountEl) {
@@ -155,7 +143,6 @@
     // Mark user as offline when leaving the page
     window.addEventListener("beforeunload", () => {
       updateUserStatus(false);
-      setUserOffline();
     });
   </script>
   
@@ -251,7 +238,7 @@
       border-left: 1px solid #ccc;
       background: #f9f9f9;
     }
-
+    
     /* Chat Input (Chatbox) */
     .chat-input-area {
       position: fixed;
@@ -310,7 +297,6 @@
     <div class="info-column">
       <h2>Site Stats</h2>
       <p>Total Visits: <span id="visitsCount">0</span></p>
-      <p>Online Users: <span id="onlineCount">0</span></p>
     </div>
   </div>
 
@@ -320,4 +306,5 @@
   </div>
 </body>
 </html>
+
 
