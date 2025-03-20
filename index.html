@@ -5,21 +5,35 @@
   <title>Muzdog Chat Room</title>
   <script type="module">
     // Import Firebase functions and our custom methods from firebase.js
-    import { db, storage, updateUserStatus } from "./firebase.js";
-    import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    // Note: Removed Firebase Storage import since image upload is no longer used
-    // import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+    import { 
+      db, 
+      storage, 
+      updateUserStatus, 
+      setUserOnline, 
+      setUserOffline, 
+      updateOnlineUsersCount,
+      incrementSiteVisits,
+      getSiteVisits
+    } from "./firebase.js";
+
+    import { 
+      collection, 
+      addDoc, 
+      serverTimestamp, 
+      query, 
+      orderBy, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
     // DOM Elements
     const chatMessages = document.getElementById("chatMessages");
     const chatInput = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendBtn");
-    // Removed imageInput since the send image button is removed
 
     // Load stored nickname (or default to "Guest")
     let currentNickname = localStorage.getItem("nickname") || "Guest";
 
-    // Mark user as online
+    // Mark user as online in the RTDB
     updateUserStatus(true);
 
     // Load Banned Words from File
@@ -48,6 +62,7 @@
       chatMessages.innerHTML = "";
       await loadBannedWords();
       const messages = snapshot.docs.slice().reverse();
+
       messages.forEach(async (doc) => {
         const message = doc.data();
         const messageDiv = document.createElement("div");
@@ -69,7 +84,7 @@
 
         let filteredText = message.text ? await filterMessage(message.text) : "";
 
-        // Note: The image display is still here in case old messages have images.
+        // Note: Image display remains in case old messages had images
         messageDiv.innerHTML = `
           <div class="message-content">
             <span class="author">${message.nickname}:</span>
@@ -97,8 +112,6 @@
       }
     });
 
-    // Removed image upload event listener since the send image button is removed
-
     // Nickname Setting
     const loginBtn = document.getElementById("loginBtn");
     const loginNickname = document.getElementById("loginNickname");
@@ -118,9 +131,29 @@
       }
     });
 
+    // On page load, do the following:
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Set user online (Firestore "onlineUsers" collection)
+      setUserOnline();
+
+      // Update the online users count
+      updateOnlineUsersCount();
+
+      // Increment the site visits count
+      await incrementSiteVisits();
+
+      // Retrieve the latest visits total and display it
+      const visits = await getSiteVisits();
+      const visitsCountEl = document.getElementById("visitsCount");
+      if (visitsCountEl) {
+        visitsCountEl.textContent = visits;
+      }
+    });
+
     // Mark user as offline when leaving the page
     window.addEventListener("beforeunload", () => {
       updateUserStatus(false);
+      setUserOffline();
     });
   </script>
   
@@ -163,7 +196,7 @@
       margin-right: 10px;
     }
     
-    /* Chat Container */
+    /* Main Container: 2 columns (chat and info) */
     .container {
       width: 800px;
       margin: 20px auto;
@@ -172,7 +205,7 @@
       border: 1px solid #ccc;
     }
     
-    /* Chat */
+    /* Chat Column */
     .chat-column {
       width: 75%;
       display: flex;
@@ -208,7 +241,15 @@
       display: block;
       margin-top: 5px;
     }
-    
+
+    /* Info Column (right side) */
+    .info-column {
+      width: 25%;
+      padding: 10px;
+      border-left: 1px solid #ccc;
+      background: #f9f9f9;
+    }
+
     /* Chat Input (Chatbox) */
     .chat-input-area {
       position: fixed;
@@ -228,7 +269,6 @@
       padding: 6px;
       border: 1px solid #ccc;
     }
-    /* Removed file input styling */
     .chat-input-area button {
       padding: 6px 12px;
       background: #ff4500;
@@ -256,16 +296,26 @@
       <button id="loginBtn">Set Nickname</button>
     </div>
   </header>
+
   <div class="container">
+    <!-- Left: Chat Column -->
     <div class="chat-column">
       <div class="chat-header">Live Chat</div>
       <div class="chat-messages" id="chatMessages"></div>
     </div>
+
+    <!-- Right: Info Column -->
+    <div class="info-column">
+      <h2>Site Stats</h2>
+      <p>Total Visits: <span id="visitsCount">0</span></p>
+      <p>Online Users: <span id="onlineCount">0</span></p>
+    </div>
   </div>
+
   <div class="chat-input-area">
     <input type="text" id="chatInput" placeholder="Type a message...">
-    <!-- Removed image input element -->
     <button id="sendBtn">Send</button>
   </div>
 </body>
 </html>
+

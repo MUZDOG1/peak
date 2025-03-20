@@ -1,7 +1,17 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  setDoc, 
+  deleteDoc, 
+  onSnapshot,
+  getDoc,
+  updateDoc,
+  increment
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
-import { getDatabase, ref, set, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getDatabase, ref, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -20,7 +30,9 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const rtdb = getDatabase(app);
 
-// Online User Tracking
+// ===============================
+// 1) Online User Tracking (RTDB)
+// ===============================
 function updateUserStatus(isOnline) {
   const currentNickname = localStorage.getItem("nickname") || "Guest";
   const userStatusRef = ref(rtdb, `onlineUsers/${currentNickname}`);
@@ -36,10 +48,10 @@ function updateUserStatus(isOnline) {
 // Generate a random user ID
 const userId = `user_${Math.floor(Math.random() * 1000000)}`;
 
-// Reference to onlineUsers collection
+// Reference to onlineUsers collection in Firestore
 const onlineUsersRef = collection(db, "onlineUsers");
 
-// Function to update online users count
+// Function to update online users count (listens for changes in the Firestore collection)
 function updateOnlineUsersCount() {
   onSnapshot(onlineUsersRef, (snapshot) => {
     const onlineCount = snapshot.size;
@@ -52,7 +64,7 @@ function updateOnlineUsersCount() {
   });
 }
 
-// Add user to onlineUsers collection
+// Add user to Firestore `onlineUsers` collection
 async function setUserOnline() {
   try {
     await setDoc(doc(onlineUsersRef, userId), {
@@ -75,15 +87,53 @@ async function setUserOffline() {
   }
 }
 
-// Call functions when the page loads
-document.addEventListener("DOMContentLoaded", () => {
-  setUserOnline();
-  updateOnlineUsersCount();
-});
+// ===============================
+// 2) Site Visits Counter (Firestore)
+// ===============================
+const siteStatsRef = doc(db, "analytics", "siteStats");
 
-// Remove user when they close the page
-window.addEventListener("beforeunload", setUserOffline);
+/**
+ * Increments the site visits by 1. If the document doesn't exist yet,
+ * it creates it with `visits = 1`.
+ */
+async function incrementSiteVisits() {
+  try {
+    await updateDoc(siteStatsRef, {
+      visits: increment(1)
+    });
+  } catch (err) {
+    // If doc doesn't exist, create it with visits=1
+    await setDoc(siteStatsRef, {
+      visits: 1
+    });
+  }
+}
+
+/** Retrieves the current total of visits. */
+async function getSiteVisits() {
+  const docSnap = await getDoc(siteStatsRef);
+  if (docSnap.exists()) {
+    return docSnap.data().visits || 0;
+  }
+  return 0;
+}
+
+// ===============================
+// 3) Setup: DOMContentLoaded & Window events
+// ===============================
+// (Note: We moved these event listeners into index.html to keep logic separate.)
+// You can keep or remove these from firebase.js if desired,
+// but in the above index.html, we already do the final calls.
 
 // Export modules
-export { db, storage, updateUserStatus, setUserOnline, setUserOffline };
+export { 
+  db, 
+  storage, 
+  updateUserStatus, 
+  setUserOnline, 
+  setUserOffline,
+  updateOnlineUsersCount,
+  incrementSiteVisits,
+  getSiteVisits
+};
 
