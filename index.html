@@ -18,7 +18,10 @@
       serverTimestamp, 
       query, 
       orderBy, 
-      onSnapshot 
+      onSnapshot, 
+      updateDoc,
+      doc,
+      increment
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
     // DOM Elements
@@ -63,7 +66,6 @@
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
 
-        // Format the timestamp to display a full date and time
         let timestamp = message.timestamp ? new Date(message.timestamp.toDate()) : null;
         let formattedTime = timestamp
           ? timestamp.toLocaleString("en-US", {
@@ -79,12 +81,16 @@
 
         let filteredText = message.text ? await filterMessage(message.text) : "";
 
-        // Image display remains in case old messages had images
+        // Include the like button and like count
         messageDiv.innerHTML = `
           <div class="message-content">
             <span class="author">${message.nickname}:</span>
             ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
             ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
+          </div>
+          <div class="message-actions">
+            <button class="like-btn" data-id="${doc.id}">Like</button>
+            <span class="like-count">${message.likes || 0}</span>
           </div>
           <span class="timestamp">${formattedTime}</span>
         `;
@@ -93,7 +99,7 @@
       chatMessages.scrollTop = 0;
     });
 
-    // Send Message
+    // Send Message with button click
     sendBtn.addEventListener("click", async () => {
       const text = chatInput.value.trim();
       if (text) {
@@ -102,8 +108,18 @@
           nickname: currentNickname,
           text: filteredText,
           timestamp: serverTimestamp(),
+          likes: 0  // initialize like count
         });
         chatInput.value = "";
+        chatInput.focus();
+      }
+    });
+
+    // Send Message with Enter key (without Shift)
+    chatInput.addEventListener("keypress", async (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendBtn.click();
       }
     });
 
@@ -143,6 +159,31 @@
     // Mark user as offline when leaving the page
     window.addEventListener("beforeunload", () => {
       updateUserStatus(false);
+    });
+
+    // Event delegation for like button clicks
+    document.addEventListener("click", async (event) => {
+      if (event.target && event.target.classList.contains("like-btn")) {
+        const messageId = event.target.getAttribute("data-id");
+
+        // Prevent duplicate likes per user using localStorage.
+        const likedMessages = JSON.parse(localStorage.getItem("likedMessages") || "[]");
+        if (likedMessages.includes(messageId)) {
+          alert("You already liked this message!");
+          return;
+        }
+
+        const messageRef = doc(db, "messages", messageId);
+        try {
+          await updateDoc(messageRef, {
+            likes: increment(1)
+          });
+          likedMessages.push(messageId);
+          localStorage.setItem("likedMessages", JSON.stringify(likedMessages));
+        } catch (error) {
+          console.error("Error updating like count:", error);
+        }
+      }
     });
   </script>
   
@@ -220,7 +261,7 @@
     
     .message {
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: flex-start;
       padding: 8px;
       margin-bottom: 8px;
@@ -271,8 +312,31 @@
     .timestamp {
       font-size: 12px;
       color: gray;
-      margin-left: 10px;
-      white-space: nowrap;
+      margin-top: 5px;
+      align-self: flex-end;
+    }
+
+    /* Like System Styling */
+    .message-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .like-btn {
+      padding: 3px 6px;
+      background-color: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    .like-count {
+      font-size: 12px;
+      color: #333;
     }
   </style>
 </head>
