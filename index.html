@@ -313,7 +313,6 @@
       font-size: 12px;
       color: gray;
       margin-top: 0;
-      /* Removed align-self: flex-end so it stays on the same line as the Like button */
     }
 
     /* Like System Styling */
@@ -343,7 +342,11 @@
 <body>
   <header class="muzdog-header">
     <div class="logo">
-      Muzdog Chat <span class="subtitle">- The Best Chatroom</span>
+      Muzdog Chat 
+      <span class="subtitle">
+        - The Best Chatroom
+        <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
+      </span>
     </div>
     <div class="login">
       <input type="text" id="loginNickname" placeholder="Nickname">
@@ -367,5 +370,4 @@
   </div>
 </body>
 </html>
-
 
