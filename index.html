@@ -81,7 +81,7 @@
 
         let filteredText = message.text ? await filterMessage(message.text) : "";
 
-        // Include the like button and like count
+        // Position the Like button and count BEFORE the timestamp
         messageDiv.innerHTML = `
           <div class="message-content">
             <span class="author">${message.nickname}:</span>
@@ -91,8 +91,8 @@
           <div class="message-actions">
             <button class="like-btn" data-id="${doc.id}">Like</button>
             <span class="like-count">${message.likes || 0}</span>
+            <span class="timestamp">${formattedTime}</span>
           </div>
-          <span class="timestamp">${formattedTime}</span>
         `;
         chatMessages.appendChild(messageDiv);
       });
@@ -312,7 +312,8 @@
     .timestamp {
       font-size: 12px;
       color: gray;
-      margin-top: 5px;
+      /* Removed margin-top to reduce whitespace */
+      margin-top: 0;
       align-self: flex-end;
     }
 
@@ -321,7 +322,8 @@
       display: flex;
       align-items: center;
       gap: 5px;
-      margin-top: 5px;
+      /* Removed margin-top to reduce whitespace */
+      margin-top: 0;
     }
 
     .like-btn {
@@ -367,3 +369,4 @@
   </div>
 </body>
 </html>
+
