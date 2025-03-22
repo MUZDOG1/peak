@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Muzdog Chat Room</title>
   <script type="module">
-    // Import Firebase functions and our custom methods from firebase.js
     import { 
       db, 
       storage, 
@@ -14,20 +13,10 @@
       getSiteVisits, 
       signUp, 
       login, 
-      logout 
+      logout,
+      banUser
     } from "./firebase.js";
-    import { 
-      collection, 
-      addDoc, 
-      serverTimestamp, 
-      query, 
-      orderBy, 
-      onSnapshot,
-      updateDoc,
-      doc,
-      increment,
-      getDoc
-    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, updateDoc, doc, increment, getDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     // -------------------------------
@@ -48,6 +37,10 @@
     const loginBtn = document.getElementById("loginBtn");
 
     const logoutBtn = document.getElementById("logoutBtn");
+
+    // Admin Panel Elements
+    const adminPanel = document.getElementById("adminPanel");
+    const adminUserList = document.getElementById("adminUserList");
 
     // -------------------------------
     // Event Listeners for Authentication
@@ -80,23 +73,36 @@
     // -------------------------------
     // Authentication State Listener
     // -------------------------------
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is signed in.
         logoutBtn.style.display = "block";
         chatInput.disabled = false;
         sendBtn.disabled = false;
         updateUserStatus(true);
-        // Hide the authentication container after login.
         document.getElementById("authContainer").style.display = "none";
+
+        // Check if the user is banned
+        const userDocSnap = await getDoc(doc(db, "users", user.uid));
+        if (userDocSnap.exists() && userDocSnap.data().banned) {
+          alert("Your account has been banned.");
+          logout();
+          return;
+        }
+
+        // If user is an admin, show admin panel and load users list.
+        if (userDocSnap.exists() && userDocSnap.data().isAdmin) {
+          adminPanel.style.display = "block";
+          loadUsersForAdmin();
+        } else {
+          adminPanel.style.display = "none";
+        }
       } else {
-        // No user is signed in.
         logoutBtn.style.display = "none";
         chatInput.disabled = true;
         sendBtn.disabled = true;
         updateUserStatus(false);
-        // Show the authentication container so users can sign up or log in.
         document.getElementById("authContainer").style.display = "block";
+        adminPanel.style.display = "none";
       }
     });
 
@@ -125,12 +131,9 @@
     // -------------------------------
     // Load and Display Chat Messages (Newest on top)
     // -------------------------------
-    // Query messages ordered descending by timestamp.
     const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
     onSnapshot(q, async (snapshot) => {
       await loadBannedWords();
-      
-      // Build an array of HTML strings for each message.
       const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
         const message = docSnap.data();
         let timestamp = message.timestamp ? new Date(message.timestamp.toDate()) : null;
@@ -172,10 +175,7 @@
           </div>
         `;
       }));
-      
-      // Update the chatMessages container in one go.
       chatMessages.innerHTML = messagesHtmlArray.join('');
-      // Scroll to the top so the newest message is visible.
       chatMessages.scrollTop = 0;
     });
 
@@ -192,7 +192,6 @@
       if (text) {
         await addDoc(collection(db, "messages"), {
           userId: auth.currentUser.uid,
-          // We'll display the verified username when reading messages.
           nickname: auth.currentUser.email,
           text: text,
           timestamp: serverTimestamp(),
@@ -203,7 +202,6 @@
       }
     });
 
-    // Allow sending message with Enter (without Shift)
     chatInput.addEventListener("keypress", async (event) => {
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -227,7 +225,6 @@
       }
     });
 
-    // Mark user as offline when leaving the page
     window.addEventListener("beforeunload", () => {
       updateUserStatus(false);
     });
@@ -238,14 +235,11 @@
     document.addEventListener("click", async (event) => {
       if (event.target && event.target.classList.contains("like-btn")) {
         const messageId = event.target.getAttribute("data-id");
-
-        // Prevent duplicate likes per user using localStorage.
         const likedMessages = JSON.parse(localStorage.getItem("likedMessages") || "[]");
         if (likedMessages.includes(messageId)) {
           alert("You already liked this message!");
           return;
         }
-
         const messageRef = doc(db, "messages", messageId);
         try {
           await updateDoc(messageRef, { likes: increment(1) });
@@ -256,23 +250,51 @@
         }
       }
     });
+
+    // -------------------------------
+    // Admin Panel: Load Users and Enable Banning
+    // -------------------------------
+    async function loadUsersForAdmin() {
+      try {
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        adminUserList.innerHTML = "";
+        usersSnapshot.forEach(userDoc => {
+          const userData = userDoc.data();
+          const userId = userDoc.id;
+          // Do not show admin users in the ban list
+          if (userData.isAdmin) return;
+          const userItem = document.createElement("div");
+          userItem.innerHTML = `
+            <span>${userData.username} (${userData.email})</span>
+            <button onclick="banUserFromUI('${userId}')">Ban</button>
+          `;
+          adminUserList.appendChild(userItem);
+        });
+      } catch (error) {
+        console.error("Error loading users for admin:", error);
+      }
+    }
+
+    // Global function for the admin ban button
+    window.banUserFromUI = async (userId) => {
+      if (confirm("Are you sure you want to ban this user?")) {
+        await banUser(userId);
+        loadUsersForAdmin();
+      }
+    };
   </script>
   
   <style>
-    /* Reset */
+    /* Reset and base styling */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
-    /* Body */
     body {
       font-family: Arial, sans-serif;
       background: #f4f4f4;
     }
-    
-    /* Top Header */
     .muzdog-header {
       background: #222;
       color: #fff;
@@ -292,8 +314,6 @@
       color: #bbb;
       margin-left: 5px;
     }
-    
-    /* Authentication Container */
     .auth-container {
       background: #fff;
       padding: 10px;
@@ -314,23 +334,17 @@
       border: none;
       cursor: pointer;
     }
-    
-    /* Chat Container */
     .container {
       width: 800px;
       margin: 20px auto;
       background: #fff;
       border: 1px solid #ccc;
     }
-    
-    /* Chat Column */
     .chat-column {
       width: 100%;
       display: flex;
       flex-direction: column;
     }
-    
-    /* Chat Header */
     .chat-header {
       background: #ddd;
       padding: 10px;
@@ -340,7 +354,6 @@
       justify-content: space-between;
       align-items: center;
     }
-    
     .chat-messages {
       flex: 1;
       padding: 10px;
@@ -348,7 +361,6 @@
       background: #fff;
       height: 400px;
     }
-    
     .message {
       display: flex;
       flex-direction: column;
@@ -358,18 +370,14 @@
       background: #f9f9f9;
       border: 1px solid #ccc;
     }
-    
     .message-content {
       flex: 1;
     }
-    
     .message img {
       max-width: 100%;
       display: block;
       margin-top: 5px;
     }
-    
-    /* Chat Input */
     .chat-input-area {
       position: fixed;
       bottom: 0;
@@ -383,13 +391,11 @@
       border-top: 1px solid #ccc;
       z-index: 1000;
     }
-    
     .chat-input-area input[type="text"] {
       flex: 1;
       padding: 6px;
       border: 1px solid #ccc;
     }
-    
     .chat-input-area button {
       padding: 6px 12px;
       background: #ff4500;
@@ -397,21 +403,17 @@
       border: none;
       cursor: pointer;
     }
-    
-    /* Timestamp & Like Styling */
     .timestamp {
       font-size: 12px;
       color: gray;
       margin-top: 0;
     }
-    
     .message-actions {
       display: flex;
       align-items: center;
       gap: 5px;
       margin-top: 0;
     }
-    
     .like-btn {
       padding: 3px 6px;
       background-color: #ff4500;
@@ -421,10 +423,21 @@
       border-radius: 3px;
       font-size: 12px;
     }
-    
     .like-count {
       font-size: 12px;
       color: #333;
+    }
+    /* Admin Panel Styling */
+    #adminPanel {
+      width: 800px;
+      margin: 20px auto;
+      background: #fff;
+      border: 1px solid #f00;
+      padding: 10px;
+      display: none;
+    }
+    #adminUserList div {
+      margin-bottom: 5px;
     }
   </style>
 </head>
@@ -470,9 +483,13 @@
     <button id="sendBtn" disabled>Send</button>
   </div>
 
-  <!-- Logout Button (displayed only when logged in) -->
+  <!-- Logout Button -->
   <button id="logoutBtn" style="position: fixed; top: 10px; right: 10px; display: none;">Logout</button>
+
+  <!-- Admin Panel (Visible for Admins only) -->
+  <div id="adminPanel">
+    <h3>Admin Panel</h3>
+    <div id="adminUserList"></div>
+  </div>
 </body>
 </html>
-
-

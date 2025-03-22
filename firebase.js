@@ -95,25 +95,23 @@ async function getSiteVisits() {
 }
 
 // -------------------------------
-// Authentication Functions with Unique Username Check
+// Authentication Functions with Admin Check
 // -------------------------------
-
 /**
  * Sign Up a new user with email, password, and username.
- * This function first queries Firestore to see if the username is already taken.
+ * If the email is "metallicfarts867@gmail.com" and username is "muzdog",
+ * the user document will be created with an admin flag.
  */
 async function signUp(email, password, username) {
   try {
-    // Convert username to lowercase for a case-insensitive check (optional)
     const normalizedUsername = username.toLowerCase();
 
-    // Query Firestore to check if the username already exists.
+    // Check if the username already exists.
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("username", "==", normalizedUsername));
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      // Username is taken.
       alert("Username is already taken. Please choose another one.");
       return;
     }
@@ -122,10 +120,15 @@ async function signUp(email, password, username) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
+    // Determine admin status based on provided details.
+    const isAdmin = (email === "metallicfarts867@gmail.com" && normalizedUsername === "muzdog");
+
     // Store the new user's data in Firestore.
     await setDoc(doc(db, "users", user.uid), {
       username: normalizedUsername,
-      email: email
+      email: email,
+      isAdmin: isAdmin,  // will be true for the specified admin
+      banned: false      // default to not banned
     });
 
     console.log("User created:", user);
@@ -165,6 +168,22 @@ async function logout() {
   }
 }
 
+/**
+ * Ban a user by setting the "banned" flag to true.
+ * Only admins should be able to call this function.
+ */
+async function banUser(userId) {
+  try {
+    await updateDoc(doc(db, "users", userId), {
+      banned: true
+    });
+    alert("User banned successfully.");
+  } catch (error) {
+    console.error("Error banning user:", error.message);
+    alert("Failed to ban user.");
+  }
+}
+
 export { 
   db, 
   storage, 
@@ -174,6 +193,8 @@ export {
   getSiteVisits, 
   signUp, 
   login, 
-  logout 
+  logout,
+  banUser
 };
+
 
