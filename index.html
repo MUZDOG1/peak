@@ -123,13 +123,15 @@
     }
 
     // -------------------------------
-    // Load and Display Chat Messages
+    // Load and Display Chat Messages (New messages at top)
     // -------------------------------
-    const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+    // Change orderBy to "desc" so latest messages come first.
+    const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
     onSnapshot(q, async (snapshot) => {
       chatMessages.innerHTML = "";
       await loadBannedWords();
-      snapshot.docs.forEach(async (docSnap) => {
+      // Use a standard loop to avoid asynchronous duplication.
+      for (const docSnap of snapshot.docs) {
         const message = docSnap.data();
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
@@ -171,8 +173,9 @@
           </div>
         `;
         chatMessages.appendChild(messageDiv);
-      });
-      chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+      // Since messages are in descending order, scroll to the top.
+      chatMessages.scrollTop = 0;
     });
 
     // -------------------------------
