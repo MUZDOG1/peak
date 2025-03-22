@@ -133,10 +133,24 @@
     // -------------------------------
     const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
     onSnapshot(q, async (snapshot) => {
-      await loadBannedWords();
-      const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
-  const message = docSnap.data();
-  
+  const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
+    const message = docSnap.data();
+    
+    // Use the nickname from the message document
+    const username = message.nickname || "Unknown User";
+
+    return `
+      <div class="message">
+        <div class="message-content">
+          <span class="author">${username}:</span>
+          <span class="text">${message.text}</span>
+        </div>
+        <!-- Rest of your message HTML -->
+      </div>
+    `;
+  });
+  chatMessages.innerHTML = messagesHtmlArray.join('');
+});
   // FIXED TIMESTAMP HANDLING
   let timestamp = null;
   if (message.timestamp && typeof message.timestamp.toDate === 'function') {
@@ -189,8 +203,7 @@
     // -------------------------------
     // Send Message (Only for Authenticated Users)
     // -------------------------------
- // Send Message (Only for Authenticated Users)
-sendBtn.addEventListener("click", async () => {
+    sendBtn.addEventListener("click", async () => {
   if (!auth.currentUser) {
     alert("You must be logged in to send messages.");
     return;
@@ -198,9 +211,14 @@ sendBtn.addEventListener("click", async () => {
   
   const text = chatInput.value.trim();
   if (text) {
-    await addDoc(collection(db, "messages"), {
-      senderId: auth.currentUser.uid, // ✅ Fixed: Correct field name
-      nickname: auth.currentUser.email,
+    // Fetch the user's username
+    const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+    const username = userDoc.exists() ? userDoc.data().username : "Unknown User";
+
+    // Send the message with the username
+    await addDoc(collection(db, "chatrooms/general/messages"), {
+      senderId: auth.currentUser.uid,
+      nickname: username, // Use username instead of email
       text: text,
       timestamp: serverTimestamp(),
       likes: 0
