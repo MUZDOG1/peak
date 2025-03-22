@@ -37,7 +37,7 @@
 
     // TOS checkbox
     const tosCheckbox = document.getElementById("tosCheckbox");
-    // Disable sign-up until TOS is checked
+    // Disable Sign Up until TOS is checked
     signupBtn.disabled = true;
     tosCheckbox.addEventListener("change", () => {
       signupBtn.disabled = !tosCheckbox.checked;
@@ -320,6 +320,7 @@
       color: #bbb;
       margin-left: 5px;
     }
+
     .auth-container {
       background: #fff;
       padding: 10px;
@@ -327,37 +328,44 @@
       width: 800px;
       margin: 20px auto;
     }
-    .auth-container input {
-      padding: 6px;
-      margin: 5px 0;
-      width: calc(100% - 20px);
-    }
+
+    /* 
+      Keep original button styling so it stays 
+      boxy and orange (not flattened).
+    */
     .auth-container button {
       padding: 6px 12px;
+      margin: 5px 0;
       background: #ff4500;
       color: #fff;
       border: none;
       cursor: pointer;
     }
 
-    /*
-     Keep the sign-up button directly under the Username field,
-     with the checkbox & label right next to it (minimal spacing).
+    .auth-container input {
+      padding: 6px;
+      margin: 5px 0;
+      width: calc(100% - 20px);
+    }
+
+    /* 
+      A simple row for the Sign Up button + TOS checkbox.
+      Minimizing spacing so they're close, 
+      but preserving the button's boxy shape.
     */
     .signup-btn-row {
-      display: flex;
-      align-items: center;
+      display: inline-flex; 
+      align-items: center; 
+      gap: 6px; /* small gap to keep them tight */
       margin-top: 5px;
-      gap: 4px; /* Reduced gap to bring them closer */
+      white-space: nowrap; /* prevents label from wrapping */
     }
-    .signup-btn-row button {
-      /* Keep default button style from above; no extra margin. */
-    }
+
     .signup-btn-row input[type="checkbox"] {
-      margin: 0; /* No extra margin around the checkbox */
+      margin: 0;
     }
     .signup-btn-row label {
-      margin: 0; /* Keep label close to the checkbox */
+      margin: 0;
     }
     .signup-btn-row a {
       color: #007BFF;
@@ -513,7 +521,7 @@
     <input type="password" id="signupPassword" placeholder="Password">
     <input type="text" id="signupUsername" placeholder="Username">
 
-    <!-- Sign Up button on its own line, with checkbox & label very close to it -->
+    <!-- Sign Up button on its own line, with the TOS checkbox & label close by -->
     <div class="signup-btn-row">
       <button id="signupBtn">Sign Up</button>
       <input type="checkbox" id="tosCheckbox">
