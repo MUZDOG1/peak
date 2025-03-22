@@ -135,8 +135,15 @@
     onSnapshot(q, async (snapshot) => {
       await loadBannedWords();
       const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
-        const message = docSnap.data();
-        let timestamp = message.timestamp ? new Date(message.timestamp.toDate()) : null;
+  const message = docSnap.data();
+  
+  // FIXED TIMESTAMP HANDLING
+  let timestamp = null;
+  if (message.timestamp && typeof message.timestamp.toDate === 'function') {
+    timestamp = message.timestamp.toDate();
+  } else {
+    timestamp = new Date(); // Fallback to current time
+  }
         let formattedTime = timestamp
           ? timestamp.toLocaleString("en-US", {
               year: "numeric",
