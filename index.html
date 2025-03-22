@@ -32,7 +32,7 @@
     const signupUsername = document.getElementById("signupUsername");
     const signupBtn = document.getElementById("signupBtn");
 
-    // New: Terms of Service Agreement Checkbox
+    // Terms of Service Agreement Checkbox
     const tosCheckbox = document.getElementById("tosCheckbox");
     // Disable sign-up until agreement is confirmed
     signupBtn.disabled = true;
@@ -337,19 +337,24 @@
       border: none;
       cursor: pointer;
     }
-    /* New: Styling for the Terms of Service checkbox */
-    .tos-container {
-      margin: 10px 5px;
+
+    /* Show Sign Up + TOS checkbox on one line */
+    .signup-row {
       display: flex;
       align-items: center;
+      gap: 8px;
+      margin: 5px;
     }
-    .tos-container input[type="checkbox"] {
-      margin-right: 8px;
+
+    .signup-row label {
+      cursor: pointer;
     }
-    .tos-container a {
+
+    .signup-row a {
       color: #007BFF;
       text-decoration: underline;
     }
+
     .container {
       width: 800px;
       margin: 20px auto;
@@ -499,12 +504,14 @@
     <input type="email" id="signupEmail" placeholder="Email">
     <input type="password" id="signupPassword" placeholder="Password">
     <input type="text" id="signupUsername" placeholder="Username">
-    <button id="signupBtn">Sign Up</button>
-    <!-- New: Terms of Service Agreement Checkbox -->
-    <div class="tos-container">
-      <input type="checkbox" id="tosCheckbox">
+
+    <!-- One row for Sign Up button + TOS checkbox -->
+    <div class="signup-row">
+      <button id="signupBtn">Sign Up</button>
+      <input type="checkbox" id="tosCheckbox" />
       <label for="tosCheckbox">
-        Click this box to agree to our <a href="tos.html" target="_blank">Terms of Service</a>
+        Click this box to agree to our 
+        <a href="tos.html" target="_blank">Terms of Service</a>
       </label>
     </div>
 
@@ -539,3 +546,4 @@
   </div>
 </body>
 </html>
+
