@@ -50,7 +50,7 @@
     const logoutBtn = document.getElementById("logoutBtn");
 
     // -------------------------------
-    // Event Listeners for Auth
+    // Event Listeners for Authentication
     // -------------------------------
     signupBtn.addEventListener("click", () => {
       const email = signupEmail.value;
@@ -82,27 +82,27 @@
     // -------------------------------
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // When logged in, show logout button and chat input.
+        // User is signed in.
         logoutBtn.style.display = "block";
         chatInput.disabled = false;
         sendBtn.disabled = false;
         updateUserStatus(true);
-        // Optionally, hide the auth container after login.
+        // Hide the authentication container after login.
         document.getElementById("authContainer").style.display = "none";
       } else {
+        // No user is signed in.
         logoutBtn.style.display = "none";
         chatInput.disabled = true;
         sendBtn.disabled = true;
         updateUserStatus(false);
-        // Show the auth container so users can sign up or log in.
+        // Show the authentication container so users can sign up or log in.
         document.getElementById("authContainer").style.display = "block";
       }
     });
 
     // -------------------------------
-    // Load and Display Chat Messages
+    // Banned Words Filtering
     // -------------------------------
-    // Load banned words from file
     let bannedWords = [];
     async function loadBannedWords() {
       try {
@@ -122,11 +122,13 @@
       return message;
     }
 
+    // -------------------------------
+    // Load and Display Chat Messages
+    // -------------------------------
     const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
     onSnapshot(q, async (snapshot) => {
       chatMessages.innerHTML = "";
       await loadBannedWords();
-      // Display messages in reverse order (newest at the bottom)
       snapshot.docs.forEach(async (docSnap) => {
         const message = docSnap.data();
         const messageDiv = document.createElement("div");
@@ -147,7 +149,7 @@
 
         let filteredText = message.text ? await filterMessage(message.text) : "";
 
-        // Retrieve the verified username from Firestore based on userId
+        // Retrieve the verified username from Firestore based on userId if available.
         let verifiedUsername = message.nickname;
         if (message.userId) {
           const userDocSnap = await getDoc(doc(db, "users", message.userId));
@@ -186,7 +188,7 @@
       if (text) {
         await addDoc(collection(db, "messages"), {
           userId: auth.currentUser.uid,
-          // We will show the verified username when reading messages.
+          // We'll display the verified username when reading messages.
           nickname: auth.currentUser.email,
           text: text,
           timestamp: serverTimestamp(),
@@ -287,7 +289,7 @@
       margin-left: 5px;
     }
     
-    /* Auth Container */
+    /* Authentication Container */
     .auth-container {
       background: #fff;
       padding: 10px;
@@ -309,7 +311,7 @@
       cursor: pointer;
     }
     
-    /* Main Container */
+    /* Chat Container */
     .container {
       width: 800px;
       margin: 20px auto;

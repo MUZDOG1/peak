@@ -6,7 +6,11 @@ import {
   getDoc, 
   updateDoc, 
   setDoc, 
-  increment 
+  increment,
+  collection,
+  query,
+  where,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { getDatabase, ref, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
@@ -39,7 +43,7 @@ const rtdb = getDatabase(app);
 // User Presence (RTDB)
 // -------------------------------
 function updateUserStatus(isOnline) {
-  // Using email as key for presence; you might want to use uid for a production app.
+  // Using uid if logged in; otherwise fallback to "Guest"
   const userKey = auth.currentUser ? auth.currentUser.uid : "Guest";
   const userStatusRef = ref(rtdb, `onlineUsers/${userKey}`);
   if (isOnline) {
@@ -91,21 +95,39 @@ async function getSiteVisits() {
 }
 
 // -------------------------------
-// Authentication Functions
+// Authentication Functions with Unique Username Check
 // -------------------------------
 
 /**
  * Sign Up a new user with email, password, and username.
+ * This function first queries Firestore to see if the username is already taken.
  */
 async function signUp(email, password, username) {
   try {
+    // Convert username to lowercase for a case-insensitive check (optional)
+    const normalizedUsername = username.toLowerCase();
+
+    // Query Firestore to check if the username already exists.
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("username", "==", normalizedUsername));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      // Username is taken.
+      alert("Username is already taken. Please choose another one.");
+      return;
+    }
+
+    // Create the user account.
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    // Store the verified username in Firestore under a 'users' collection.
+
+    // Store the new user's data in Firestore.
     await setDoc(doc(db, "users", user.uid), {
-      username: username,
+      username: normalizedUsername,
       email: email
     });
+
     console.log("User created:", user);
     alert("Account created successfully!");
   } catch (error) {
@@ -154,3 +176,4 @@ export {
   login, 
   logout 
 };
+
