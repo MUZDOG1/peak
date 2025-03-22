@@ -131,60 +131,46 @@
     // -------------------------------
     // Load and Display Chat Messages (Newest on top)
     // -------------------------------
-    const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
+    const q = query(collection(db, "chatrooms/general/messages"), orderBy("timestamp", "desc")); // ✅ Fixed collection path
     onSnapshot(q, async (snapshot) => {
-  const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
-    const message = docSnap.data();
-    
-    // Use the nickname from the message document
-    const username = message.nickname || "Unknown User";
+      await loadBannedWords();
+      const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
+        const message = docSnap.data();
 
-    return `
-      <div class="message">
-        <div class="message-content">
-          <span class="author">${username}:</span>
-          <span class="text">${message.text}</span>
-        </div>
-        <!-- Rest of your message HTML -->
-      </div>
-    `;
-  });
-  chatMessages.innerHTML = messagesHtmlArray.join('');
-});
-  // FIXED TIMESTAMP HANDLING
-  let timestamp = null;
-  if (message.timestamp && typeof message.timestamp.toDate === 'function') {
-    timestamp = message.timestamp.toDate();
-  } else {
-    timestamp = new Date(); // Fallback to current time
-  }
-        let formattedTime = timestamp
-          ? timestamp.toLocaleString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "numeric",
-              second: "numeric",
-              hour12: true
-            })
-          : "Unknown time";
+        // Safe timestamp handling
+        let timestamp = null;
+        if (message.timestamp && typeof message.timestamp.toDate === 'function') {
+          timestamp = message.timestamp.toDate();
+        } else {
+          timestamp = new Date(); // Fallback to client time
+        }
 
+        const formattedTime = timestamp.toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+          hour12: true
+        });
+
+        // Filter the message text
         let filteredText = message.text ? await filterMessage(message.text) : "";
 
-        // Retrieve verified username if available.
-        let verifiedUsername = message.nickname;
-        if (message.userId) {
-          const userDocSnap = await getDoc(doc(db, "users", message.userId));
-          if (userDocSnap.exists()) {
-            verifiedUsername = userDocSnap.data().username;
+        // Retrieve the username
+        let username = "Unknown User";
+        if (message.senderId) {
+          const userDoc = await getDoc(doc(db, "users", message.senderId));
+          if (userDoc.exists()) {
+            username = userDoc.data().username;
           }
         }
 
         return `
           <div class="message">
             <div class="message-content">
-              <span class="author">${verifiedUsername}:</span>
+              <span class="author">${username}:</span>
               ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
               ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
             </div>
@@ -196,37 +182,38 @@
           </div>
         `;
       }));
+
       chatMessages.innerHTML = messagesHtmlArray.join('');
-      chatMessages.scrollTop = 0;
+      chatMessages.scrollTop = 0; // Scroll to the top for newest messages
     });
 
     // -------------------------------
     // Send Message (Only for Authenticated Users)
     // -------------------------------
     sendBtn.addEventListener("click", async () => {
-  if (!auth.currentUser) {
-    alert("You must be logged in to send messages.");
-    return;
-  }
-  
-  const text = chatInput.value.trim();
-  if (text) {
-    // Fetch the user's username
-    const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-    const username = userDoc.exists() ? userDoc.data().username : "Unknown User";
+      if (!auth.currentUser) {
+        alert("You must be logged in to send messages.");
+        return;
+      }
+      
+      const text = chatInput.value.trim();
+      if (text) {
+        // Fetch the user's username
+        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+        const username = userDoc.exists() ? userDoc.data().username : "Unknown User";
 
-    // Send the message with the username
-    await addDoc(collection(db, "chatrooms/general/messages"), {
-      senderId: auth.currentUser.uid,
-      nickname: username, // Use username instead of email
-      text: text,
-      timestamp: serverTimestamp(),
-      likes: 0
+        // Send the message with the username
+        await addDoc(collection(db, "chatrooms/general/messages"), {
+          senderId: auth.currentUser.uid, // ✅ Correct field name
+          nickname: username, // Use username instead of email
+          text: text,
+          timestamp: serverTimestamp(),
+          likes: 0
+        });
+        chatInput.value = "";
+        chatInput.focus();
+      }
     });
-    chatInput.value = "";
-    chatInput.focus();
-  }
-});
 
     chatInput.addEventListener("keypress", async (event) => {
       if (event.key === "Enter" && !event.shiftKey) {
@@ -266,7 +253,7 @@
           alert("You already liked this message!");
           return;
         }
-        const messageRef = doc(db, "messages", messageId);
+        const messageRef = doc(db, "chatrooms/general/messages", messageId); // ✅ Fixed collection path
         try {
           await updateDoc(messageRef, { likes: increment(1) });
           likedMessages.push(messageId);
