@@ -189,25 +189,26 @@
     // -------------------------------
     // Send Message (Only for Authenticated Users)
     // -------------------------------
-    sendBtn.addEventListener("click", async () => {
-      if (!auth.currentUser) {
-        alert("You must be logged in to send messages.");
-        return;
-      }
-      
-      const text = chatInput.value.trim();
-      if (text) {
-        await addDoc(collection(db, "messages"), {
-          userId: auth.currentUser.uid,
-          nickname: auth.currentUser.email,
-          text: text,
-          timestamp: serverTimestamp(),
-          likes: 0
-        });
-        chatInput.value = "";
-        chatInput.focus();
-      }
+ // Send Message (Only for Authenticated Users)
+sendBtn.addEventListener("click", async () => {
+  if (!auth.currentUser) {
+    alert("You must be logged in to send messages.");
+    return;
+  }
+  
+  const text = chatInput.value.trim();
+  if (text) {
+    await addDoc(collection(db, "messages"), {
+      senderId: auth.currentUser.uid, // ✅ Fixed: Correct field name
+      nickname: auth.currentUser.email,
+      text: text,
+      timestamp: serverTimestamp(),
+      likes: 0
     });
+    chatInput.value = "";
+    chatInput.focus();
+  }
+});
 
     chatInput.addEventListener("keypress", async (event) => {
       if (event.key === "Enter" && !event.shiftKey) {
