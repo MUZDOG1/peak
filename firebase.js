@@ -1,3 +1,4 @@
+// firebase.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { 
   getFirestore, 
@@ -9,6 +10,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 import { getDatabase, ref, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut 
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -25,24 +32,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 const rtdb = getDatabase(app);
 
 // -------------------------------
 // User Presence (RTDB)
 // -------------------------------
-// Note: Although we're removing the online users UI,
-// the updateUserStatus function can remain for other purposes.
 function updateUserStatus(isOnline) {
-  const currentNickname = localStorage.getItem("nickname") || "Guest";
-  const userStatusRef = ref(rtdb, `onlineUsers/${currentNickname}`);
+  // Using email as key for presence; you might want to use uid for a production app.
+  const userKey = auth.currentUser ? auth.currentUser.uid : "Guest";
+  const userStatusRef = ref(rtdb, `onlineUsers/${userKey}`);
   if (isOnline) {
     set(userStatusRef, true)
-      .then(() => console.log(`${currentNickname} is online (RTDB).`))
+      .then(() => console.log(`${userKey} is online (RTDB).`))
       .catch((err) => console.error("Error updating online status:", err));
     onDisconnect(userStatusRef).remove();
   } else {
     set(userStatusRef, false)
-      .then(() => console.log(`${currentNickname} is offline (RTDB).`))
+      .then(() => console.log(`${userKey} is offline (RTDB).`))
       .catch((err) => console.error("Error updating online status:", err));
   }
 }
@@ -52,22 +59,14 @@ function updateUserStatus(isOnline) {
 // -------------------------------
 const siteStatsRef = doc(db, "analytics", "siteStats");
 
-/**
- * Increments the site visits count by 1.
- * If the document doesn't exist, creates it with visits = 1.
- */
 async function incrementSiteVisits() {
   try {
-    await updateDoc(siteStatsRef, {
-      visits: increment(1)
-    });
+    await updateDoc(siteStatsRef, { visits: increment(1) });
     console.log("Site visits incremented by 1.");
   } catch (err) {
     console.warn("Could not update siteStats doc. It might not exist. Creating it...", err);
     try {
-      await setDoc(siteStatsRef, {
-        visits: 1
-      });
+      await setDoc(siteStatsRef, { visits: 1 });
       console.log("SiteStats document created with visits = 1.");
     } catch (error) {
       console.error("Error creating siteStats document:", error);
@@ -75,9 +74,6 @@ async function incrementSiteVisits() {
   }
 }
 
-/**
- * Retrieves the current total site visits.
- */
 async function getSiteVisits() {
   try {
     const docSnap = await getDoc(siteStatsRef);
@@ -94,7 +90,67 @@ async function getSiteVisits() {
   }
 }
 
-export { db, storage, updateUserStatus, incrementSiteVisits, getSiteVisits };
+// -------------------------------
+// Authentication Functions
+// -------------------------------
 
+/**
+ * Sign Up a new user with email, password, and username.
+ */
+async function signUp(email, password, username) {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    // Store the verified username in Firestore under a 'users' collection.
+    await setDoc(doc(db, "users", user.uid), {
+      username: username,
+      email: email
+    });
+    console.log("User created:", user);
+    alert("Account created successfully!");
+  } catch (error) {
+    console.error("Signup Error:", error.message);
+    alert(error.message);
+  }
+}
 
+/**
+ * Log in an existing user.
+ */
+async function login(email, password) {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    console.log("User logged in:", user);
+    alert("Login successful!");
+  } catch (error) {
+    console.error("Login Error:", error.message);
+    alert(error.message);
+  }
+}
 
+/**
+ * Log out the current user.
+ */
+async function logout() {
+  try {
+    await signOut(auth);
+    console.log("User logged out.");
+    alert("You have been logged out.");
+  } catch (error) {
+    console.error("Logout Error:", error.message);
+    alert(error.message);
+  }
+}
+
+export { 
+  db, 
+  storage, 
+  auth, 
+  updateUserStatus, 
+  incrementSiteVisits, 
+  getSiteVisits, 
+  signUp, 
+  login, 
+  logout 
+};

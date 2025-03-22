@@ -8,9 +8,13 @@
     import { 
       db, 
       storage, 
+      auth, 
       updateUserStatus, 
       incrementSiteVisits, 
-      getSiteVisits 
+      getSiteVisits, 
+      signUp, 
+      login, 
+      logout 
     } from "./firebase.js";
     import { 
       collection, 
@@ -18,23 +22,86 @@
       serverTimestamp, 
       query, 
       orderBy, 
-      onSnapshot, 
+      onSnapshot,
       updateDoc,
       doc,
-      increment
+      increment,
+      getDoc
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
+    // -------------------------------
     // DOM Elements
+    // -------------------------------
     const chatMessages = document.getElementById("chatMessages");
     const chatInput = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendBtn");
 
-    // Load stored nickname (or default to "Guest")
-    let currentNickname = localStorage.getItem("nickname") || "Guest";
+    // Authentication DOM Elements
+    const signupEmail = document.getElementById("signupEmail");
+    const signupPassword = document.getElementById("signupPassword");
+    const signupUsername = document.getElementById("signupUsername");
+    const signupBtn = document.getElementById("signupBtn");
 
-    // Mark user as online (using updateUserStatus for RTDB presence)
-    updateUserStatus(true);
+    const loginEmail = document.getElementById("loginEmail");
+    const loginPassword = document.getElementById("loginPassword");
+    const loginBtn = document.getElementById("loginBtn");
 
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // -------------------------------
+    // Event Listeners for Auth
+    // -------------------------------
+    signupBtn.addEventListener("click", () => {
+      const email = signupEmail.value;
+      const password = signupPassword.value;
+      const username = signupUsername.value;
+      if (!email || !password || !username) {
+        alert("Please fill out all sign up fields.");
+        return;
+      }
+      signUp(email, password, username);
+    });
+
+    loginBtn.addEventListener("click", () => {
+      const email = loginEmail.value;
+      const password = loginPassword.value;
+      if (!email || !password) {
+        alert("Please fill out both login fields.");
+        return;
+      }
+      login(email, password);
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      logout();
+    });
+
+    // -------------------------------
+    // Authentication State Listener
+    // -------------------------------
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // When logged in, show logout button and chat input.
+        logoutBtn.style.display = "block";
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        updateUserStatus(true);
+        // Optionally, hide the auth container after login.
+        document.getElementById("authContainer").style.display = "none";
+      } else {
+        logoutBtn.style.display = "none";
+        chatInput.disabled = true;
+        sendBtn.disabled = true;
+        updateUserStatus(false);
+        // Show the auth container so users can sign up or log in.
+        document.getElementById("authContainer").style.display = "block";
+      }
+    });
+
+    // -------------------------------
+    // Load and Display Chat Messages
+    // -------------------------------
     // Load banned words from file
     let bannedWords = [];
     async function loadBannedWords() {
@@ -55,14 +122,13 @@
       return message;
     }
 
-    // Listen for messages in Firestore
     const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
     onSnapshot(q, async (snapshot) => {
       chatMessages.innerHTML = "";
       await loadBannedWords();
-      const messages = snapshot.docs.slice().reverse();
-      messages.forEach(async (doc) => {
-        const message = doc.data();
+      // Display messages in reverse order (newest at the bottom)
+      snapshot.docs.forEach(async (docSnap) => {
+        const message = docSnap.data();
         const messageDiv = document.createElement("div");
         messageDiv.classList.add("message");
 
@@ -81,41 +147,57 @@
 
         let filteredText = message.text ? await filterMessage(message.text) : "";
 
-        // Position the Like button and count BEFORE the timestamp
+        // Retrieve the verified username from Firestore based on userId
+        let verifiedUsername = message.nickname;
+        if (message.userId) {
+          const userDocSnap = await getDoc(doc(db, "users", message.userId));
+          if (userDocSnap.exists()) {
+            verifiedUsername = userDocSnap.data().username;
+          }
+        }
+
         messageDiv.innerHTML = `
           <div class="message-content">
-            <span class="author">${message.nickname}:</span>
+            <span class="author">${verifiedUsername}:</span>
             ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
             ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
           </div>
           <div class="message-actions">
-            <button class="like-btn" data-id="${doc.id}">Like</button>
+            <button class="like-btn" data-id="${docSnap.id}">Like</button>
             <span class="like-count">${message.likes || 0}</span>
             <span class="timestamp">${formattedTime}</span>
           </div>
         `;
         chatMessages.appendChild(messageDiv);
       });
-      chatMessages.scrollTop = 0;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
-    // Send Message with button click
+    // -------------------------------
+    // Send Message (Only for Authenticated Users)
+    // -------------------------------
     sendBtn.addEventListener("click", async () => {
+      if (!auth.currentUser) {
+        alert("You must be logged in to send messages.");
+        return;
+      }
+      
       const text = chatInput.value.trim();
       if (text) {
-        const filteredText = await filterMessage(text);
         await addDoc(collection(db, "messages"), {
-          nickname: currentNickname,
-          text: filteredText,
+          userId: auth.currentUser.uid,
+          // We will show the verified username when reading messages.
+          nickname: auth.currentUser.email,
+          text: text,
           timestamp: serverTimestamp(),
-          likes: 0  // initialize like count
+          likes: 0
         });
         chatInput.value = "";
         chatInput.focus();
       }
     });
 
-    // Send Message with Enter key (without Shift)
+    // Allow sending message with Enter (without Shift)
     chatInput.addEventListener("keypress", async (event) => {
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -123,26 +205,9 @@
       }
     });
 
-    // Nickname setting
-    const loginBtn = document.getElementById("loginBtn");
-    const loginNickname = document.getElementById("loginNickname");
-    const profileNickname = document.getElementById("profileNickname");
-    if (profileNickname) {
-      profileNickname.textContent = currentNickname;
-    }
-    loginBtn.addEventListener("click", () => {
-      const newNickname = loginNickname.value.trim();
-      if (newNickname) {
-        currentNickname = newNickname;
-        localStorage.setItem("nickname", currentNickname);
-        if (profileNickname) {
-          profileNickname.textContent = currentNickname;
-        }
-        alert("Nickname set to: " + currentNickname);
-      }
-    });
-
-    // On page load, increment site visits and display the total in the chat header
+    // -------------------------------
+    // Site Visits Counter on Page Load
+    // -------------------------------
     document.addEventListener("DOMContentLoaded", async () => {
       console.log("DOM fully loaded. Incrementing site visits...");
       await incrementSiteVisits();
@@ -161,7 +226,9 @@
       updateUserStatus(false);
     });
 
-    // Event delegation for like button clicks
+    // -------------------------------
+    // Like Button Event Delegation
+    // -------------------------------
     document.addEventListener("click", async (event) => {
       if (event.target && event.target.classList.contains("like-btn")) {
         const messageId = event.target.getAttribute("data-id");
@@ -175,9 +242,7 @@
 
         const messageRef = doc(db, "messages", messageId);
         try {
-          await updateDoc(messageRef, {
-            likes: increment(1)
-          });
+          await updateDoc(messageRef, { likes: increment(1) });
           likedMessages.push(messageId);
           localStorage.setItem("likedMessages", JSON.stringify(likedMessages));
         } catch (error) {
@@ -221,8 +286,27 @@
       color: #bbb;
       margin-left: 5px;
     }
-    .muzdog-header .login {
-      margin-right: 10px;
+    
+    /* Auth Container */
+    .auth-container {
+      background: #fff;
+      padding: 10px;
+      border: 1px solid #ccc;
+      width: 800px;
+      margin: 20px auto;
+    }
+    .auth-container input {
+      padding: 6px;
+      margin: 5px;
+      width: calc(100% - 20px);
+    }
+    .auth-container button {
+      padding: 6px 12px;
+      margin: 5px;
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
     }
     
     /* Main Container */
@@ -240,7 +324,7 @@
       flex-direction: column;
     }
     
-    /* Chat Header (now spans full width) */
+    /* Chat Header */
     .chat-header {
       background: #ddd;
       padding: 10px;
@@ -279,7 +363,7 @@
       margin-top: 5px;
     }
     
-    /* Chat Input (Chatbox) */
+    /* Chat Input */
     .chat-input-area {
       position: fixed;
       bottom: 0;
@@ -308,21 +392,20 @@
       cursor: pointer;
     }
     
-    /* Timestamp Styling */
+    /* Timestamp & Like Styling */
     .timestamp {
       font-size: 12px;
       color: gray;
       margin-top: 0;
     }
-
-    /* Like System Styling */
+    
     .message-actions {
       display: flex;
       align-items: center;
       gap: 5px;
       margin-top: 0;
     }
-
+    
     .like-btn {
       padding: 3px 6px;
       background-color: #ff4500;
@@ -332,7 +415,7 @@
       border-radius: 3px;
       font-size: 12px;
     }
-
+    
     .like-count {
       font-size: 12px;
       color: #333;
@@ -348,12 +431,23 @@
         <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
       </span>
     </div>
-    <div class="login">
-      <input type="text" id="loginNickname" placeholder="Nickname">
-      <button id="loginBtn">Set Nickname</button>
-    </div>
   </header>
 
+  <!-- Authentication Section -->
+  <div class="auth-container" id="authContainer">
+    <h2>Sign Up</h2>
+    <input type="email" id="signupEmail" placeholder="Email">
+    <input type="password" id="signupPassword" placeholder="Password">
+    <input type="text" id="signupUsername" placeholder="Username">
+    <button id="signupBtn">Sign Up</button>
+
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <!-- Chat Container (Visible after login) -->
   <div class="container">
     <div class="chat-column">
       <div class="chat-header">
@@ -364,10 +458,14 @@
     </div>
   </div>
 
+  <!-- Chat Input Area -->
   <div class="chat-input-area">
-    <input type="text" id="chatInput" placeholder="Type a message...">
-    <button id="sendBtn">Send</button>
+    <input type="text" id="chatInput" placeholder="Type a message..." disabled>
+    <button id="sendBtn" disabled>Send</button>
   </div>
+
+  <!-- Logout Button (displayed only when logged in) -->
+  <button id="logoutBtn" style="position: fixed; top: 10px; right: 10px; display: none;">Logout</button>
 </body>
 </html>
 
