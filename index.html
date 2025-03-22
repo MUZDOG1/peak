@@ -340,16 +340,24 @@
       cursor: pointer;
     }
 
-    /* Keep the Sign Up button on its own line, with TOS to the right. */
+    /*
+     Keep the sign-up button directly under the Username field,
+     with the checkbox & label right next to it (minimal spacing).
+    */
     .signup-btn-row {
-      display: flex;         /* place items on one row */
-      align-items: center;   /* vertically center them */
+      display: flex;
+      align-items: center;
       margin-top: 5px;
-      gap: 10px;             /* space between button & checkbox */
-      white-space: nowrap;   /* prevent line breaks in the label text */
+      gap: 4px; /* Reduced gap to bring them closer */
+    }
+    .signup-btn-row button {
+      /* Keep default button style from above; no extra margin. */
+    }
+    .signup-btn-row input[type="checkbox"] {
+      margin: 0; /* No extra margin around the checkbox */
     }
     .signup-btn-row label {
-      margin-left: 5px;
+      margin: 0; /* Keep label close to the checkbox */
     }
     .signup-btn-row a {
       color: #007BFF;
@@ -505,7 +513,7 @@
     <input type="password" id="signupPassword" placeholder="Password">
     <input type="text" id="signupUsername" placeholder="Username">
 
-    <!-- Sign Up button in normal position, TOS to its right on one line -->
+    <!-- Sign Up button on its own line, with checkbox & label very close to it -->
     <div class="signup-btn-row">
       <button id="signupBtn">Sign Up</button>
       <input type="checkbox" id="tosCheckbox">
@@ -546,4 +554,5 @@
   </div>
 </body>
 </html>
+
 
