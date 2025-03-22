@@ -302,6 +302,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      position: relative;
+      z-index: 1002;
     }
     .muzdog-header .logo {
       font-size: 24px;
@@ -314,12 +316,33 @@
       color: #bbb;
       margin-left: 5px;
     }
+    /* Admin Panel Styling - UPDATED */
+    #adminPanel {
+      position: fixed;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      background: #fff;
+      border: 2px solid #f00;
+      padding: 10px;
+      display: none;
+      z-index: 1001;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    #adminUserList div {
+      margin-bottom: 5px;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+    }
     .auth-container {
       background: #fff;
       padding: 10px;
       border: 1px solid #ccc;
       width: 800px;
-      margin: 20px auto;
+      margin: 120px auto 20px;
     }
     .auth-container input {
       padding: 6px;
@@ -339,6 +362,8 @@
       margin: 20px auto;
       background: #fff;
       border: 1px solid #ccc;
+      position: relative;
+      z-index: 1;
     }
     .chat-column {
       width: 100%;
@@ -427,18 +452,6 @@
       font-size: 12px;
       color: #333;
     }
-    /* Admin Panel Styling */
-    #adminPanel {
-      width: 800px;
-      margin: 20px auto;
-      background: #fff;
-      border: 1px solid #f00;
-      padding: 10px;
-      display: none;
-    }
-    #adminUserList div {
-      margin-bottom: 5px;
-    }
   </style>
 </head>
 <body>
@@ -450,7 +463,14 @@
         <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
       </span>
     </div>
+    <button id="logoutBtn" style="display: none;">Logout</button>
   </header>
+
+  <!-- Admin Panel moved to top -->
+  <div id="adminPanel">
+    <h3>Admin Panel</h3>
+    <div id="adminUserList"></div>
+  </div>
 
   <!-- Authentication Section -->
   <div class="auth-container" id="authContainer">
@@ -466,7 +486,7 @@
     <button id="loginBtn">Login</button>
   </div>
 
-  <!-- Chat Container (Visible after login) -->
+  <!-- Chat Container -->
   <div class="container">
     <div class="chat-column">
       <div class="chat-header">
@@ -481,15 +501,6 @@
   <div class="chat-input-area">
     <input type="text" id="chatInput" placeholder="Type a message..." disabled>
     <button id="sendBtn" disabled>Send</button>
-  </div>
-
-  <!-- Logout Button -->
-  <button id="logoutBtn" style="position: fixed; top: 10px; right: 10px; display: none;">Logout</button>
-
-  <!-- Admin Panel (Visible for Admins only) -->
-  <div id="adminPanel">
-    <h3>Admin Panel</h3>
-    <div id="adminUserList"></div>
   </div>
 </body>
 </html>
