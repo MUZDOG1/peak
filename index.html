@@ -32,9 +32,9 @@
     const signupUsername = document.getElementById("signupUsername");
     const signupBtn = document.getElementById("signupBtn");
 
-    // Terms of Service Agreement Checkbox
+    // TOS checkbox
     const tosCheckbox = document.getElementById("tosCheckbox");
-    // Disable sign-up until agreement is confirmed
+    // Disable sign-up until TOS is checked
     signupBtn.disabled = true;
     tosCheckbox.addEventListener("change", () => {
       signupBtn.disabled = !tosCheckbox.checked;
@@ -331,26 +331,22 @@
     }
     .auth-container button {
       padding: 6px 12px;
-      margin: 5px;
+      margin: 5px 0;
       background: #ff4500;
       color: #fff;
       border: none;
       cursor: pointer;
     }
 
-    /* Show Sign Up + TOS checkbox on one line */
-    .signup-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 5px;
+    /* Keep Sign Up button in place, put checkbox/label to its right */
+    .signup-actions {
+      display: inline-flex;       /* so they're side-by-side */
+      align-items: center;        /* vertically center them */
+      gap: 10px;                  /* space between items */
+      margin-left: 5px;           /* small left margin so it doesn't touch input boxes */
     }
 
-    .signup-row label {
-      cursor: pointer;
-    }
-
-    .signup-row a {
+    .signup-actions a {
       color: #007BFF;
       text-decoration: underline;
     }
@@ -504,11 +500,11 @@
     <input type="email" id="signupEmail" placeholder="Email">
     <input type="password" id="signupPassword" placeholder="Password">
     <input type="text" id="signupUsername" placeholder="Username">
-
-    <!-- One row for Sign Up button + TOS checkbox -->
-    <div class="signup-row">
+    
+    <!-- Sign Up button stays put, TOS to its right -->
+    <div class="signup-actions">
       <button id="signupBtn">Sign Up</button>
-      <input type="checkbox" id="tosCheckbox" />
+      <input type="checkbox" id="tosCheckbox">
       <label for="tosCheckbox">
         Click this box to agree to our 
         <a href="tos.html" target="_blank">Terms of Service</a>
@@ -546,4 +542,3 @@
   </div>
 </body>
 </html>
-
