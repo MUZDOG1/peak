@@ -123,19 +123,16 @@
     }
 
     // -------------------------------
-    // Load and Display Chat Messages (New messages at top)
+    // Load and Display Chat Messages (Newest on top)
     // -------------------------------
-    // Change orderBy to "desc" so latest messages come first.
+    // Query messages ordered descending by timestamp.
     const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
     onSnapshot(q, async (snapshot) => {
-      chatMessages.innerHTML = "";
       await loadBannedWords();
-      // Use a standard loop to avoid asynchronous duplication.
-      for (const docSnap of snapshot.docs) {
+      
+      // Build an array of HTML strings for each message.
+      const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
         const message = docSnap.data();
-        const messageDiv = document.createElement("div");
-        messageDiv.classList.add("message");
-
         let timestamp = message.timestamp ? new Date(message.timestamp.toDate()) : null;
         let formattedTime = timestamp
           ? timestamp.toLocaleString("en-US", {
@@ -151,7 +148,7 @@
 
         let filteredText = message.text ? await filterMessage(message.text) : "";
 
-        // Retrieve the verified username from Firestore based on userId if available.
+        // Retrieve verified username if available.
         let verifiedUsername = message.nickname;
         if (message.userId) {
           const userDocSnap = await getDoc(doc(db, "users", message.userId));
@@ -160,21 +157,25 @@
           }
         }
 
-        messageDiv.innerHTML = `
-          <div class="message-content">
-            <span class="author">${verifiedUsername}:</span>
-            ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
-            ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
-          </div>
-          <div class="message-actions">
-            <button class="like-btn" data-id="${docSnap.id}">Like</button>
-            <span class="like-count">${message.likes || 0}</span>
-            <span class="timestamp">${formattedTime}</span>
+        return `
+          <div class="message">
+            <div class="message-content">
+              <span class="author">${verifiedUsername}:</span>
+              ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
+              ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
+            </div>
+            <div class="message-actions">
+              <button class="like-btn" data-id="${docSnap.id}">Like</button>
+              <span class="like-count">${message.likes || 0}</span>
+              <span class="timestamp">${formattedTime}</span>
+            </div>
           </div>
         `;
-        chatMessages.appendChild(messageDiv);
-      }
-      // Since messages are in descending order, scroll to the top.
+      }));
+      
+      // Update the chatMessages container in one go.
+      chatMessages.innerHTML = messagesHtmlArray.join('');
+      // Scroll to the top so the newest message is visible.
       chatMessages.scrollTop = 0;
     });
 
@@ -473,4 +474,5 @@
   <button id="logoutBtn" style="position: fixed; top: 10px; right: 10px; display: none;">Logout</button>
 </body>
 </html>
+
 
