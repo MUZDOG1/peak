@@ -302,8 +302,6 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: relative;
-      z-index: 1002;
     }
     .muzdog-header .logo {
       font-size: 24px;
@@ -316,33 +314,12 @@
       color: #bbb;
       margin-left: 5px;
     }
-    /* Admin Panel Styling - UPDATED */
-    #adminPanel {
-      position: fixed;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 800px;
-      background: #fff;
-      border: 2px solid #f00;
-      padding: 10px;
-      display: none;
-      z-index: 1001;
-      max-height: 200px;
-      overflow-y: auto;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    #adminUserList div {
-      margin-bottom: 5px;
-      padding: 5px;
-      border-bottom: 1px solid #eee;
-    }
     .auth-container {
       background: #fff;
       padding: 10px;
       border: 1px solid #ccc;
       width: 800px;
-      margin: 120px auto 20px;
+      margin: 20px auto;
     }
     .auth-container input {
       padding: 6px;
@@ -363,7 +340,6 @@
       background: #fff;
       border: 1px solid #ccc;
       position: relative;
-      z-index: 1;
     }
     .chat-column {
       width: 100%;
@@ -379,12 +355,37 @@
       justify-content: space-between;
       align-items: center;
     }
+    /* Updated Admin Panel Positioning */
+    #adminPanel {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border: 2px solid #f00;
+      padding: 10px;
+      display: none;
+      z-index: 1000;
+      margin-top: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    #adminUserList {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    #adminUserList div {
+      margin-bottom: 5px;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     .chat-messages {
       flex: 1;
       padding: 10px;
       overflow-y: auto;
       background: #fff;
       height: 400px;
+      margin-top: 10px;
     }
     .message {
       display: flex;
@@ -452,6 +453,16 @@
       font-size: 12px;
       color: #333;
     }
+    #logoutBtn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 5px 10px;
+      background: #ff4500;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -465,12 +476,6 @@
     </div>
     <button id="logoutBtn" style="display: none;">Logout</button>
   </header>
-
-  <!-- Admin Panel moved to top -->
-  <div id="adminPanel">
-    <h3>Admin Panel</h3>
-    <div id="adminUserList"></div>
-  </div>
 
   <!-- Authentication Section -->
   <div class="auth-container" id="authContainer">
@@ -493,6 +498,13 @@
         <span class="chat-title">Live Chat</span>
         <span class="visits">Total Visits: <span id="visitsCount">0</span></span>
       </div>
+      
+      <!-- Admin Panel positioned here -->
+      <div id="adminPanel">
+        <h3>Admin Panel</h3>
+        <div id="adminUserList"></div>
+      </div>
+
       <div class="chat-messages" id="chatMessages"></div>
     </div>
   </div>
