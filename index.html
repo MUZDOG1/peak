@@ -32,13 +32,12 @@
     const signupUsername = document.getElementById("signupUsername");
     const signupBtn = document.getElementById("signupBtn");
 
-    // New: Terms of Service Agreement Button
-    const tosAgreeBtn = document.getElementById("tosAgreeBtn");
+    // New: Terms of Service Agreement Checkbox
+    const tosCheckbox = document.getElementById("tosCheckbox");
     // Disable sign-up until agreement is confirmed
     signupBtn.disabled = true;
-    tosAgreeBtn.addEventListener("click", () => {
-      signupBtn.disabled = false;
-      tosAgreeBtn.disabled = true;
+    tosCheckbox.addEventListener("change", () => {
+      signupBtn.disabled = !tosCheckbox.checked;
     });
 
     const loginEmail = document.getElementById("loginEmail");
@@ -338,19 +337,17 @@
       border: none;
       cursor: pointer;
     }
-    /* New: Styling for the Terms of Service button */
+    /* New: Styling for the Terms of Service checkbox */
     .tos-container {
       margin: 10px 5px;
+      display: flex;
+      align-items: center;
     }
-    .tos-container button {
-      padding: 6px 12px;
-      background: #007BFF;
-      color: #fff;
-      border: none;
-      cursor: pointer;
+    .tos-container input[type="checkbox"] {
+      margin-right: 8px;
     }
     .tos-container a {
-      color: #fff;
+      color: #007BFF;
       text-decoration: underline;
     }
     .container {
@@ -503,11 +500,12 @@
     <input type="password" id="signupPassword" placeholder="Password">
     <input type="text" id="signupUsername" placeholder="Username">
     <button id="signupBtn">Sign Up</button>
-    <!-- New: Terms of Service Agreement Button -->
+    <!-- New: Terms of Service Agreement Checkbox -->
     <div class="tos-container">
-      <button id="tosAgreeBtn" type="button">
-        Click this button to agree to our <a href="tos.html" target="_blank">Terms of Service</a>
-      </button>
+      <input type="checkbox" id="tosCheckbox">
+      <label for="tosCheckbox">
+        Click this box to agree to our <a href="tos.html" target="_blank">Terms of Service</a>
+      </label>
     </div>
 
     <h2>Login</h2>
