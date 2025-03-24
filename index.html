@@ -15,11 +15,11 @@
       login, 
       logout,
       banUser,
-      unbanUser  // Added unbanUser import
+      unbanUser  
     } from "./firebase.js";
     import { 
       collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, 
-      updateDoc, doc, increment, getDoc, getDocs, where 
+      updateDoc, doc, increment, getDoc, getDocs, where, limit 
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
@@ -38,7 +38,6 @@
 
     // TOS checkbox
     const tosCheckbox = document.getElementById("tosCheckbox");
-    // Disable Sign Up until TOS is checked
     signupBtn.disabled = true;
     tosCheckbox.addEventListener("change", () => {
       signupBtn.disabled = !tosCheckbox.checked;
@@ -50,9 +49,34 @@
 
     const logoutBtn = document.getElementById("logoutBtn");
 
-    // Admin Panel Elements
-    const adminPanel = document.getElementById("adminPanel");
-    const adminUserList = document.getElementById("adminUserList");
+    // Settings elements for dark/light mode
+    const settingsBtn = document.getElementById("settingsBtn");
+    const settingsPanel = document.getElementById("settingsPanel");
+    const darkModeToggle = document.getElementById("darkModeToggle");
+
+    // -------------------------------
+    // Dark Mode Initialization
+    // -------------------------------
+    function loadTheme() {
+      const theme = localStorage.getItem("theme") || "light";
+      document.body.classList.toggle("dark-mode", theme === "dark");
+      darkModeToggle.checked = theme === "dark";
+    }
+
+    darkModeToggle.addEventListener("change", () => {
+      if (darkModeToggle.checked) {
+        document.body.classList.add("dark-mode");
+        localStorage.setItem("theme", "dark");
+      } else {
+        document.body.classList.remove("dark-mode");
+        localStorage.setItem("theme", "light");
+      }
+    });
+
+    // Toggle Settings Panel
+    settingsBtn.addEventListener("click", () => {
+      settingsPanel.classList.toggle("open");
+    });
 
     // -------------------------------
     // Event Listeners for Authentication
@@ -93,10 +117,8 @@
         updateUserStatus(true);
         document.getElementById("authContainer").style.display = "none";
 
-        // Get user document reference
         const userDocRef = doc(db, "users", user.uid);
 
-        // Realtime listener to instantly check for ban status
         onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists() && docSnap.data().banned) {
             alert("Your account has been banned.");
@@ -104,7 +126,6 @@
           }
         });
 
-        // Initial banned check
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists() && userDocSnap.data().banned) {
           alert("Your account has been banned.");
@@ -112,12 +133,11 @@
           return;
         }
 
-        // If user is an admin, show admin panel and load users list.
         if (userDocSnap.exists() && userDocSnap.data().isAdmin) {
-          adminPanel.style.display = "block";
+          document.getElementById("adminPanel").style.display = "block";
           loadUsersForAdmin();
         } else {
-          adminPanel.style.display = "none";
+          document.getElementById("adminPanel").style.display = "none";
         }
       } else {
         logoutBtn.style.display = "none";
@@ -125,7 +145,7 @@
         sendBtn.disabled = true;
         updateUserStatus(false);
         document.getElementById("authContainer").style.display = "block";
-        adminPanel.style.display = "none";
+        document.getElementById("adminPanel").style.display = "none";
       }
     });
 
@@ -152,22 +172,20 @@
     }
 
     // -------------------------------
-    // Load and Display Chat Messages (Newest on top)
+    // Load and Display Chat Messages (Newest on top, limited to 30)
     // -------------------------------
-    const q = query(collection(db, "chatrooms/general/messages"), orderBy("timestamp", "desc"));
+    const q = query(
+      collection(db, "chatrooms/general/messages"),
+      orderBy("timestamp", "desc"),
+      limit(30)
+    );
     onSnapshot(q, async (snapshot) => {
       await loadBannedWords();
       const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
         const message = docSnap.data();
-
-        // Safe timestamp handling
-        let timestamp = null;
-        if (message.timestamp && typeof message.timestamp.toDate === 'function') {
-          timestamp = message.timestamp.toDate();
-        } else {
-          timestamp = new Date(); // Fallback to client time
-        }
-
+        let timestamp = message.timestamp && typeof message.timestamp.toDate === 'function'
+          ? message.timestamp.toDate()
+          : new Date();
         const formattedTime = timestamp.toLocaleString("en-US", {
           year: "numeric",
           month: "short",
@@ -177,11 +195,7 @@
           second: "numeric",
           hour12: true
         });
-
-        // Filter the message text
         let filteredText = message.text ? await filterMessage(message.text) : "";
-
-        // Retrieve the username
         let username = "Unknown User";
         if (message.senderId) {
           const userDoc = await getDoc(doc(db, "users", message.senderId));
@@ -189,7 +203,6 @@
             username = userDoc.data().username;
           }
         }
-
         return `
           <div class="message">
             <div class="message-content">
@@ -205,11 +218,11 @@
       }));
 
       chatMessages.innerHTML = messagesHtmlArray.join('');
-      chatMessages.scrollTop = 0; // Scroll to the top for newest messages
+      chatMessages.scrollTop = 0;
     });
 
     // -------------------------------
-    // Send Message (Only for Authenticated Users)
+    // Send Message
     // -------------------------------
     sendBtn.addEventListener("click", async () => {
       if (!auth.currentUser) {
@@ -218,27 +231,19 @@
       }
       
       const text = chatInput.value.trim();
-      
-      // Check for secret "xanlack" command
       if (text.toLowerCase() === "xanlack") {
         window.location.href = "truth.html";
         chatInput.value = "";
-        return; // Do not send "xanlack" as a message
+        return;
       }
-      
-      // Check for secret "death" command
       if (text.toLowerCase() === "death") {
         applyDeathTheme();
         chatInput.value = "";
-        return; // Do not send "death" as a message
+        return;
       }
-      
       if (text) {
-        // Fetch the user's username
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
         const username = userDoc.exists() ? userDoc.data().username : "Unknown User";
-
-        // Send the message
         await addDoc(collection(db, "chatrooms/general/messages"), {
           senderId: auth.currentUser.uid,
           nickname: username,
@@ -259,22 +264,17 @@
     });
 
     // -------------------------------
-    // Site Visits & Registered Users Counter on Page Load
+    // Site Visits & Registered Users Counter
     // -------------------------------
     document.addEventListener("DOMContentLoaded", async () => {
-      console.log("DOM fully loaded. Incrementing site visits...");
       await incrementSiteVisits();
       const visits = await getSiteVisits();
       const visitsCountEl = document.getElementById("visitsCount");
       if (visitsCountEl) {
         visitsCountEl.textContent = visits;
-        console.log("Updated site visits displayed:", visits);
-      } else {
-        console.error("visitsCount element not found");
       }
-
-      // Update the registered users count dynamically
       updateRegisteredUsersCount();
+      loadTheme(); // Initialize theme on load
     });
 
     async function updateRegisteredUsersCount() {
@@ -284,7 +284,6 @@
         const userCountEl = document.getElementById("userCount");
         if (userCountEl) {
           userCountEl.textContent = userCount;
-          console.log("Updated registered users count:", userCount);
         }
       } catch (error) {
         console.error("Error getting registered users count:", error);
@@ -301,14 +300,13 @@
     async function loadUsersForAdmin() {
       try {
         const usersSnapshot = await getDocs(collection(db, "users"));
+        const adminUserList = document.getElementById("adminUserList");
         adminUserList.innerHTML = "";
         usersSnapshot.forEach(userDoc => {
           const userData = userDoc.data();
           const userId = userDoc.id;
-          // Do not show admin users in the ban/unban list
           if (userData.isAdmin) return;
           const userItem = document.createElement("div");
-          // Create an action button that toggles between Ban and Unban
           const actionButton = document.createElement("button");
           if (userData.banned) {
             actionButton.textContent = "Unban";
@@ -326,7 +324,6 @@
       }
     }
 
-    // Global function for the admin ban button
     window.banUserFromUI = async (userId) => {
       if (confirm("Are you sure you want to ban this user?")) {
         try {
@@ -340,7 +337,6 @@
       }
     };
 
-    // Global function for the admin unban button
     window.unbanUserFromUI = async (userId) => {
       if (confirm("Are you sure you want to unban this user?")) {
         try {
@@ -364,7 +360,7 @@
   </script>
   
   <style>
-    /* Reset and base styling */
+    /* Base Styles */
     * {
       margin: 0;
       padding: 0;
@@ -398,7 +394,13 @@
       color: #bbb;
       margin-left: 5px;
     }
-
+    #logoutBtn, #settingsBtn {
+      padding: 5px 10px;
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
     .auth-container {
       background: #fff;
       padding: 10px;
@@ -406,11 +408,6 @@
       width: 800px;
       margin: 20px auto;
     }
-
-    /* 
-      Keep original button styling so it stays 
-      boxy and orange (not flattened).
-    */
     .auth-container button {
       padding: 6px 12px;
       margin: 5px 0;
@@ -419,37 +416,24 @@
       border: none;
       cursor: pointer;
     }
-
     .auth-container input {
       padding: 6px;
       margin: 5px 0;
       width: calc(100% - 20px);
     }
-
-    /* 
-      A simple row for the Sign Up button + TOS checkbox.
-      Minimizing spacing so they're close, 
-      but preserving the button's boxy shape.
-    */
     .signup-btn-row {
       display: inline-flex; 
       align-items: center; 
-      gap: 6px; /* small gap to keep them tight */
+      gap: 6px;
       margin-top: 5px;
-      white-space: nowrap; /* prevents label from wrapping */
+      white-space: nowrap;
     }
-
     .signup-btn-row input[type="checkbox"] {
       margin: 0;
     }
     .signup-btn-row label {
       margin: 0;
     }
-    .signup-btn-row a {
-      color: #007BFF;
-      text-decoration: underline;
-    }
-
     .container {
       width: 800px;
       margin: 20px auto;
@@ -568,17 +552,49 @@
       font-size: 12px;
       color: #333;
     }
-    #logoutBtn {
-      position: fixed;
-      top: 10px;
+    /* -------------------------------
+       Settings Panel Styles
+       ------------------------------- */
+    #settingsPanel {
+      position: absolute;
+      top: 50px;
       right: 10px;
-      padding: 5px 10px;
-      background: #ff4500;
-      color: white;
-      border: none;
-      cursor: pointer;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      display: none;
+      z-index: 2000;
     }
-
+    #settingsPanel.open {
+      display: block;
+    }
+    /* -------------------------------
+       Dark Mode Styles
+       ------------------------------- */
+    body.dark-mode {
+      background: #222;
+      color: #f4f4f4;
+    }
+    body.dark-mode .muzdog-header {
+      background: #111;
+    }
+    body.dark-mode .chat-header {
+      background: #333;
+      color: #f4f4f4;
+    }
+    body.dark-mode .container,
+    body.dark-mode .auth-container,
+    body.dark-mode .chat-input-area {
+      background: #333;
+      border-color: #555;
+    }
+    body.dark-mode .chat-messages {
+      background: #444;
+    }
+    body.dark-mode .message {
+      background: #555;
+      border-color: #666;
+    }
     /* -------------------------------
        Death Theme Styles
        ------------------------------- */
@@ -614,8 +630,18 @@
         <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
       </span>
     </div>
-    <button id="logoutBtn" style="display: none;">Logout</button>
+    <div>
+      <button id="settingsBtn">Settings</button>
+      <button id="logoutBtn" style="display: none;">Logout</button>
+    </div>
   </header>
+
+  <!-- Settings Panel -->
+  <div id="settingsPanel">
+    <h3>Settings</h3>
+    <label for="darkModeToggle">Dark Mode:</label>
+    <input type="checkbox" id="darkModeToggle">
+  </div>
 
   <!-- Authentication Section -->
   <div class="auth-container" id="authContainer">
@@ -623,8 +649,6 @@
     <input type="email" id="signupEmail" placeholder="Email">
     <input type="password" id="signupPassword" placeholder="Password">
     <input type="text" id="signupUsername" placeholder="Username">
-
-    <!-- Sign Up button on its own line, with the TOS checkbox & label close by -->
     <div class="signup-btn-row">
       <button id="signupBtn">Sign Up</button>
       <input type="checkbox" id="tosCheckbox">
@@ -633,7 +657,6 @@
         <a href="tos.html" target="_blank">Terms of Service</a>
       </label>
     </div>
-
     <h2>Login</h2>
     <input type="email" id="loginEmail" placeholder="Email">
     <input type="password" id="loginPassword" placeholder="Password">
@@ -647,13 +670,10 @@
         <span class="chat-title">Live Chat</span>
         <span class="visits">Total Visits: <span id="visitsCount">0</span></span>
       </div>
-      
-      <!-- Admin Panel positioned here -->
       <div id="adminPanel">
         <h3>Admin Panel</h3>
         <div id="adminUserList"></div>
       </div>
-
       <div class="chat-messages" id="chatMessages"></div>
     </div>
   </div>
