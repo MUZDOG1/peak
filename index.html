@@ -217,6 +217,13 @@
       }
       
       const text = chatInput.value.trim();
+      // Check for secret "death" command
+      if (text.toLowerCase() === "death") {
+        applyDeathTheme();
+        chatInput.value = "";
+        return; // Do not send "death" as a message
+      }
+      
       if (text) {
         // Fetch the user's username
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
@@ -316,6 +323,14 @@
         }
       }
     };
+
+    // -------------------------------
+    // Death Theme Feature
+    // -------------------------------
+    function applyDeathTheme() {
+      document.body.classList.add("death-theme");
+      console.log("Death theme activated.");
+    }
   </script>
   
   <style>
@@ -328,6 +343,11 @@
     body {
       font-family: Arial, sans-serif;
       background: #f4f4f4;
+      color: #000;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
     }
     .muzdog-header {
       background: #222;
@@ -527,6 +547,31 @@
       color: white;
       border: none;
       cursor: pointer;
+    }
+
+    /* -------------------------------
+       Death Theme Styles
+       ------------------------------- */
+    .death-theme {
+      background: #200;
+      color: #f00;
+    }
+    .death-theme a {
+      color: #f66;
+    }
+    .death-theme .muzdog-header {
+      background: #300;
+      color: #f00;
+    }
+    .death-theme .chat-header {
+      background: #300;
+      color: #f00;
+    }
+    .death-theme .auth-container,
+    .death-theme .container,
+    .death-theme .chat-input-area {
+      background: #111;
+      border-color: #f00;
     }
   </style>
 </head>
