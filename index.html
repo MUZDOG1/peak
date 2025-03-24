@@ -14,7 +14,8 @@
       signUp, 
       login, 
       logout,
-      banUser
+      banUser,
+      unbanUser  // Added unbanUser import
     } from "./firebase.js";
     import { 
       collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, 
@@ -295,7 +296,7 @@
     });
 
     // -------------------------------
-    // Admin Panel: Load Users and Enable Banning
+    // Admin Panel: Load Users and Enable Banning/Unbanning
     // -------------------------------
     async function loadUsersForAdmin() {
       try {
@@ -304,13 +305,20 @@
         usersSnapshot.forEach(userDoc => {
           const userData = userDoc.data();
           const userId = userDoc.id;
-          // Do not show admin users in the ban list
+          // Do not show admin users in the ban/unban list
           if (userData.isAdmin) return;
           const userItem = document.createElement("div");
-          userItem.innerHTML = `
-            <span>${userData.username} (${userData.email})</span>
-            <button onclick="banUserFromUI('${userId}')">Ban</button>
-          `;
+          // Create an action button that toggles between Ban and Unban
+          const actionButton = document.createElement("button");
+          if (userData.banned) {
+            actionButton.textContent = "Unban";
+            actionButton.onclick = () => { unbanUserFromUI(userId); };
+          } else {
+            actionButton.textContent = "Ban";
+            actionButton.onclick = () => { banUserFromUI(userId); };
+          }
+          userItem.innerHTML = `<span>${userData.username} (${userData.email})</span>`;
+          userItem.appendChild(actionButton);
           adminUserList.appendChild(userItem);
         });
       } catch (error) {
@@ -328,6 +336,20 @@
         } catch (error) {
           console.error("Error banning user:", error);
           alert("Failed to ban user. Check the console for details.");
+        }
+      }
+    };
+
+    // Global function for the admin unban button
+    window.unbanUserFromUI = async (userId) => {
+      if (confirm("Are you sure you want to unban this user?")) {
+        try {
+          await unbanUser(userId);
+          alert("User unbanned successfully!");
+          loadUsersForAdmin();
+        } catch (error) {
+          console.error("Error unbanning user:", error);
+          alert("Failed to unban user. Check the console for details.");
         }
       }
     };
