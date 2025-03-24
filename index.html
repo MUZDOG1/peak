@@ -176,12 +176,12 @@
     }
 
     // -------------------------------
-    // Load and Display Chat Messages (Newest on top, limited to 30)
+    // Load and Display Chat Messages (Newest on top, limited to 100)
     // -------------------------------
     const q = query(
       collection(db, "chatrooms/general/messages"),
       orderBy("timestamp", "desc"),
-      limit(30)
+      limit(100)
     );
     onSnapshot(q, async (snapshot) => {
       await loadBannedWords();
