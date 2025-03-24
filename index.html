@@ -92,8 +92,19 @@
         updateUserStatus(true);
         document.getElementById("authContainer").style.display = "none";
 
-        // Check if the user is banned
-        const userDocSnap = await getDoc(doc(db, "users", user.uid));
+        // Get user document reference
+        const userDocRef = doc(db, "users", user.uid);
+
+        // Realtime listener to instantly check for ban status
+        onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists() && docSnap.data().banned) {
+            alert("Your account has been banned.");
+            logout();
+          }
+        });
+
+        // Initial banned check
+        const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists() && userDocSnap.data().banned) {
           alert("Your account has been banned.");
           logout();
@@ -562,5 +573,3 @@
   </div>
 </body>
 </html>
-
-
