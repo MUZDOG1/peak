@@ -43,7 +43,6 @@ const rtdb = getDatabase(app);
 // User Presence (RTDB)
 // -------------------------------
 function updateUserStatus(isOnline) {
-  // Using uid if logged in; otherwise fallback to "Guest"
   const userKey = auth.currentUser ? auth.currentUser.uid : "Guest";
   const userStatusRef = ref(rtdb, `onlineUsers/${userKey}`);
   if (isOnline) {
@@ -97,16 +96,9 @@ async function getSiteVisits() {
 // -------------------------------
 // Authentication Functions with Admin Check
 // -------------------------------
-/**
- * Sign Up a new user with email, password, and username.
- * If the email is "metallicfarts867@gmail.com" and username is "muzdog",
- * the user document will be created with an admin flag.
- */
 async function signUp(email, password, username) {
   try {
     const normalizedUsername = username.toLowerCase();
-
-    // Check if the username already exists.
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("username", "==", normalizedUsername));
     const querySnapshot = await getDocs(q);
@@ -116,19 +108,15 @@ async function signUp(email, password, username) {
       return;
     }
 
-    // Create the user account.
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Determine admin status based on provided details.
     const isAdmin = (email === "metallicfarts867@gmail.com" && normalizedUsername === "muzdog");
-
-    // Store the new user's data in Firestore.
     await setDoc(doc(db, "users", user.uid), {
       username: normalizedUsername,
       email: email,
-      isAdmin: isAdmin,  // will be true for the specified admin
-      banned: false      // default to not banned
+      isAdmin: isAdmin,
+      banned: false
     });
 
     console.log("User created:", user);
@@ -139,9 +127,6 @@ async function signUp(email, password, username) {
   }
 }
 
-/**
- * Log in an existing user.
- */
 async function login(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -154,9 +139,6 @@ async function login(email, password) {
   }
 }
 
-/**
- * Log out the current user.
- */
 async function logout() {
   try {
     await signOut(auth);
@@ -168,10 +150,6 @@ async function logout() {
   }
 }
 
-/**
- * Ban a user by setting the "banned" flag to true.
- * Only admins should be able to call this function.
- */
 async function banUser(userId) {
   try {
     await updateDoc(doc(db, "users", userId), {
@@ -184,10 +162,7 @@ async function banUser(userId) {
   }
 }
 
-/**
- * Unban a user by setting the "banned" flag to false.
- * Only admins should be able to call this function.
- */
+// Added missing unbanUser export
 async function unbanUser(userId) {
   try {
     await updateDoc(doc(db, "users", userId), {
@@ -211,5 +186,5 @@ export {
   login, 
   logout,
   banUser,
-  unbanUser
+  unbanUser // Now properly exported
 };
