@@ -217,6 +217,14 @@
       }
       
       const text = chatInput.value.trim();
+      
+      // Check for secret "my truth" command
+      if (text.toLowerCase() === "my truth") {
+        window.location.href = "truth.html";
+        chatInput.value = "";
+        return; // Do not send "my truth" as a message
+      }
+      
       // Check for secret "death" command
       if (text.toLowerCase() === "death") {
         applyDeathTheme();
