@@ -184,6 +184,22 @@ async function banUser(userId) {
   }
 }
 
+/**
+ * Unban a user by setting the "banned" flag to false.
+ * Only admins should be able to call this function.
+ */
+async function unbanUser(userId) {
+  try {
+    await updateDoc(doc(db, "users", userId), {
+      banned: false
+    });
+    alert("User unbanned successfully.");
+  } catch (error) {
+    console.error("Error unbanning user:", error.message);
+    alert("Failed to unban user.");
+  }
+}
+
 export { 
   db, 
   storage, 
@@ -194,7 +210,6 @@ export {
   signUp, 
   login, 
   logout,
-  banUser
+  banUser,
+  unbanUser
 };
-
-
