@@ -243,7 +243,7 @@
     });
 
     // -------------------------------
-    // Site Visits Counter on Page Load
+    // Site Visits & Registered Users Counter on Page Load
     // -------------------------------
     document.addEventListener("DOMContentLoaded", async () => {
       console.log("DOM fully loaded. Incrementing site visits...");
@@ -256,7 +256,24 @@
       } else {
         console.error("visitsCount element not found");
       }
+
+      // Update the registered users count dynamically
+      updateRegisteredUsersCount();
     });
+
+    async function updateRegisteredUsersCount() {
+      try {
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const userCount = usersSnapshot.size;
+        const userCountEl = document.getElementById("userCount");
+        if (userCountEl) {
+          userCountEl.textContent = userCount;
+          console.log("Updated registered users count:", userCount);
+        }
+      } catch (error) {
+        console.error("Error getting registered users count:", error);
+      }
+    }
 
     window.addEventListener("beforeunload", () => {
       updateUserStatus(false);
@@ -518,7 +535,7 @@
     <div class="logo">
       Muzdog Chat 
       <span class="subtitle">
-        - The Best Chatroom
+        - <span id="userCount">0</span> users and counting!
         <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
       </span>
     </div>
