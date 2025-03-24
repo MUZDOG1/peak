@@ -117,8 +117,10 @@
         updateUserStatus(true);
         document.getElementById("authContainer").style.display = "none";
 
+        // Get user document reference
         const userDocRef = doc(db, "users", user.uid);
 
+        // Realtime listener to instantly check for ban status
         onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists() && docSnap.data().banned) {
             alert("Your account has been banned.");
@@ -126,6 +128,7 @@
           }
         });
 
+        // Initial banned check
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists() && userDocSnap.data().banned) {
           alert("Your account has been banned.");
@@ -133,6 +136,7 @@
           return;
         }
 
+        // If user is an admin, show admin panel and load users list.
         if (userDocSnap.exists() && userDocSnap.data().isAdmin) {
           document.getElementById("adminPanel").style.display = "block";
           loadUsersForAdmin();
@@ -231,16 +235,21 @@
       }
       
       const text = chatInput.value.trim();
+      
+      // Check for secret "xanlack" command
       if (text.toLowerCase() === "xanlack") {
         window.location.href = "truth.html";
         chatInput.value = "";
         return;
       }
+      
+      // Check for secret "death" command
       if (text.toLowerCase() === "death") {
         applyDeathTheme();
         chatInput.value = "";
         return;
       }
+      
       if (text) {
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
         const username = userDoc.exists() ? userDoc.data().username : "Unknown User";
@@ -394,7 +403,12 @@
       color: #bbb;
       margin-left: 5px;
     }
-    #logoutBtn, #settingsBtn {
+    /* Header Buttons Container */
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    #settingsBtn, #logoutBtn {
       padding: 5px 10px;
       background: #ff4500;
       color: #fff;
@@ -455,6 +469,7 @@
       justify-content: space-between;
       align-items: center;
     }
+    /* Admin Panel Styling */
     #adminPanel {
       position: sticky;
       top: 0;
@@ -465,6 +480,20 @@
       z-index: 1000;
       margin-top: 10px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    /* Settings Panel Styling */
+    #settingsPanel {
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      display: none;
+      z-index: 2000;
+    }
+    #settingsPanel.open {
+      display: block;
     }
     #adminUserList {
       max-height: 150px;
@@ -553,22 +582,6 @@
       color: #333;
     }
     /* -------------------------------
-       Settings Panel Styles
-       ------------------------------- */
-    #settingsPanel {
-      position: absolute;
-      top: 50px;
-      right: 10px;
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 10px;
-      display: none;
-      z-index: 2000;
-    }
-    #settingsPanel.open {
-      display: block;
-    }
-    /* -------------------------------
        Dark Mode Styles
        ------------------------------- */
     body.dark-mode {
@@ -594,6 +607,13 @@
     body.dark-mode .message {
       background: #555;
       border-color: #666;
+    }
+    /* Dark mode for admin panel and settings panel */
+    body.dark-mode #adminPanel,
+    body.dark-mode #settingsPanel {
+      background: #333;
+      border-color: #555;
+      color: #f4f4f4;
     }
     /* -------------------------------
        Death Theme Styles
@@ -630,7 +650,7 @@
         <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
       </span>
     </div>
-    <div>
+    <div class="header-buttons">
       <button id="settingsBtn">Settings</button>
       <button id="logoutBtn" style="display: none;">Logout</button>
     </div>
