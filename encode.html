@@ -37,13 +37,23 @@
         }
         
         function shuffleString(str) {
-            return str.split('').sort(() => Math.random() - 0.5).join('');
+            let arr = str.split('');
+            let map = arr.map((char, index) => index); // Create an index map
+            map.sort(() => Math.random() - 0.5); // Randomly shuffle indices
+
+            let shuffled = map.map(index => arr[index]).join('');
+            return { shuffled, map }; // Return shuffled string and map
         }
-        
-        function unshuffleString(str, original) {
-            let map = [...original].map((char, i) => ({ char, i }));
-            map.sort((a, b) => str.indexOf(a.char) - str.indexOf(b.char));
-            return map.map(obj => obj.char).join('');
+
+        function unshuffleString(shuffled, map) {
+            let arr = shuffled.split('');
+            let original = new Array(arr.length);
+
+            map.forEach((shuffledIndex, originalIndex) => {
+                original[originalIndex] = arr[shuffledIndex];
+            });
+
+            return original.join('');
         }
         
         function encryptAES(text, key) {
@@ -59,17 +69,23 @@
             let text = document.getElementById("inputText").value;
             let xored = xorEncrypt(text, secretKey);
             let shifted = shiftCharacters(xored, 5);
-            let shuffled = shuffleString(shifted);
+            let shuffledObj = shuffleString(shifted);
+            let shuffled = shuffledObj.shuffled;
+            let map = shuffledObj.map;
+
             let encrypted = encryptAES(shuffled, secretKey);
-            let base64 = btoa(encrypted);
+            let base64 = btoa(JSON.stringify({ encrypted, map })); // Store both encrypted text and map
             document.getElementById("outputText").value = base64;
         }
         
         function decodeText() {
             let base64 = document.getElementById("outputText").value;
-            let encrypted = atob(base64);
+            let parsed = JSON.parse(atob(base64)); // Retrieve encrypted text and map
+            let encrypted = parsed.encrypted;
+            let map = parsed.map;
+
             let decrypted = decryptAES(encrypted, secretKey);
-            let unshuffled = unshuffleString(decrypted, shiftCharacters(secretKey, 5));
+            let unshuffled = unshuffleString(decrypted, map);
             let unshifted = shiftCharacters(unshuffled, -5);
             let xored = xorEncrypt(unshifted, secretKey);
             document.getElementById("outputText").value = xored;
