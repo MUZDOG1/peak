@@ -14,8 +14,7 @@
       signUp, 
       logout,
       banUser,
-      unbanUser,
-      checkAdminStatus
+      unbanUser  
     } from "./firebase.js";
     import { 
       collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, 
@@ -26,36 +25,48 @@
       signInWithEmailAndPassword 
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
+    // -------------------------------
     // Global Variables
+    // -------------------------------
     let isAdmin = false;
     let bannedWords = [];
     let bannedAlertShown = false;
     let matrixInterval;
 
+    // -------------------------------
     // DOM Elements
+    // -------------------------------
     const chatMessages = document.getElementById("chatMessages");
     const chatInput = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendBtn");
+
+    // Authentication DOM Elements
     const signupEmail = document.getElementById("signupEmail");
     const signupPassword = document.getElementById("signupPassword");
     const signupUsername = document.getElementById("signupUsername");
     const signupBtn = document.getElementById("signupBtn");
-    const tosCheckbox = document.getElementById("tosCheckbox");
-    const loginEmail = document.getElementById("loginEmail");
-    const loginPassword = document.getElementById("loginPassword");
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const settingsBtn = document.getElementById("settingsBtn");
-    const settingsPanel = document.getElementById("settingsPanel");
-    const themeRadios = document.querySelectorAll('input[name="theme"]');
 
-    // Initialize TOS checkbox
+    // TOS checkbox
+    const tosCheckbox = document.getElementById("tosCheckbox");
     signupBtn.disabled = true;
     tosCheckbox.addEventListener("change", () => {
       signupBtn.disabled = !tosCheckbox.checked;
     });
 
+    const loginEmail = document.getElementById("loginEmail");
+    const loginPassword = document.getElementById("loginPassword");
+    const loginBtn = document.getElementById("loginBtn");
+
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // Settings elements
+    const settingsBtn = document.getElementById("settingsBtn");
+    const settingsPanel = document.getElementById("settingsPanel");
+    const themeRadios = document.querySelectorAll('input[name="theme"]');
+
+    // -------------------------------
     // Matrix Effect
+    // -------------------------------
     function startMatrixEffect() {
       const chars = "01";
       const canvas = document.createElement("div");
@@ -105,17 +116,13 @@
       if (canvas) canvas.remove();
     }
 
+    // -------------------------------
     // Theme Management
+    // -------------------------------
     function loadTheme() {
       const theme = localStorage.getItem("theme") || "light";
-      setTheme(theme);
-      document.getElementById(theme + "ModeRadio").checked = true;
-    }
-
-    function setTheme(theme) {
       document.body.className = theme + "-mode";
-      
-      stopMatrixEffect();
+      document.getElementById(theme + "ModeRadio").checked = true;
       
       if (theme === "hacker") {
         startMatrixEffect();
@@ -125,8 +132,14 @@
     themeRadios.forEach(radio => {
       radio.addEventListener("change", () => {
         const theme = radio.value;
+        document.body.className = theme + "-mode";
         localStorage.setItem("theme", theme);
-        setTheme(theme);
+        
+        stopMatrixEffect();
+        
+        if (theme === "hacker") {
+          startMatrixEffect();
+        }
       });
     });
 
@@ -134,7 +147,9 @@
       settingsPanel.classList.toggle("open");
     });
 
+    // -------------------------------
     // Banned Words Loader & Filtering
+    // -------------------------------
     async function loadBannedWords() {
       try {
         const response = await fetch("banned_words.txt");
@@ -153,7 +168,9 @@
       return message;
     }
 
+    // -------------------------------
     // Authentication
+    // -------------------------------
     signupBtn.addEventListener("click", async () => {
       const email = signupEmail.value;
       const password = signupPassword.value;
@@ -260,7 +277,9 @@
       }
     });
 
+    // -------------------------------
     // Chat Functionality
+    // -------------------------------
     const q = query(
       collection(db, "chatrooms/general/messages"),
       orderBy("timestamp", "desc"),
@@ -313,18 +332,10 @@
     });
 
     window.deleteMessage = async function(messageId) {
-      if (!auth.currentUser) {
-        alert("You must be logged in to delete messages.");
-        return;
-      }
-
-      // Verify admin status on server side
-      const isActuallyAdmin = await checkAdminStatus(auth.currentUser.uid);
-      if (!isActuallyAdmin) {
+      if (!isAdmin) {
         alert("You are not authorized to delete messages.");
         return;
       }
-
       try {
         await deleteDoc(doc(db, "chatrooms/general/messages", messageId));
       } catch (error) {
@@ -381,7 +392,9 @@
       }
     });
 
+    // -------------------------------
     // Admin Functions
+    // -------------------------------
     async function loadUsersForAdmin() {
       try {
         const usersSnapshot = await getDocs(collection(db, "users"));
@@ -435,7 +448,9 @@
       }
     };
 
+    // -------------------------------
     // Utilities
+    // -------------------------------
     document.addEventListener("DOMContentLoaded", async () => {
       await incrementSiteVisits();
       const visits = await getSiteVisits();
@@ -729,51 +744,7 @@
       100% { transform: translateY(calc(100vh + 100px)); }
     }
 
-    /* Dark Mode */
-    body.dark-mode {
-      background: #121212 !important;
-      color: #e0e0e0 !important;
-    }
-    body.dark-mode .muzdog-header {
-      background: #1e1e1e !important;
-      border-bottom: 1px solid #333 !important;
-    }
-    body.dark-mode .chat-header {
-      background: #1e1e1e !important;
-      color: #ff4500 !important;
-      border-bottom: 1px solid #333 !important;
-    }
-    body.dark-mode .container,
-    body.dark-mode .auth-container,
-    body.dark-mode .chat-input-area {
-      background: #1e1e1e !important;
-      border-color: #333 !important;
-    }
-    body.dark-mode .chat-messages {
-      background: #252525 !important;
-    }
-    body.dark-mode .message {
-      background: #2d2d2d !important;
-      border-color: #333 !important;
-    }
-    body.dark-mode #adminPanel,
-    body.dark-mode #settingsPanel {
-      background: #1e1e1e !important;
-      border-color: #333 !important;
-      color: #e0e0e0 !important;
-    }
-    body.dark-mode input,
-    body.dark-mode button {
-      background: #252525 !important;
-      border-color: #444 !important;
-      color: #e0e0e0 !important;
-    }
-    body.dark-mode .delete-btn {
-      background: #c00 !important;
-      color: #fff !important;
-    }
-
-    /* Hacker Mode */
+    /* Hacker Mode Specific Styles */
     body.hacker-mode {
       background: #000 !important;
       color: #0f0 !important;
@@ -781,12 +752,12 @@
     }
     body.hacker-mode .muzdog-header {
       background: #000 !important;
-      border-bottom: 1px solid #0f0 !important;
+      border-bottom: 1px solid #0f0;
     }
     body.hacker-mode .chat-header {
       background: #000 !important;
       color: #0f0 !important;
-      border-bottom: 1px solid #0f0 !important;
+      border-bottom: 1px solid #0f0;
     }
     body.hacker-mode .container,
     body.hacker-mode .auth-container,

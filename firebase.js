@@ -21,22 +21,27 @@ import {
   signOut 
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
+// Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAr_YalGc9rlZijAY17uQPAT2PyxfMiD-8",
   authDomain: "chatroom-80c45.firebaseapp.com",
   projectId: "chatroom-80c45",
-  storageBucket: "chatroom-80c45.appspot.com",
+  storageBucket: "chatroom-80c45.firebasestorage.app",
   messagingSenderId: "810230295758",
   appId: "1:810230295758:web:d736c80d30f0d83b19749f",
   measurementId: "G-4973KL5NCN"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 const rtdb = getDatabase(app);
 
+// -------------------------------
+// User Presence (RTDB)
+// -------------------------------
 function updateUserStatus(isOnline) {
   const userKey = auth.currentUser ? auth.currentUser.uid : "Guest";
   const userStatusRef = ref(rtdb, `onlineUsers/${userKey}`);
@@ -52,6 +57,9 @@ function updateUserStatus(isOnline) {
   }
 }
 
+// -------------------------------
+// Site Visits Counter (Firestore)
+// -------------------------------
 const siteStatsRef = doc(db, "analytics", "siteStats");
 
 async function incrementSiteVisits() {
@@ -85,6 +93,9 @@ async function getSiteVisits() {
   }
 }
 
+// -------------------------------
+// Authentication Functions with Admin Check
+// -------------------------------
 async function signUp(email, password, username) {
   try {
     const normalizedUsername = username.toLowerCase();
@@ -151,6 +162,7 @@ async function banUser(userId) {
   }
 }
 
+// Added missing unbanUser export
 async function unbanUser(userId) {
   try {
     await updateDoc(doc(db, "users", userId), {
@@ -160,17 +172,6 @@ async function unbanUser(userId) {
   } catch (error) {
     console.error("Error unbanning user:", error.message);
     alert("Failed to unban user.");
-  }
-}
-
-// Add this new function
-async function checkAdminStatus(userId) {
-  try {
-    const userDoc = await getDoc(doc(db, "users", userId));
-    return userDoc.exists() && userDoc.data().isAdmin === true;
-  } catch (error) {
-    console.error("Error checking admin status:", error);
-    return false;
   }
 }
 
@@ -185,6 +186,5 @@ export {
   login, 
   logout,
   banUser,
-  unbanUser,
-  checkAdminStatus
+  unbanUser // Now properly exported
 };
