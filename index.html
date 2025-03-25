@@ -12,7 +12,6 @@
       incrementSiteVisits, 
       getSiteVisits, 
       signUp, 
-      login, 
       logout,
       banUser,
       unbanUser  
@@ -21,7 +20,10 @@
       collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, 
       updateDoc, doc, increment, getDoc, getDocs, where, limit, deleteDoc 
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { 
+      onAuthStateChanged,
+      signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     // -------------------------------
     // Global Variables
@@ -55,10 +57,11 @@
 
     const logoutBtn = document.getElementById("logoutBtn");
 
-    // Settings elements for dark/light mode
+    // Settings elements for dark/light mode and account deletion
     const settingsBtn = document.getElementById("settingsBtn");
     const settingsPanel = document.getElementById("settingsPanel");
     const darkModeToggle = document.getElementById("darkModeToggle");
+    const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
     // -------------------------------
     // Dark Mode Initialization
@@ -134,21 +137,65 @@
           return;
         }
       }
+      // Check if email is banned by querying the "users" collection.
+      const usersQuery = query(collection(db, "users"), where("email", "==", email), limit(1));
+      const usersSnapshot = await getDocs(usersQuery);
+      if (!usersSnapshot.empty) {
+        const userDoc = usersSnapshot.docs[0];
+        if (userDoc.data().banned) {
+          alert("This email is banned. You cannot create a new account with it.");
+          return;
+        }
+      }
+      // Proceed with sign up.
       signUp(email, password, username);
     });
 
-    loginBtn.addEventListener("click", () => {
+    // Custom login process: immediately check if the account is banned
+    loginBtn.addEventListener("click", async () => {
       const email = loginEmail.value;
       const password = loginPassword.value;
       if (!email || !password) {
         alert("Please fill out both login fields.");
         return;
       }
-      login(email, password);
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userDocRef = doc(db, "users", userCredential.user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists() && userDocSnap.data().banned) {
+          alert("Your account is banned. You cannot log in.");
+          await logout();
+          return;
+        }
+        // If not banned, login proceeds normally and onAuthStateChanged will update the UI.
+      } catch (error) {
+        alert("Login failed: " + error.message);
+      }
     });
 
     logoutBtn.addEventListener("click", () => {
       logout();
+    });
+
+    // -------------------------------
+    // Account Deletion Feature
+    // -------------------------------
+    deleteAccountBtn.addEventListener("click", async () => {
+      if (!auth.currentUser) {
+        alert("You must be logged in to delete your account.");
+        return;
+      }
+      if (confirm("Are you sure you want to delete your account? This will remove your record from the users collection, update the user count, and sign you out.")) {
+        try {
+          await deleteDoc(doc(db, "users", auth.currentUser.uid));
+          updateRegisteredUsersCount();
+          logout(); // Sign out the user after deletion
+        } catch (error) {
+          console.error("Error deleting account:", error);
+          alert("Failed to delete account. Check the console for details.");
+        }
+      }
     });
 
     // -------------------------------
@@ -541,6 +588,15 @@
     #settingsPanel.open {
       display: block;
     }
+    /* Delete Account button styling */
+    #deleteAccountBtn {
+      margin-top: 10px;
+      padding: 6px 12px;
+      background: #c00;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
     #adminUserList {
       max-height: 150px;
       overflow-y: auto;
@@ -716,6 +772,7 @@
     <h3>Settings</h3>
     <label for="darkModeToggle">Dark Mode:</label>
     <input type="checkbox" id="darkModeToggle">
+    <button id="deleteAccountBtn">Delete Account</button>
   </div>
 
   <!-- Authentication Section -->
@@ -760,6 +817,7 @@
   </div>
 </body>
 </html>
+
 
 
 
