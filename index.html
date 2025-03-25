@@ -65,25 +65,14 @@
     const themeRadios = document.querySelectorAll('input[name="theme"]');
 
     // -------------------------------
-    // Theme Management
+    // Matrix Effect
     // -------------------------------
-    function loadTheme() {
-      const theme = localStorage.getItem("theme") || "light";
-      document.body.className = theme + "-mode";
-      document.getElementById(theme + "ModeRadio").checked = true;
-      
-      if (theme === "hacker") {
-        startMatrixEffect();
-      }
-    }
-
     function startMatrixEffect() {
       const chars = "01";
       const canvas = document.createElement("div");
       canvas.className = "matrix-canvas";
       document.body.appendChild(canvas);
       
-      // Create columns of falling characters
       const fontSize = 14;
       const columns = Math.floor(window.innerWidth / fontSize);
       
@@ -91,9 +80,8 @@
         const column = document.createElement("div");
         column.className = "matrix-column";
         column.style.left = (i * fontSize) + "px";
+        column.style.setProperty('--duration', Math.random() * 5 + 3);
         canvas.appendChild(column);
-        
-        // Start animation for this column
         animateColumn(column);
       }
       
@@ -126,6 +114,19 @@
       clearInterval(matrixInterval);
       const canvas = document.querySelector(".matrix-canvas");
       if (canvas) canvas.remove();
+    }
+
+    // -------------------------------
+    // Theme Management
+    // -------------------------------
+    function loadTheme() {
+      const theme = localStorage.getItem("theme") || "light";
+      document.body.className = theme + "-mode";
+      document.getElementById(theme + "ModeRadio").checked = true;
+      
+      if (theme === "hacker") {
+        startMatrixEffect();
+      }
     }
 
     themeRadios.forEach(radio => {
@@ -611,11 +612,11 @@
       display: none;
       z-index: 2000;
       width: 150px;
+      flex-direction: column;
+      gap: 10px;
     }
     #settingsPanel.open {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
     }
     #adminUserList {
       max-height: 150px;
@@ -743,42 +744,7 @@
       100% { transform: translateY(calc(100vh + 100px)); }
     }
 
-    /* Theme Styles */
-    /* Light Mode (default) - already in base styles */
-    
-    /* Dark Mode */
-    body.dark-mode {
-      background: #222;
-      color: #f4f4f4;
-    }
-    body.dark-mode .muzdog-header {
-      background: #111;
-    }
-    body.dark-mode .chat-header {
-      background: #333;
-      color: #f4f4f4;
-    }
-    body.dark-mode .container,
-    body.dark-mode .auth-container,
-    body.dark-mode .chat-input-area {
-      background: #333;
-      border-color: #555;
-    }
-    body.dark-mode .chat-messages {
-      background: #444;
-    }
-    body.dark-mode .message {
-      background: #555;
-      border-color: #666;
-    }
-    body.dark-mode #adminPanel,
-    body.dark-mode #settingsPanel {
-      background: #333;
-      border-color: #555;
-      color: #f4f4f4;
-    }
-    
-    /* Hacker Mode */
+    /* Hacker Mode Specific Styles */
     body.hacker-mode {
       background: #000 !important;
       color: #0f0 !important;
@@ -800,6 +766,16 @@
       border: 1px solid #0f0 !important;
       box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
     }
+    body.hacker-mode #adminPanel {
+      background: rgba(0, 20, 0, 0.9) !important;
+      border: 1px solid #0f0 !important;
+      color: #0f0 !important;
+    }
+    body.hacker-mode #settingsPanel {
+      background: rgba(0, 20, 0, 0.9) !important;
+      border: 1px solid #0f0 !important;
+      color: #0f0 !important;
+    }
     body.hacker-mode input,
     body.hacker-mode button {
       background: #000 !important;
@@ -817,7 +793,7 @@
       background: rgba(0, 30, 0, 0.7) !important;
       border-color: #0f0 !important;
     }
-    
+
     /* Death Theme */
     body.death-theme {
       background: #000;
