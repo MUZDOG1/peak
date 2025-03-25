@@ -24,18 +24,16 @@
     <script>
         const secretKey = "MUZDOG_SECRET";
 
-        // XOR Encryption with Base64 to preserve all characters
+        // XOR Encryption
         function xorEncrypt(data, key) {
-            let xored = data.split('').map((char, i) => 
+            return data.split('').map((char, i) => 
                 String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
             ).join('');
-            return btoa(xored); // Convert to Base64 for safe handling
         }
 
-        // XOR Decryption with Base64 decoding
+        // XOR Decryption
         function xorDecrypt(data, key) {
-            let decoded = atob(data); // Decode from Base64
-            return decoded.split('').map((char, i) => 
+            return data.split('').map((char, i) => 
                 String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
             ).join('');
         }
@@ -84,7 +82,7 @@
             let text = document.getElementById("inputText").value;
 
             try {
-                // XOR Step with Base64
+                // XOR Step
                 let xored = xorEncrypt(text, secretKey);
 
                 // Shift Characters
@@ -128,7 +126,7 @@
                 // Reverse Character Shift
                 let unshifted = shiftCharacters(unshuffled, -5);
 
-                // XOR Decryption with Base64
+                // XOR Decryption
                 let xored = xorDecrypt(unshifted, secretKey);
 
                 document.getElementById("outputText").value = xored;
