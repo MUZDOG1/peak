@@ -1,3 +1,4 @@
+// firebase.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { 
   getFirestore, 
@@ -162,6 +163,7 @@ async function unbanUser(userId) {
   }
 }
 
+// Add this new function
 async function checkAdminStatus(userId) {
   try {
     const userDoc = await getDoc(doc(db, "users", userId));
