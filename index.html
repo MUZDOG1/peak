@@ -28,9 +28,9 @@
     // -------------------------------
     // Global Variables
     // -------------------------------
-    let isAdmin = false; // Tracks if the current user is an admin
-    let bannedWords = []; // Array to hold banned words
-    let bannedAlertShown = false; // Flag to ensure only one banned alert is shown
+    let isAdmin = false;
+    let bannedWords = [];
+    let bannedAlertShown = false;
 
     // -------------------------------
     // DOM Elements
@@ -58,37 +58,71 @@
 
     const logoutBtn = document.getElementById("logoutBtn");
 
-    // Settings elements for dark/light mode
+    // Settings elements
     const settingsBtn = document.getElementById("settingsBtn");
     const settingsPanel = document.getElementById("settingsPanel");
-    const darkModeToggle = document.getElementById("darkModeToggle");
+    const themeRadios = document.querySelectorAll('input[name="theme"]');
 
     // -------------------------------
-    // Dark Mode Initialization
+    // Theme Management
     // -------------------------------
     function loadTheme() {
       const theme = localStorage.getItem("theme") || "light";
-      document.body.classList.toggle("dark-mode", theme === "dark");
-      darkModeToggle.checked = theme === "dark";
+      document.body.className = theme + "-mode";
+      document.getElementById(theme + "ModeRadio").checked = true;
+      
+      if (theme === "hacker") {
+        startHackerEffects();
+      }
     }
 
-    darkModeToggle.addEventListener("change", () => {
-      if (darkModeToggle.checked) {
-        document.body.classList.add("dark-mode");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.body.classList.remove("dark-mode");
-        localStorage.setItem("theme", "light");
-      }
+    function startHackerEffects() {
+      // Create CRT effect
+      const crtEffect = document.createElement("div");
+      crtEffect.className = "crt-effect";
+      document.body.appendChild(crtEffect);
+      
+      // Add random glitch effect
+      const glitchInterval = setInterval(() => {
+        if (Math.random() > 0.7) {
+          document.body.classList.add("glitch");
+          setTimeout(() => {
+            document.body.classList.remove("glitch");
+          }, 100);
+        }
+      }, 3000);
+      
+      document.body.dataset.glitchInterval = glitchInterval;
+    }
+
+    function stopHackerEffects() {
+      const crt = document.querySelector(".crt-effect");
+      if (crt) crt.remove();
+      
+      clearInterval(document.body.dataset.glitchInterval);
+      document.body.classList.remove("glitch");
+    }
+
+    themeRadios.forEach(radio => {
+      radio.addEventListener("change", () => {
+        const theme = radio.value;
+        document.body.className = theme + "-mode";
+        localStorage.setItem("theme", theme);
+        
+        stopHackerEffects();
+        
+        if (theme === "hacker") {
+          startHackerEffects();
+        }
+      });
     });
 
-    // Toggle Settings Panel
     settingsBtn.addEventListener("click", () => {
       settingsPanel.classList.toggle("open");
     });
 
     // -------------------------------
-    // Banned Words Loader & Filtering Functions
+    // Banned Words Loader & Filtering
     // -------------------------------
     async function loadBannedWords() {
       try {
@@ -101,7 +135,6 @@
     }
 
     async function filterMessage(message) {
-      // Replace each banned word with asterisks of equal length.
       bannedWords.forEach(word => {
         const regex = new RegExp(`\\b${word}\\b`, "gi");
         message = message.replace(regex, (match) => "*".repeat(match.length));
@@ -110,7 +143,7 @@
     }
 
     // -------------------------------
-    // Event Listeners for Authentication (Sign Up and Login)
+    // Authentication
     // -------------------------------
     signupBtn.addEventListener("click", async () => {
       const email = signupEmail.value;
@@ -120,16 +153,13 @@
         alert("Please fill out all sign up fields.");
         return;
       }
-      // Username length check
       if (username.length > 15) {
         alert("Your username cannot be longer than 15 characters.");
         return;
       }
-      // Load banned words if not loaded yet.
       if (bannedWords.length === 0) {
         await loadBannedWords();
       }
-      // Check if username contains any banned word.
       for (const word of bannedWords) {
         const regex = new RegExp(`\\b${word}\\b`, "i");
         if (regex.test(username)) {
@@ -137,7 +167,6 @@
           return;
         }
       }
-      // Check if email is banned by querying the "users" collection.
       const usersQuery = query(collection(db, "users"), where("email", "==", email), limit(1));
       const usersSnapshot = await getDocs(usersQuery);
       if (!usersSnapshot.empty) {
@@ -147,11 +176,9 @@
           return;
         }
       }
-      // Proceed with sign up.
       signUp(email, password, username);
     });
 
-    // Custom login process: immediately check if the account is banned
     loginBtn.addEventListener("click", async () => {
       const email = loginEmail.value;
       const password = loginPassword.value;
@@ -171,7 +198,6 @@
           await logout();
           return;
         }
-        // Normal login: onAuthStateChanged will update the UI.
       } catch (error) {
         alert("Login failed: " + error.message);
       }
@@ -181,9 +207,6 @@
       logout();
     });
 
-    // -------------------------------
-    // Authentication State Listener
-    // -------------------------------
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         logoutBtn.style.display = "block";
@@ -192,10 +215,8 @@
         updateUserStatus(true);
         document.getElementById("authContainer").style.display = "none";
 
-        // Get user document reference
         const userDocRef = doc(db, "users", user.uid);
 
-        // Realtime listener to check for ban status (only one alert will be shown)
         onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists() && docSnap.data().banned && !bannedAlertShown) {
             alert("You are banned, logging out.");
@@ -204,7 +225,6 @@
           }
         });
 
-        // Initial banned check
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists() && userDocSnap.data().banned && !bannedAlertShown) {
           alert("You are banned, logging out.");
@@ -213,7 +233,6 @@
           return;
         }
 
-        // Set admin flag based on user data and show admin panel if applicable.
         if (userDocSnap.exists() && userDocSnap.data().isAdmin) {
           isAdmin = true;
           document.getElementById("adminPanel").style.display = "block";
@@ -233,7 +252,7 @@
     });
 
     // -------------------------------
-    // Load and Display Chat Messages (Newest on top, limited to 100)
+    // Chat Functionality
     // -------------------------------
     const q = query(
       collection(db, "chatrooms/general/messages"),
@@ -264,7 +283,6 @@
             username = userDoc.data().username;
           }
         }
-        // Only show delete button for admins
         const deleteButton = isAdmin 
           ? `<button class="delete-btn" onclick="deleteMessage('${docSnap.id}')">Delete</button>` 
           : "";
@@ -287,9 +305,6 @@
       chatMessages.scrollTop = 0;
     });
 
-    // -------------------------------
-    // Delete Message Function (Admin Only)
-    // -------------------------------
     window.deleteMessage = async function(messageId) {
       if (!isAdmin) {
         alert("You are not authorized to delete messages.");
@@ -303,9 +318,6 @@
       }
     };
 
-    // -------------------------------
-    // Send Message
-    // -------------------------------
     sendBtn.addEventListener("click", async () => {
       if (!auth.currentUser) {
         alert("You must be logged in to send messages.");
@@ -314,21 +326,18 @@
       
       const text = chatInput.value.trim();
       
-      // Check for secret "xanlack" command
       if (text.toLowerCase() === "xanlack") {
         window.location.href = "truth.html";
         chatInput.value = "";
         return;
       }
       
-      // Check for secret "death" command
       if (text.toLowerCase() === "death") {
         applyDeathTheme();
         chatInput.value = "";
         return;
       }
 
-      // Add new encode command
       if (text.toLowerCase() === "encode") {
         window.location.href = "encode.html";
         chatInput.value = "";
@@ -358,38 +367,7 @@
     });
 
     // -------------------------------
-    // Site Visits & Registered Users Counter
-    // -------------------------------
-    document.addEventListener("DOMContentLoaded", async () => {
-      await incrementSiteVisits();
-      const visits = await getSiteVisits();
-      const visitsCountEl = document.getElementById("visitsCount");
-      if (visitsCountEl) {
-        visitsCountEl.textContent = visits;
-      }
-      updateRegisteredUsersCount();
-      loadTheme(); // Initialize theme on load
-    });
-
-    async function updateRegisteredUsersCount() {
-      try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const userCount = usersSnapshot.size;
-        const userCountEl = document.getElementById("userCount");
-        if (userCountEl) {
-          userCountEl.textContent = userCount;
-        }
-      } catch (error) {
-        console.error("Error getting registered users count:", error);
-      }
-    }
-
-    window.addEventListener("beforeunload", () => {
-      updateUserStatus(false);
-    });
-
-    // -------------------------------
-    // Admin Panel: Load Users and Enable Banning/Unbanning
+    // Admin Functions
     // -------------------------------
     async function loadUsersForAdmin() {
       try {
@@ -445,8 +423,36 @@
     };
 
     // -------------------------------
-    // Death Theme Feature
+    // Utilities
     // -------------------------------
+    document.addEventListener("DOMContentLoaded", async () => {
+      await incrementSiteVisits();
+      const visits = await getSiteVisits();
+      const visitsCountEl = document.getElementById("visitsCount");
+      if (visitsCountEl) {
+        visitsCountEl.textContent = visits;
+      }
+      updateRegisteredUsersCount();
+      loadTheme();
+    });
+
+    async function updateRegisteredUsersCount() {
+      try {
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const userCount = usersSnapshot.size;
+        const userCountEl = document.getElementById("userCount");
+        if (userCountEl) {
+          userCountEl.textContent = userCount;
+        }
+      } catch (error) {
+        console.error("Error getting registered users count:", error);
+      }
+    }
+
+    window.addEventListener("beforeunload", () => {
+      updateUserStatus(false);
+    });
+
     function applyDeathTheme() {
       document.body.classList.add("death-theme");
       console.log("Death theme activated.");
@@ -464,6 +470,7 @@
       font-family: Arial, sans-serif;
       background: #f4f4f4;
       color: #000;
+      transition: all 0.3s;
     }
     a {
       color: inherit;
@@ -488,7 +495,6 @@
       color: #bbb;
       margin-left: 5px;
     }
-    /* Header Buttons Container */
     .header-buttons {
       display: flex;
       gap: 10px;
@@ -554,7 +560,6 @@
       justify-content: space-between;
       align-items: center;
     }
-    /* Admin Panel Styling */
     #adminPanel {
       position: sticky;
       top: 0;
@@ -566,7 +571,6 @@
       margin-top: 10px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-    /* Settings Panel Styling */
     #settingsPanel {
       position: absolute;
       top: 50px;
@@ -580,7 +584,6 @@
     #settingsPanel.open {
       display: block;
     }
-    /* Delete Account button styling removed */
     #adminUserList {
       max-height: 150px;
       overflow-y: auto;
@@ -676,9 +679,11 @@
       border-radius: 3px;
       font-size: 12px;
     }
-    /* -------------------------------
-       Dark Mode Styles
-       ------------------------------- */
+
+    /* Theme Styles */
+    /* Light Mode (default) - already in base styles */
+    
+    /* Dark Mode */
     body.dark-mode {
       background: #222;
       color: #f4f4f4;
@@ -703,19 +708,87 @@
       background: #555;
       border-color: #666;
     }
-    /* Dark mode for admin panel and settings panel */
     body.dark-mode #adminPanel,
     body.dark-mode #settingsPanel {
       background: #333;
       border-color: #555;
       color: #f4f4f4;
     }
-    /* -------------------------------
-       Death Theme Styles (Overrides Everything)
-       ------------------------------- */
+    
+    /* Hacker Mode */
+    body.hacker-mode {
+      background: #001100 !important;
+      color: #0f0 !important;
+      font-family: 'Courier New', monospace;
+      background-image: 
+        radial-gradient(circle at center, #002200 0%, #000 100%),
+        linear-gradient(45deg, transparent 48%, rgba(0,255,0,0.1) 50%, transparent 52%);
+      background-size: cover, 4px 4px;
+    }
+    body.hacker-mode .muzdog-header {
+      background: #000 !important;
+      border-bottom: 1px solid #0f0;
+    }
+    body.hacker-mode .chat-header {
+      background: #000 !important;
+      color: #0f0 !important;
+      border-bottom: 1px solid #0f0;
+    }
+    body.hacker-mode .container,
+    body.hacker-mode .auth-container,
+    body.hacker-mode .chat-input-area {
+      background: rgba(0, 20, 0, 0.3) !important;
+      border: 1px solid #0f0 !important;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+    body.hacker-mode input,
+    body.hacker-mode button {
+      background: #000 !important;
+      border: 1px solid #0f0 !important;
+      color: #0f0 !important;
+    }
+    body.hacker-mode .delete-btn {
+      background: #0f0 !important;
+      color: #000 !important;
+    }
+    
+    /* CRT Effect for Hacker Mode */
+    .crt-effect {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: linear-gradient(rgba(0,255,0,0.06) 50%, rgba(0,0,0,0.8) 50%);
+      background-size: 100% 3px;
+      animation: scanline 2s linear infinite;
+      z-index: 9999;
+    }
+    
+    /* Glitch Effect */
+    body.glitch {
+      animation: glitch 0.1s infinite;
+    }
+    
+    @keyframes scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
+    }
+    
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
+    
+    /* Death Theme */
     body.death-theme {
-      background: #000; /* Pure black */
-      color: #FF0000;   /* Vivid blood red */
+      background: #000;
+      color: #FF0000;
     }
     body.death-theme a {
       color: #FF0000;
@@ -745,7 +818,7 @@
     }
   </style>
 </head>
-<body>
+<body class="light-mode">
   <header class="muzdog-header">
     <div class="logo">
       Muzdog Chat 
@@ -761,11 +834,20 @@
     </div>
   </header>
 
-  <!-- Settings Panel (Delete Account button removed) -->
+  <!-- Settings Panel -->
   <div id="settingsPanel">
     <h3>Settings</h3>
-    <label for="darkModeToggle">Dark Mode:</label>
-    <input type="checkbox" id="darkModeToggle">
+    <div class="theme-selection">
+      <label>
+        <input type="radio" name="theme" value="light" id="lightModeRadio"> Light Mode
+      </label>
+      <label>
+        <input type="radio" name="theme" value="dark" id="darkModeRadio"> Dark Mode
+      </label>
+      <label>
+        <input type="radio" name="theme" value="hacker" id="hackerModeRadio"> Hacker Mode
+      </label>
+    </div>
   </div>
 
   <!-- Authentication Section -->
