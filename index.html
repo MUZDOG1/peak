@@ -12,6 +12,7 @@
       incrementSiteVisits, 
       getSiteVisits, 
       signUp, 
+      login, 
       logout,
       banUser,
       unbanUser,
@@ -26,13 +27,11 @@
       signInWithEmailAndPassword 
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    // Global Variables
     let isAdmin = false;
     let bannedWords = [];
     let bannedAlertShown = false;
     let matrixInterval;
 
-    // DOM Elements
     const chatMessages = document.getElementById("chatMessages");
     const chatInput = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendBtn");
@@ -49,13 +48,11 @@
     const settingsPanel = document.getElementById("settingsPanel");
     const themeRadios = document.querySelectorAll('input[name="theme"]');
 
-    // Initialize TOS checkbox
     signupBtn.disabled = true;
     tosCheckbox.addEventListener("change", () => {
       signupBtn.disabled = !tosCheckbox.checked;
     });
 
-    // Matrix Effect
     function startMatrixEffect() {
       const chars = "01";
       const canvas = document.createElement("div");
@@ -105,7 +102,6 @@
       if (canvas) canvas.remove();
     }
 
-    // Theme Management
     function loadTheme() {
       const theme = localStorage.getItem("theme") || "light";
       setTheme(theme);
@@ -114,9 +110,7 @@
 
     function setTheme(theme) {
       document.body.className = theme + "-mode";
-      
       stopMatrixEffect();
-      
       if (theme === "hacker") {
         startMatrixEffect();
       }
@@ -134,7 +128,6 @@
       settingsPanel.classList.toggle("open");
     });
 
-    // Banned Words Loader & Filtering
     async function loadBannedWords() {
       try {
         const response = await fetch("banned_words.txt");
@@ -153,7 +146,6 @@
       return message;
     }
 
-    // Authentication
     signupBtn.addEventListener("click", async () => {
       const email = signupEmail.value;
       const password = signupPassword.value;
@@ -226,29 +218,34 @@
 
         const userDocRef = doc(db, "users", user.uid);
 
-        onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists() && docSnap.data().banned && !bannedAlertShown) {
-            alert("You are banned, logging out.");
-            bannedAlertShown = true;
-            logout();
+        onSnapshot(userDocRef, async (docSnap) => {
+          if (docSnap.exists()) {
+            if (docSnap.data().banned && !bannedAlertShown) {
+              alert("You are banned, logging out.");
+              bannedAlertShown = true;
+              await logout();
+              return;
+            }
+            
+            isAdmin = docSnap.data().isAdmin === true;
+            if (isAdmin) {
+              isAdmin = await checkAdminStatus(user.uid);
+              document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
+              if (isAdmin) loadUsersForAdmin();
+            } else {
+              document.getElementById("adminPanel").style.display = "none";
+            }
           }
         });
 
         const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists() && userDocSnap.data().banned && !bannedAlertShown) {
-          alert("You are banned, logging out.");
-          bannedAlertShown = true;
-          logout();
-          return;
-        }
-
-        if (userDocSnap.exists() && userDocSnap.data().isAdmin) {
-          isAdmin = true;
-          document.getElementById("adminPanel").style.display = "block";
-          loadUsersForAdmin();
-        } else {
-          isAdmin = false;
-          document.getElementById("adminPanel").style.display = "none";
+        if (userDocSnap.exists()) {
+          isAdmin = userDocSnap.data().isAdmin === true;
+          if (isAdmin) {
+            isAdmin = await checkAdminStatus(user.uid);
+            document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
+            if (isAdmin) loadUsersForAdmin();
+          }
         }
       } else {
         logoutBtn.style.display = "none";
@@ -257,15 +254,16 @@
         updateUserStatus(false);
         document.getElementById("authContainer").style.display = "block";
         document.getElementById("adminPanel").style.display = "none";
+        isAdmin = false;
       }
     });
 
-    // Chat Functionality
     const q = query(
       collection(db, "chatrooms/general/messages"),
       orderBy("timestamp", "desc"),
       limit(100)
     );
+
     onSnapshot(q, async (snapshot) => {
       await loadBannedWords();
       const currentUserIsAdmin = auth.currentUser ? await checkAdminStatus(auth.currentUser.uid) : false;
@@ -382,7 +380,6 @@
       }
     });
 
-    // Admin Functions
     async function loadUsersForAdmin() {
       try {
         const usersSnapshot = await getDocs(collection(db, "users"));
@@ -436,7 +433,6 @@
       }
     };
 
-    // Utilities
     document.addEventListener("DOMContentLoaded", async () => {
       await incrementSiteVisits();
       const visits = await getSiteVisits();
@@ -472,7 +468,6 @@
   </script>
   
   <style>
-    /* Base Styles */
     * {
       margin: 0;
       padding: 0;
@@ -699,8 +694,6 @@
       border-radius: 3px;
       font-size: 12px;
     }
-
-    /* Matrix Effect */
     .matrix-canvas {
       position: fixed;
       top: 0;
@@ -729,8 +722,6 @@
       0% { transform: translateY(-100px); }
       100% { transform: translateY(calc(100vh + 100px)); }
     }
-
-    /* Dark Mode */
     body.dark-mode {
       background: #121212 !important;
       color: #e0e0e0 !important;
@@ -773,8 +764,6 @@
       background: #c00 !important;
       color: #fff !important;
     }
-
-    /* Hacker Mode */
     body.hacker-mode {
       background: #000 !important;
       color: #0f0 !important;
@@ -823,8 +812,6 @@
       background: rgba(0, 30, 0, 0.7) !important;
       border-color: #0f0 !important;
     }
-
-    /* Death Theme */
     body.death-theme {
       background: #000;
       color: #FF0000;
@@ -873,7 +860,6 @@
     </div>
   </header>
 
-  <!-- Settings Panel -->
   <div id="settingsPanel">
     <h3>Settings</h3>
     <label>
@@ -887,7 +873,6 @@
     </label>
   </div>
 
-  <!-- Authentication Section -->
   <div class="auth-container" id="authContainer">
     <h2>Sign Up</h2>
     <input type="email" id="signupEmail" placeholder="Email">
@@ -907,7 +892,6 @@
     <button id="loginBtn">Login</button>
   </div>
 
-  <!-- Chat Container -->
   <div class="container">
     <div class="chat-column">
       <div class="chat-header">
@@ -922,7 +906,6 @@
     </div>
   </div>
 
-  <!-- Chat Input Area -->
   <div class="chat-input-area">
     <input type="text" id="chatInput" placeholder="Type a message..." disabled>
     <button id="sendBtn" disabled>Send</button>
