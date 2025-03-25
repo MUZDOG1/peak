@@ -31,6 +31,7 @@
     let isAdmin = false;
     let bannedWords = [];
     let bannedAlertShown = false;
+    let matrixInterval;
 
     // -------------------------------
     // DOM Elements
@@ -72,35 +73,59 @@
       document.getElementById(theme + "ModeRadio").checked = true;
       
       if (theme === "hacker") {
-        startHackerEffects();
+        startMatrixEffect();
       }
     }
 
-    function startHackerEffects() {
-      // Create CRT effect
-      const crtEffect = document.createElement("div");
-      crtEffect.className = "crt-effect";
-      document.body.appendChild(crtEffect);
+    function startMatrixEffect() {
+      const chars = "01";
+      const canvas = document.createElement("div");
+      canvas.className = "matrix-canvas";
+      document.body.appendChild(canvas);
       
-      // Add random glitch effect
-      const glitchInterval = setInterval(() => {
-        if (Math.random() > 0.7) {
-          document.body.classList.add("glitch");
-          setTimeout(() => {
-            document.body.classList.remove("glitch");
-          }, 100);
-        }
-      }, 3000);
+      // Create columns of falling characters
+      const fontSize = 14;
+      const columns = Math.floor(window.innerWidth / fontSize);
       
-      document.body.dataset.glitchInterval = glitchInterval;
+      for (let i = 0; i < columns; i++) {
+        const column = document.createElement("div");
+        column.className = "matrix-column";
+        column.style.left = (i * fontSize) + "px";
+        canvas.appendChild(column);
+        
+        // Start animation for this column
+        animateColumn(column);
+      }
+      
+      matrixInterval = setInterval(() => {
+        const columns = document.querySelectorAll(".matrix-column");
+        columns.forEach(col => {
+          if (Math.random() > 0.9) {
+            animateColumn(col);
+          }
+        });
+      }, 100);
     }
 
-    function stopHackerEffects() {
-      const crt = document.querySelector(".crt-effect");
-      if (crt) crt.remove();
+    function animateColumn(column) {
+      const chars = "01";
+      const length = Math.floor(Math.random() * 15) + 5;
+      let html = "";
       
-      clearInterval(document.body.dataset.glitchInterval);
-      document.body.classList.remove("glitch");
+      for (let i = 0; i < length; i++) {
+        const char = chars[Math.floor(Math.random() * chars.length)];
+        const opacity = (length - i) / length;
+        const delay = i * 100;
+        html += `<span style="animation-delay:${delay}ms;opacity:${opacity}">${char}</span>`;
+      }
+      
+      column.innerHTML = html;
+    }
+
+    function stopMatrixEffect() {
+      clearInterval(matrixInterval);
+      const canvas = document.querySelector(".matrix-canvas");
+      if (canvas) canvas.remove();
     }
 
     themeRadios.forEach(radio => {
@@ -109,10 +134,10 @@
         document.body.className = theme + "-mode";
         localStorage.setItem("theme", theme);
         
-        stopHackerEffects();
+        stopMatrixEffect();
         
         if (theme === "hacker") {
-          startHackerEffects();
+          startMatrixEffect();
         }
       });
     });
@@ -483,6 +508,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      position: relative;
+      z-index: 100;
     }
     .muzdog-header .logo {
       font-size: 24px;
@@ -512,6 +539,8 @@
       border: 1px solid #ccc;
       width: 800px;
       margin: 20px auto;
+      position: relative;
+      z-index: 100;
     }
     .auth-container button {
       padding: 6px 12px;
@@ -545,6 +574,7 @@
       background: #fff;
       border: 1px solid #ccc;
       position: relative;
+      z-index: 100;
     }
     .chat-column {
       width: 100%;
@@ -580,9 +610,12 @@
       padding: 10px;
       display: none;
       z-index: 2000;
+      width: 150px;
     }
     #settingsPanel.open {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     #adminUserList {
       max-height: 150px;
@@ -680,6 +713,36 @@
       font-size: 12px;
     }
 
+    /* Matrix Effect */
+    .matrix-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .matrix-column {
+      position: absolute;
+      top: -100px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: rgba(0, 255, 0, 0.7);
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+    }
+    .matrix-column span {
+      display: block;
+      animation: matrix-fall linear infinite;
+      animation-duration: calc(var(--duration) * 1s);
+    }
+    @keyframes matrix-fall {
+      0% { transform: translateY(-100px); }
+      100% { transform: translateY(calc(100vh + 100px)); }
+    }
+
     /* Theme Styles */
     /* Light Mode (default) - already in base styles */
     
@@ -717,13 +780,9 @@
     
     /* Hacker Mode */
     body.hacker-mode {
-      background: #001100 !important;
+      background: #000 !important;
       color: #0f0 !important;
       font-family: 'Courier New', monospace;
-      background-image: 
-        radial-gradient(circle at center, #002200 0%, #000 100%),
-        linear-gradient(45deg, transparent 48%, rgba(0,255,0,0.1) 50%, transparent 52%);
-      background-size: cover, 4px 4px;
     }
     body.hacker-mode .muzdog-header {
       background: #000 !important;
@@ -737,7 +796,7 @@
     body.hacker-mode .container,
     body.hacker-mode .auth-container,
     body.hacker-mode .chat-input-area {
-      background: rgba(0, 20, 0, 0.3) !important;
+      background: rgba(0, 20, 0, 0.7) !important;
       border: 1px solid #0f0 !important;
       box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
     }
@@ -751,38 +810,12 @@
       background: #0f0 !important;
       color: #000 !important;
     }
-    
-    /* CRT Effect for Hacker Mode */
-    .crt-effect {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      background: linear-gradient(rgba(0,255,0,0.06) 50%, rgba(0,0,0,0.8) 50%);
-      background-size: 100% 3px;
-      animation: scanline 2s linear infinite;
-      z-index: 9999;
+    body.hacker-mode .chat-messages {
+      background: rgba(0, 10, 0, 0.8) !important;
     }
-    
-    /* Glitch Effect */
-    body.glitch {
-      animation: glitch 0.1s infinite;
-    }
-    
-    @keyframes scanline {
-      0% { transform: translateY(-100%); }
-      100% { transform: translateY(100%); }
-    }
-    
-    @keyframes glitch {
-      0% { transform: translate(0); }
-      20% { transform: translate(-2px, 2px); }
-      40% { transform: translate(-2px, -2px); }
-      60% { transform: translate(2px, 2px); }
-      80% { transform: translate(2px, -2px); }
-      100% { transform: translate(0); }
+    body.hacker-mode .message {
+      background: rgba(0, 30, 0, 0.7) !important;
+      border-color: #0f0 !important;
     }
     
     /* Death Theme */
@@ -837,17 +870,15 @@
   <!-- Settings Panel -->
   <div id="settingsPanel">
     <h3>Settings</h3>
-    <div class="theme-selection">
-      <label>
-        <input type="radio" name="theme" value="light" id="lightModeRadio"> Light Mode
-      </label>
-      <label>
-        <input type="radio" name="theme" value="dark" id="darkModeRadio"> Dark Mode
-      </label>
-      <label>
-        <input type="radio" name="theme" value="hacker" id="hackerModeRadio"> Hacker Mode
-      </label>
-    </div>
+    <label>
+      <input type="radio" name="theme" value="light" id="lightModeRadio"> Light Mode
+    </label>
+    <label>
+      <input type="radio" name="theme" value="dark" id="darkModeRadio"> Dark Mode
+    </label>
+    <label>
+      <input type="radio" name="theme" value="hacker" id="hackerModeRadio"> Hacker Mode
+    </label>
   </div>
 
   <!-- Authentication Section -->
