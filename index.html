@@ -27,6 +27,7 @@
     // Global Variables
     // -------------------------------
     let isAdmin = false; // Tracks if the current user is an admin
+    let bannedWords = []; // Array to hold banned words
 
     // -------------------------------
     // DOM Elements
@@ -84,15 +85,49 @@
     });
 
     // -------------------------------
+    // Banned Words Loader & Filtering Functions
+    // -------------------------------
+    async function loadBannedWords() {
+      try {
+        const response = await fetch("banned_words.txt");
+        const text = await response.text();
+        bannedWords = text.split("\n").map(word => word.trim()).filter(word => word);
+      } catch (error) {
+        console.error("Failed to load banned words:", error);
+      }
+    }
+
+    async function filterMessage(message) {
+      // Replace each banned word with asterisks of equal length.
+      bannedWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, "gi");
+        message = message.replace(regex, (match) => "*".repeat(match.length));
+      });
+      return message;
+    }
+
+    // -------------------------------
     // Event Listeners for Authentication
     // -------------------------------
-    signupBtn.addEventListener("click", () => {
+    signupBtn.addEventListener("click", async () => {
       const email = signupEmail.value;
       const password = signupPassword.value;
       const username = signupUsername.value;
       if (!email || !password || !username) {
         alert("Please fill out all sign up fields.");
         return;
+      }
+      // Load banned words if not loaded yet.
+      if (bannedWords.length === 0) {
+        await loadBannedWords();
+      }
+      // Check if username contains any banned word.
+      for (const word of bannedWords) {
+        const regex = new RegExp(`\\b${word}\\b`, "i");
+        if (regex.test(username)) {
+          alert("Your username contains inappropriate language.");
+          return;
+        }
       }
       signUp(email, password, username);
     });
@@ -159,29 +194,6 @@
         document.getElementById("adminPanel").style.display = "none";
       }
     });
-
-    // -------------------------------
-    // Banned Words Filtering
-    // -------------------------------
-    let bannedWords = [];
-    async function loadBannedWords() {
-      try {
-        const response = await fetch("banned_words.txt");
-        const text = await response.text();
-        bannedWords = text.split("\n").map(word => word.trim()).filter(word => word);
-      } catch (error) {
-        console.error("Failed to load banned words:", error);
-      }
-    }
-
-    async function filterMessage(message) {
-      // For each banned word, replace it with asterisks of equal length.
-      bannedWords.forEach(word => {
-        const regex = new RegExp(`\\b${word}\\b`, "gi");
-        message = message.replace(regex, (match) => "*".repeat(match.length));
-      });
-      return message;
-    }
 
     // -------------------------------
     // Load and Display Chat Messages (Newest on top, limited to 100)
@@ -748,5 +760,5 @@
 
 
 <!--ALSO ADD DELETE ALL USER MESSAGE BUTTON AND USERNAME FILTERING-->
-<!--ADD AI FILTERING AND ADMIN ABILITY TO DELETE MESSAGES-->
+<!--ADD AI FILTERING-->
 <!--ADD SEND LIMITS EVERY 3-5 SECONDS-->
