@@ -22,7 +22,7 @@
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
     import { 
       onAuthStateChanged,
-      signInWithEmailAndPassword
+      signInWithEmailAndPassword 
     } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     // -------------------------------
@@ -30,6 +30,7 @@
     // -------------------------------
     let isAdmin = false; // Tracks if the current user is an admin
     let bannedWords = []; // Array to hold banned words
+    let bannedAlertShown = false; // Flag to ensure only one banned alert is shown
 
     // -------------------------------
     // DOM Elements
@@ -110,7 +111,7 @@
     }
 
     // -------------------------------
-    // Event Listeners for Authentication
+    // Event Listeners for Authentication (Sign Up and Login)
     // -------------------------------
     signupBtn.addEventListener("click", async () => {
       const email = signupEmail.value;
@@ -164,11 +165,14 @@
         const userDocRef = doc(db, "users", userCredential.user.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists() && userDocSnap.data().banned) {
-          alert("Your account is banned. You cannot log in.");
+          if (!bannedAlertShown) {
+            alert("You are banned, logging out.");
+            bannedAlertShown = true;
+          }
           await logout();
           return;
         }
-        // If not banned, login proceeds normally and onAuthStateChanged will update the UI.
+        // Normal login: onAuthStateChanged will update the UI.
       } catch (error) {
         alert("Login failed: " + error.message);
       }
@@ -179,18 +183,34 @@
     });
 
     // -------------------------------
-    // Account Deletion Feature
+    // Account Deletion Feature with Cascade Message Deletion
     // -------------------------------
     deleteAccountBtn.addEventListener("click", async () => {
       if (!auth.currentUser) {
         alert("You must be logged in to delete your account.");
         return;
       }
-      if (confirm("Are you sure you want to delete your account? This will remove your record from the users collection, update the user count, and sign you out.")) {
+      if (confirm("Are you sure you want to delete your account? This will remove your record and all your messages, update the user count, and sign you out.")) {
         try {
-          await deleteDoc(doc(db, "users", auth.currentUser.uid));
+          // Delete the user document from "users" collection.
+          const userUid = auth.currentUser.uid;
+          await deleteDoc(doc(db, "users", userUid));
+
+          // Cascade deletion: delete all messages from this user.
+          const messagesQuery = query(
+            collection(db, "chatrooms/general/messages"),
+            where("senderId", "==", userUid)
+          );
+          const messagesSnapshot = await getDocs(messagesQuery);
+          const deletePromises = messagesSnapshot.docs.map(docSnap => 
+            deleteDoc(doc(db, "chatrooms/general/messages", docSnap.id))
+          );
+          await Promise.all(deletePromises);
+
+          // Update the user count.
           updateRegisteredUsersCount();
-          logout(); // Sign out the user after deletion
+          // Sign out the user.
+          logout();
         } catch (error) {
           console.error("Error deleting account:", error);
           alert("Failed to delete account. Check the console for details.");
@@ -212,18 +232,20 @@
         // Get user document reference
         const userDocRef = doc(db, "users", user.uid);
 
-        // Realtime listener to instantly check for ban status
+        // Realtime listener to check for ban status (only one alert will be shown)
         onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists() && docSnap.data().banned) {
-            alert("Your account has been banned.");
+          if (docSnap.exists() && docSnap.data().banned && !bannedAlertShown) {
+            alert("You are banned, logging out.");
+            bannedAlertShown = true;
             logout();
           }
         });
 
         // Initial banned check
         const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists() && userDocSnap.data().banned) {
-          alert("Your account has been banned.");
+        if (userDocSnap.exists() && userDocSnap.data().banned && !bannedAlertShown) {
+          alert("You are banned, logging out.");
+          bannedAlertShown = true;
           logout();
           return;
         }
@@ -588,7 +610,7 @@
     #settingsPanel.open {
       display: block;
     }
-    /* Delete Account button styling */
+    /* Delete Account button styling, placed below dark mode toggle */
     #deleteAccountBtn {
       margin-top: 10px;
       padding: 6px 12px;
@@ -817,6 +839,7 @@
   </div>
 </body>
 </html>
+
 
 
 
