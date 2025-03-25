@@ -704,7 +704,7 @@
       color: #f4f4f4;
     }
     /* -------------------------------
-       Death Theme Styles (Overrides Dark Mode)
+       Death Theme Styles (Overrides Everything)
        ------------------------------- */
     body.death-theme {
       background: #000; /* Pure black */
@@ -713,19 +713,28 @@
     body.death-theme a {
       color: #FF0000;
     }
-    body.death-theme .muzdog-header {
-      background: #000;
-      color: #FF0000;
-    }
-    body.death-theme .chat-header {
-      background: #000;
-      color: #FF0000;
-    }
+    body.death-theme .muzdog-header,
+    body.death-theme .chat-header,
     body.death-theme .auth-container,
     body.death-theme .container,
-    body.death-theme .chat-input-area {
+    body.death-theme .chat-input-area,
+    body.death-theme .chat-messages,
+    body.death-theme .message,
+    body.death-theme #adminPanel,
+    body.death-theme #settingsPanel {
       background: #000;
       border-color: #FF0000;
+      color: #FF0000;
+    }
+    body.death-theme .chat-input-area input[type="text"] {
+      background: #000;
+      border-color: #FF0000;
+      color: #FF0000;
+    }
+    body.death-theme .delete-btn,
+    body.death-theme .like-btn {
+      background: #FF0000;
+      color: #000;
     }
   </style>
 </head>
@@ -793,12 +802,6 @@
   </div>
 </body>
 </html>
-
- 
-
-
-
-
 
 <!--ALSO ADD DELETE ALL USER MESSAGE BUTTON AND USERNAME FILTERING-->
 <!--ADD AI FILTERING-->
