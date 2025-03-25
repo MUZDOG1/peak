@@ -24,18 +24,16 @@
     <script>
         const secretKey = "MUZDOG_SECRET";
 
-        // XOR Encryption with Base64 for safe handling of special characters
+        // XOR Encryption
         function xorEncrypt(data, key) {
-            let xored = data.split('').map((char, i) => 
+            return data.split('').map((char, i) => 
                 String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
             ).join('');
-            return btoa(xored); // Convert to Base64 for safe storage
         }
 
-        // XOR Decryption with Base64 decoding
+        // XOR Decryption
         function xorDecrypt(data, key) {
-            let decoded = atob(data); // Decode from Base64
-            return decoded.split('').map((char, i) => 
+            return data.split('').map((char, i) => 
                 String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
             ).join('');
         }
@@ -50,8 +48,8 @@
         // Shuffle and Unshuffle Functions
         function shuffleString(str) {
             let arr = str.split('');
-            let map = arr.map((_, index) => index); // Generate index map
-            map.sort(() => Math.random() - 0.5); // Randomly shuffle indices
+            let map = arr.map((_, index) => index);
+            map.sort(() => Math.random() - 0.5);
 
             let shuffled = map.map(index => arr[index]).join('');
             return { shuffled, map };
@@ -82,14 +80,14 @@
         // Encoding Function
         function encodeText() {
             let text = document.getElementById("inputText").value;
-
-            // XOR Step with Base64
+            
+            // XOR Encryption
             let xored = xorEncrypt(text, secretKey);
 
             // Shift Characters
             let shifted = shiftCharacters(xored, 5);
 
-            // Shuffle Step
+            // Shuffle
             let shuffledObj = shuffleString(shifted);
             let shuffled = shuffledObj.shuffled;
             let map = shuffledObj.map;
@@ -97,8 +95,9 @@
             // AES Encryption
             let encrypted = encryptAES(shuffled, secretKey);
 
-            // Combine Encrypted Text and Shuffle Map into Base64
-            let base64 = btoa(JSON.stringify({ encrypted, map }));
+            // Combine Encrypted Text and Shuffle Map
+            let combined = JSON.stringify({ encrypted, map });
+            let base64 = btoa(combined);
             document.getElementById("outputText").value = base64;
         }
 
@@ -107,21 +106,22 @@
             let base64 = document.getElementById("outputText").value;
 
             try {
-                // Parse Base64 Content
-                let parsed = JSON.parse(atob(base64));
+                // Parse Base64
+                let combined = atob(base64);
+                let parsed = JSON.parse(combined);
                 let encrypted = parsed.encrypted;
                 let map = parsed.map;
 
                 // AES Decryption
                 let decrypted = decryptAES(encrypted, secretKey);
 
-                // Unshuffle Step
+                // Unshuffle
                 let unshuffled = unshuffleString(decrypted, map);
 
-                // Reverse Character Shift
+                // Reverse Shift
                 let unshifted = shiftCharacters(unshuffled, -5);
 
-                // XOR Decryption with Base64
+                // XOR Decryption
                 let xored = xorDecrypt(unshifted, secretKey);
 
                 document.getElementById("outputText").value = xored;
