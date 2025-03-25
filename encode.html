@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Encoder</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
         textarea { width: 80%; height: 100px; margin: 10px 0; display: block; margin-left: auto; margin-right: auto; }
@@ -22,48 +21,56 @@
     </div>
 
     <script>
-        const secretKey = "MUZDOG_SECRET"; // Secret key for AES
+        const secretKey = "MUZDOG_SECRET"; // Secret key for encoding
 
-        // AES Encryption
-        function encryptAES(text, key) {
-            const keyUtf8 = CryptoJS.enc.Utf8.parse(key); // Convert the key to WordArray
-            const encrypted = CryptoJS.AES.encrypt(text, keyUtf8).toString(); // Encrypt the text
-            return encrypted;
+        // XOR Encryption with Base64 encoding
+        function encryptXOR(text, key) {
+            let encrypted = '';
+            for (let i = 0; i < text.length; i++) {
+                const textChar = text.charCodeAt(i);
+                const keyChar = key.charCodeAt(i % key.length);
+                encrypted += String.fromCharCode(textChar ^ keyChar);
+            }
+            return btoa(encrypted);
         }
 
-        // AES Decryption
-        function decryptAES(ciphertext, key) {
-            const keyUtf8 = CryptoJS.enc.Utf8.parse(key); // Convert the key to WordArray
-            const bytes = CryptoJS.AES.decrypt(ciphertext, keyUtf8); // Decrypt the ciphertext
-            const decryptedText = bytes.toString(CryptoJS.enc.Utf8); // Convert bytes to string
-            return decryptedText;
-        }
-
-        // Encoding Function
-        function encodeText() {
-            let text = document.getElementById("inputText").value;
-
+        // XOR Decryption with Base64 decoding
+        function decryptXOR(base64, key) {
             try {
-                // Encrypt the text using AES
-                let encrypted = encryptAES(text, secretKey);
-                document.getElementById("outputText").value = encrypted; // Display the encrypted text
-            } catch (error) {
-                console.error("Error during encoding:", error);
-                document.getElementById("outputText").value = "Encoding failed!";
+                const encrypted = atob(base64);
+                let decrypted = '';
+                for (let i = 0; i < encrypted.length; i++) {
+                    const encryptedChar = encrypted.charCodeAt(i);
+                    const keyChar = key.charCodeAt(i % key.length);
+                    decrypted += String.fromCharCode(encryptedChar ^ keyChar);
+                }
+                return decrypted;
+            } catch (e) {
+                return null;
             }
         }
 
-        // Decoding Function
-        function decodeText() {
-            let encrypted = document.getElementById("outputText").value;
+        function encodeText() {
+            const text = document.getElementById("inputText").value;
+            if (!text.trim()) {
+                alert("Please enter some text to encode!");
+                return;
+            }
+            const encoded = encryptXOR(text, secretKey);
+            document.getElementById("outputText").value = encoded;
+        }
 
-            try {
-                // Decrypt the text using AES
-                let decrypted = decryptAES(encrypted, secretKey);
-                document.getElementById("outputText").value = decrypted; // Display the decrypted text
-            } catch (error) {
-                console.error("Error during decoding:", error);
-                document.getElementById("outputText").value = "Decoding failed. Please check your input!";
+        function decodeText() {
+            const encoded = document.getElementById("outputText").value;
+            if (!encoded.trim()) {
+                alert("No encoded text to decode!");
+                return;
+            }
+            const decoded = decryptXOR(encoded, secretKey);
+            if (decoded) {
+                document.getElementById("outputText").value = decoded;
+            } else {
+                alert("Decoding failed! Please check your input.");
             }
         }
     </script>
