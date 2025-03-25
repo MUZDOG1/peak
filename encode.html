@@ -24,43 +24,41 @@
     <script>
         const secretKey = "MUZDOG_SECRET";
 
-        // XOR Encryption/Decryption
+        // XOR Encryption
         function xorEncrypt(data, key) {
             return data.split('').map((char, i) => 
                 String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
             ).join('');
         }
         
-        // Shift characters by a specified value
+        // Shift Characters
         function shiftCharacters(str, shift) {
             return str.split('').map(char => 
                 String.fromCharCode(char.charCodeAt(0) + shift)
             ).join('');
         }
         
-        // Shuffle string and return both the shuffled string and mapping
+        // Shuffle and Unshuffle Logic
         function shuffleString(str) {
             let arr = str.split('');
-            let map = arr.map((_, index) => index); // Create an index map
-            map.sort(() => Math.random() - 0.5); // Randomly shuffle indices
+            let map = arr.map((_, index) => index); // Generate index mapping
+            map.sort(() => Math.random() - 0.5); // Shuffle indices randomly
 
             let shuffled = map.map(index => arr[index]).join('');
-            return { shuffled, map }; // Return both shuffled string and map
+            return { shuffled, map }; // Return shuffled string and map
         }
 
-        // Reverse the shuffle using the stored map
         function unshuffleString(shuffled, map) {
             let arr = shuffled.split('');
             let original = new Array(arr.length);
 
-            // Place characters back into their original positions
             map.forEach((shuffledIndex, originalIndex) => {
                 original[originalIndex] = arr[shuffledIndex];
             });
 
             return original.join('');
         }
-        
+
         // AES Encryption
         function encryptAES(text, key) {
             return CryptoJS.AES.encrypt(text, key).toString();
@@ -72,50 +70,56 @@
             return bytes.toString(CryptoJS.enc.Utf8);
         }
         
-        // Encode process
+        // Encoding Function
         function encodeText() {
             let text = document.getElementById("inputText").value;
-            
-            // Step 1: XOR Encryption
+
+            // XOR Step
             let xored = xorEncrypt(text, secretKey);
 
-            // Step 2: Shift characters
+            // Shift Characters
             let shifted = shiftCharacters(xored, 5);
 
-            // Step 3: Shuffle the characters
+            // Shuffle Step
             let shuffledObj = shuffleString(shifted);
             let shuffled = shuffledObj.shuffled;
             let map = shuffledObj.map;
 
-            // Step 4: AES Encryption
+            // AES Encryption
             let encrypted = encryptAES(shuffled, secretKey);
 
-            // Step 5: Convert to Base64 with the shuffle map included
+            // Combine Encrypted Text and Shuffle Map into Base64
             let base64 = btoa(JSON.stringify({ encrypted, map }));
             document.getElementById("outputText").value = base64;
         }
         
-        // Decode process
+        // Decoding Function
         function decodeText() {
             let base64 = document.getElementById("outputText").value;
-            
-            // Step 1: Decode Base64 and parse the stored JSON
-            let parsed = JSON.parse(atob(base64));
-            let encrypted = parsed.encrypted;
-            let map = parsed.map;
 
-            // Step 2: AES Decryption
-            let decrypted = decryptAES(encrypted, secretKey);
+            try {
+                // Parse Base64 Content
+                let parsed = JSON.parse(atob(base64));
+                let encrypted = parsed.encrypted;
+                let map = parsed.map;
 
-            // Step 3: Unshuffle the characters
-            let unshuffled = unshuffleString(decrypted, map);
+                // AES Decryption
+                let decrypted = decryptAES(encrypted, secretKey);
 
-            // Step 4: Reverse the character shift
-            let unshifted = shiftCharacters(unshuffled, -5);
+                // Unshuffle Step
+                let unshuffled = unshuffleString(decrypted, map);
 
-            // Step 5: XOR Decryption
-            let xored = xorEncrypt(unshifted, secretKey);
-            document.getElementById("outputText").value = xored;
+                // Reverse Character Shift
+                let unshifted = shiftCharacters(unshuffled, -5);
+
+                // XOR Decryption
+                let xored = xorEncrypt(unshifted, secretKey);
+
+                document.getElementById("outputText").value = xored;
+            } catch (error) {
+                console.error("Error during decoding:", error);
+                document.getElementById("outputText").value = "Decoding failed. Please check your input!";
+            }
         }
     </script>
 </body>
