@@ -327,6 +327,13 @@
         chatInput.value = "";
         return;
       }
+
+      // Add new encode command
+      if (text.toLowerCase() === "encode") {
+        window.location.href = "encode.html";
+        chatInput.value = "";
+       return;
+      }
       
       if (text) {
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
