@@ -22,17 +22,21 @@
     </div>
 
     <script>
-        const secretKey = "MUZDOG_SECRET";
+        const secretKey = "MUZDOG_SECRET"; // Secret key for AES
 
         // AES Encryption
         function encryptAES(text, key) {
-            return CryptoJS.AES.encrypt(text, CryptoJS.enc.Utf8.parse(key)).toString();
+            const keyUtf8 = CryptoJS.enc.Utf8.parse(key); // Convert the key to WordArray
+            const encrypted = CryptoJS.AES.encrypt(text, keyUtf8).toString(); // Encrypt the text
+            return encrypted;
         }
 
         // AES Decryption
         function decryptAES(ciphertext, key) {
-            let bytes = CryptoJS.AES.decrypt(ciphertext, CryptoJS.enc.Utf8.parse(key));
-            return bytes.toString(CryptoJS.enc.Utf8);
+            const keyUtf8 = CryptoJS.enc.Utf8.parse(key); // Convert the key to WordArray
+            const bytes = CryptoJS.AES.decrypt(ciphertext, keyUtf8); // Decrypt the ciphertext
+            const decryptedText = bytes.toString(CryptoJS.enc.Utf8); // Convert bytes to string
+            return decryptedText;
         }
 
         // Encoding Function
@@ -40,11 +44,9 @@
             let text = document.getElementById("inputText").value;
 
             try {
-                // AES Encryption
+                // Encrypt the text using AES
                 let encrypted = encryptAES(text, secretKey);
-
-                // Show the result
-                document.getElementById("outputText").value = encrypted;
+                document.getElementById("outputText").value = encrypted; // Display the encrypted text
             } catch (error) {
                 console.error("Error during encoding:", error);
                 document.getElementById("outputText").value = "Encoding failed!";
@@ -56,11 +58,9 @@
             let encrypted = document.getElementById("outputText").value;
 
             try {
-                // AES Decryption
+                // Decrypt the text using AES
                 let decrypted = decryptAES(encrypted, secretKey);
-
-                // Show the result
-                document.getElementById("outputText").value = decrypted;
+                document.getElementById("outputText").value = decrypted; // Display the decrypted text
             } catch (error) {
                 console.error("Error during decoding:", error);
                 document.getElementById("outputText").value = "Decoding failed. Please check your input!";
