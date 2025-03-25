@@ -175,9 +175,10 @@
     }
 
     async function filterMessage(message) {
+      // For each banned word, replace it with asterisks of equal length.
       bannedWords.forEach(word => {
         const regex = new RegExp(`\\b${word}\\b`, "gi");
-        message = message.replace(regex, "****");
+        message = message.replace(regex, (match) => "*".repeat(match.length));
       });
       return message;
     }
