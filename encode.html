@@ -68,12 +68,12 @@
 
         // AES Encryption
         function encryptAES(text, key) {
-            return CryptoJS.AES.encrypt(text, key).toString();
+            return CryptoJS.AES.encrypt(text, CryptoJS.enc.Utf8.parse(key)).toString();
         }
 
         // AES Decryption
         function decryptAES(ciphertext, key) {
-            let bytes = CryptoJS.AES.decrypt(ciphertext, key);
+            let bytes = CryptoJS.AES.decrypt(ciphertext, CryptoJS.enc.Utf8.parse(key));
             return bytes.toString(CryptoJS.enc.Utf8);
         }
 
