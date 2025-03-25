@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insane Encoder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        textarea { width: 80%; height: 100px; margin: 10px 0; display: block; margin-left: auto; margin-right: auto; }
+        button { padding: 10px; cursor: pointer; margin: 5px; }
+        .button-container { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Insane Encoder</h1>
+    <textarea id="inputText" placeholder="Enter your text"></textarea>
+    <textarea id="outputText" readonly></textarea>
+    <div class="button-container">
+        <button onclick="encodeText()">Encode</button>
+        <button onclick="decodeText()">Decode</button>
+    </div>
+
+    <script>
+        const secretKey = "MUZDOG_SECRET";
+
+        function xorEncrypt(data, key) {
+            return data.split('').map((char, i) => 
+                String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
+            ).join('');
+        }
+        
+        function shiftCharacters(str, shift) {
+            return str.split('').map(char => 
+                String.fromCharCode(char.charCodeAt(0) + shift)
+            ).join('');
+        }
+        
+        function shuffleString(str) {
+            return str.split('').sort(() => Math.random() - 0.5).join('');
+        }
+        
+        function unshuffleString(str, original) {
+            let map = [...original].map((char, i) => ({ char, i }));
+            map.sort((a, b) => str.indexOf(a.char) - str.indexOf(b.char));
+            return map.map(obj => obj.char).join('');
+        }
+        
+        function encryptAES(text, key) {
+            return CryptoJS.AES.encrypt(text, key).toString();
+        }
+
+        function decryptAES(ciphertext, key) {
+            let bytes = CryptoJS.AES.decrypt(ciphertext, key);
+            return bytes.toString(CryptoJS.enc.Utf8);
+        }
+        
+        function encodeText() {
+            let text = document.getElementById("inputText").value;
+            let xored = xorEncrypt(text, secretKey);
+            let shifted = shiftCharacters(xored, 5);
+            let shuffled = shuffleString(shifted);
+            let encrypted = encryptAES(shuffled, secretKey);
+            let base64 = btoa(encrypted);
+            document.getElementById("outputText").value = base64;
+        }
+        
+        function decodeText() {
+            let base64 = document.getElementById("outputText").value;
+            let encrypted = atob(base64);
+            let decrypted = decryptAES(encrypted, secretKey);
+            let unshuffled = unshuffleString(decrypted, shiftCharacters(secretKey, 5));
+            let unshifted = shiftCharacters(unshuffled, -5);
+            let xored = xorEncrypt(unshifted, secretKey);
+            document.getElementById("outputText").value = xored;
+        }
+    </script>
+</body>
+</html>
