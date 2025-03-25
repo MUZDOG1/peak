@@ -3,27 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Encoder</title>
+    <title>XENO CODER v1.3</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        textarea { width: 80%; height: 100px; margin: 10px 0; display: block; margin-left: auto; margin-right: auto; }
-        button { padding: 10px; cursor: pointer; margin: 5px; }
-        .button-container { margin-top: 10px; }
+        /* === FULL RETRO ALIEN STYLING === */
+        body {
+            background: #001100;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            text-align: center;
+            padding: 20px;
+            background-image: 
+                radial-gradient(circle at center, #002200 0%, #000 100%),
+                linear-gradient(45deg, transparent 48%, rgba(0,255,0,0.1) 50%, transparent 52%);
+            background-size: cover, 4px 4px;
+            min-height: 100vh;
+            overflow: hidden;
+            text-shadow: 0 0 5px #0f0;
+        }
+
+        .crt-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: linear-gradient(rgba(0,255,0,0.06) 50%, rgba(0,0,0,0.8) 50%);
+            background-size: 100% 3px;
+            animation: scanline 2s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+            margin: 20px 0;
+            font-size: 2em;
+            letter-spacing: 4px;
+            animation: glitch 1s infinite;
+            position: relative;
+        }
+
+        h1::before, h1::after {
+            content: 'XENO-CODER 1.3';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+        }
+
+        h1::before {
+            color: #0ff;
+            z-index: -1;
+            animation: glitch 0.3s infinite;
+        }
+
+        h1::after {
+            color: #f0f;
+            z-index: -2;
+            animation: glitch 0.5s infinite reverse;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        textarea {
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 15px;
+            width: 80%;
+            height: 100px;
+            margin: 20px auto;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 0 15px rgba(0,255,0,0.3);
+            transition: all 0.3s;
+            resize: none;
+            font-size: 16px;
+        }
+
+        textarea:focus {
+            outline: none;
+            box-shadow: 0 0 25px #0f0;
+            border-color: #0ff;
+        }
+
+        textarea#outputText {
+            background: #000511;
+            border-style: dashed;
+        }
+
+        button {
+            background: #002200;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 15px 30px;
+            margin: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+        }
+
+        button:hover {
+            background: #0f0;
+            color: #000;
+            text-shadow: 0 0 10px #000;
+            box-shadow: 0 0 25px #0f0;
+            transform: scale(1.05);
+        }
+
+        button::before {
+            content: '>';
+            position: absolute;
+            left: -20px;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        button:hover::before {
+            left: 10px;
+            opacity: 1;
+        }
+
+        button:active {
+            transform: scale(0.95);
+            background: #0ff;
+        }
+
+        .terminal {
+            border: 3px solid #0f0;
+            padding: 20px;
+            margin: 20px auto;
+            width: 85%;
+            position: relative;
+            background: rgba(0,20,0,0.2);
+            box-shadow: 0 0 30px rgba(0,255,0,0.2);
+        }
+
+        .terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #0f0, #0ff, #f0f, #0f0);
+            animation: rainbow 3s linear infinite;
+        }
+
+        .terminal::after {
+            content: 'SYSTEM READY';
+            position: absolute;
+            bottom: -15px;
+            right: 10px;
+            background: #000;
+            padding: 0 10px;
+            color: #0f0;
+            font-size: 0.8em;
+            border: 1px solid #0f0;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .pixel-cursor {
+            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6AIAhF5f8/2jYXZkwEjNSVvVUjDpcrGgT7FUkH2QxAHlMDN5FABET5Lz4CIPwiuLSIE8AsBY4vIQ8Dyn6BqMMw3wJjQzwnEvQB6DljCwCI8ijAPwDVsAQ8AXsCqy8A8I4jYH8CagCwCYDvD0IsAPV3AHl/AKCNAOwBlf0FAGDfAIA1AL++J4FxAPDVAJhRAGAB8oT8AHAJAIsBQP0JAJwA4BQAWAcAqAEAugAA0QBVUgMAmACqsQEAugEAKAAA8gBwJgCwFgCwCQBVUgKAlACwCACqJAAsAgDVAABVAABCAQDIADsRAHVQAbABAFQCABQBQF0CABQBABsCABoBABECADsFAC4EAJQBAB4CADwCADYGAJcGAJwGAKoGAKUPAOEPAOsPAFUSACwAAAAASUVORK5CYII='),
+            auto;
+        }
+
+        .alien-eyes {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #0f0 20%, transparent 70%);
+            border-radius: 50%;
+            top: 20px;
+            animation: blink 4s infinite;
+        }
+
+        .alien-eyes.left {
+            left: 20px;
+        }
+
+        .alien-eyes.right {
+            right: 20px;
+        }
+
+        @keyframes blink {
+            0%, 48%, 52%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.1); }
+        }
     </style>
 </head>
-<body>
-    <h1>Simple Encoder</h1>
-    <textarea id="inputText" placeholder="Enter your text"></textarea>
-    <textarea id="outputText" readonly></textarea>
-    <div class="button-container">
-        <button onclick="encodeText()">Encode</button>
-        <button onclick="decodeText()">Decode</button>
+<body class="pixel-cursor">
+    <div class="crt-effect"></div>
+    <div class="alien-eyes left"></div>
+    <div class="alien-eyes right"></div>
+    
+    <h1>XENO-CODER 1.3</h1>
+    
+    <div class="terminal">
+        <textarea id="inputText" placeholder="INITIALIZE INPUT SEQUENCE..."></textarea>
+        <textarea id="outputText" readonly placeholder="DECRYPTION MATRIX READY"></textarea>
+        <div>
+            <button onclick="encodeText()">ENCRYPT</button>
+            <button onclick="decodeText()">DECRYPT</button>
+            <button onclick="toggleHackMode()">HACKING MODE</button>
+            <button onclick="clearAll()">PURGE DATA</button>
+        </div>
     </div>
 
     <script>
-        const secretKey = "MUZDOG_SECRET"; // Secret key for encoding
+        // ====== FULL FUNCTIONAL CODE ======
+        const secretKey = "MUZDOG_SECRET";
+        let hackMode = false;
 
-        // XOR Encryption with Base64 encoding
         function encryptXOR(text, key) {
             let encrypted = '';
             for (let i = 0; i < text.length; i++) {
@@ -34,7 +250,6 @@
             return btoa(encrypted);
         }
 
-        // XOR Decryption with Base64 decoding
         function decryptXOR(base64, key) {
             try {
                 const encrypted = atob(base64);
@@ -53,25 +268,113 @@
         function encodeText() {
             const text = document.getElementById("inputText").value;
             if (!text.trim()) {
-                alert("Please enter some text to encode!");
+                showAlert("INPUT SEQUENCE REQUIRED!");
                 return;
             }
-            const encoded = encryptXOR(text, secretKey);
-            document.getElementById("outputText").value = encoded;
+            
+            // Show processing animation
+            const output = document.getElementById("outputText");
+            output.style.animation = "glitch 0.2s infinite";
+            output.placeholder = "ENCRYPTING...";
+            output.value = "";
+            
+            setTimeout(() => {
+                const encoded = encryptXOR(text, secretKey);
+                output.value = encoded;
+                output.style.animation = "";
+                if (hackMode) {
+                    output.style.animation = "glitch 0.5s";
+                    setTimeout(() => {
+                        output.style.animation = "";
+                    }, 500);
+                }
+            }, 500);
         }
 
         function decodeText() {
             const encoded = document.getElementById("outputText").value;
             if (!encoded.trim()) {
-                alert("No encoded text to decode!");
+                showAlert("NO ENCRYPTED DATA DETECTED!");
                 return;
             }
-            const decoded = decryptXOR(encoded, secretKey);
-            if (decoded) {
-                document.getElementById("outputText").value = decoded;
-            } else {
-                alert("Decoding failed! Please check your input.");
-            }
+            
+            // Show processing animation
+            const output = document.getElementById("outputText");
+            output.style.animation = "glitch 0.2s infinite";
+            output.placeholder = "DECRYPTING...";
+            
+            setTimeout(() => {
+                const decoded = decryptXOR(encoded, secretKey);
+                if (decoded) {
+                    output.value = decoded;
+                    if (hackMode) {
+                        document.getElementById("inputText").value = decoded;
+                        output.style.animation = "glitch 0.5s";
+                        setTimeout(() => {
+                            output.style.animation = "";
+                        }, 500);
+                    }
+                } else {
+                    showAlert("DECRYPTION FAILED! INVALID KEY OR DATA CORRUPTION");
+                }
+                output.style.animation = "";
+            }, 500);
+        }
+
+        function toggleHackMode() {
+            hackMode = !hackMode;
+            const elements = document.querySelectorAll('button, textarea, h1, .terminal');
+            elements.forEach(el => {
+                el.style.borderColor = hackMode ? '#f0f' : '#0f0';
+                el.style.boxShadow = hackMode ? 
+                    '0 0 15px rgba(255,0,255,0.5)' : 
+                    '0 0 15px rgba(0,255,0,0.3)';
+            });
+            document.body.style.color = hackMode ? '#f0f' : '#0f0';
+            document.body.style.textShadow = hackMode ? 
+                '0 0 10px #f0f' : '0 0 10px #0f0';
+            
+            // Toggle eye colors
+            document.querySelectorAll('.alien-eyes').forEach(eye => {
+                eye.style.background = hackMode ? 
+                    'radial-gradient(circle, #f0f 20%, transparent 70%)' : 
+                    'radial-gradient(circle, #0f0 20%, transparent 70%)';
+            });
+        }
+
+        function clearAll() {
+            document.getElementById("inputText").value = "";
+            document.getElementById("outputText").value = "";
+            document.getElementById("outputText").placeholder = "MATRIX RESET";
+            setTimeout(() => {
+                document.getElementById("outputText").placeholder = "DECRYPTION MATRIX READY";
+            }, 1000);
+        }
+
+        function showAlert(message) {
+            const alertBox = document.createElement('div');
+            alertBox.style.position = 'fixed';
+            alertBox.style.top = '50%';
+            alertBox.style.left = '50%';
+            alertBox.style.transform = 'translate(-50%, -50%)';
+            alertBox.style.backgroundColor = '#000';
+            alertBox.style.border = '2px solid #f00';
+            alertBox.style.padding = '20px';
+            alertBox.style.zIndex = '1000';
+            alertBox.style.color = '#f00';
+            alertBox.style.fontFamily = "'Press Start 2P', cursive";
+            alertBox.style.fontSize = '12px';
+            alertBox.style.boxShadow = '0 0 20px #f00';
+            alertBox.textContent = message;
+            
+            document.body.appendChild(alertBox);
+            
+            setTimeout(() => {
+                alertBox.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(alertBox);
+                }, 500);
+            }, 2000);
         }
     </script>
 </body>
