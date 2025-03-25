@@ -21,7 +21,6 @@ import {
   signOut 
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// Firebase Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAr_YalGc9rlZijAY17uQPAT2PyxfMiD-8",
   authDomain: "chatroom-80c45.firebaseapp.com",
@@ -32,16 +31,12 @@ const firebaseConfig = {
   measurementId: "G-4973KL5NCN"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 const rtdb = getDatabase(app);
 
-// -------------------------------
-// User Presence (RTDB)
-// -------------------------------
 function updateUserStatus(isOnline) {
   const userKey = auth.currentUser ? auth.currentUser.uid : "Guest";
   const userStatusRef = ref(rtdb, `onlineUsers/${userKey}`);
@@ -57,9 +52,6 @@ function updateUserStatus(isOnline) {
   }
 }
 
-// -------------------------------
-// Site Visits Counter (Firestore)
-// -------------------------------
 const siteStatsRef = doc(db, "analytics", "siteStats");
 
 async function incrementSiteVisits() {
@@ -93,9 +85,6 @@ async function getSiteVisits() {
   }
 }
 
-// -------------------------------
-// Authentication Functions
-// -------------------------------
 async function signUp(email, password, username) {
   try {
     const normalizedUsername = username.toLowerCase();
@@ -150,9 +139,6 @@ async function logout() {
   }
 }
 
-// -------------------------------
-// Admin Functions
-// -------------------------------
 async function banUser(userId) {
   try {
     await updateDoc(doc(db, "users", userId), {
@@ -177,23 +163,17 @@ async function unbanUser(userId) {
   }
 }
 
-// NEW FUNCTION: Server-side admin status check
+// Add this new function
 async function checkAdminStatus(userId) {
   try {
     const userDoc = await getDoc(doc(db, "users", userId));
-    if (userDoc.exists()) {
-      return userDoc.data().isAdmin === true;
-    }
-    return false;
+    return userDoc.exists() && userDoc.data().isAdmin === true;
   } catch (error) {
     console.error("Error checking admin status:", error);
     return false;
   }
 }
 
-// -------------------------------
-// Exports
-// -------------------------------
 export { 
   db, 
   storage, 
@@ -206,5 +186,5 @@ export {
   logout,
   banUser,
   unbanUser,
-  checkAdminStatus // NEW EXPORT
+  checkAdminStatus
 };

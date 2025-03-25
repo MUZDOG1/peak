@@ -268,6 +268,8 @@
     );
     onSnapshot(q, async (snapshot) => {
       await loadBannedWords();
+      const currentUserIsAdmin = auth.currentUser ? await checkAdminStatus(auth.currentUser.uid) : false;
+      
       const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
         const message = docSnap.data();
         let timestamp = message.timestamp && typeof message.timestamp.toDate === 'function'
@@ -290,7 +292,7 @@
             username = userDoc.data().username;
           }
         }
-        const deleteButton = isAdmin 
+        const deleteButton = currentUserIsAdmin 
           ? `<button class="delete-btn" onclick="deleteMessage('${docSnap.id}')">Delete</button>` 
           : "";
         return `
@@ -318,14 +320,13 @@
         return;
       }
 
-      // Verify admin status on server side
-      const isActuallyAdmin = await checkAdminStatus(auth.currentUser.uid);
-      if (!isActuallyAdmin) {
-        alert("You are not authorized to delete messages.");
-        return;
-      }
-
       try {
+        const isAdmin = await checkAdminStatus(auth.currentUser.uid);
+        if (!isAdmin) {
+          alert("You are not authorized to delete messages.");
+          return;
+        }
+
         await deleteDoc(doc(db, "chatrooms/general/messages", messageId));
       } catch (error) {
         console.error("Error deleting message:", error);
@@ -928,7 +929,6 @@
   </div>
 </body>
 </html>
-
 
 <!--ALSO ADD DELETE ALL USER MESSAGE BUTTON AND USERNAME FILTERING-->
 <!--ADD AI FILTERING-->
