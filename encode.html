@@ -24,28 +24,37 @@
     <script>
         const secretKey = "MUZDOG_SECRET";
 
-        // XOR Encryption
+        // XOR Encryption with Base64 for safe handling of special characters
         function xorEncrypt(data, key) {
-            return data.split('').map((char, i) => 
+            let xored = data.split('').map((char, i) => 
+                String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
+            ).join('');
+            return btoa(xored); // Convert to Base64 for safe storage
+        }
+
+        // XOR Decryption with Base64 decoding
+        function xorDecrypt(data, key) {
+            let decoded = atob(data); // Decode from Base64
+            return decoded.split('').map((char, i) => 
                 String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
             ).join('');
         }
-        
+
         // Shift Characters
         function shiftCharacters(str, shift) {
             return str.split('').map(char => 
                 String.fromCharCode(char.charCodeAt(0) + shift)
             ).join('');
         }
-        
-        // Shuffle and Unshuffle Logic
+
+        // Shuffle and Unshuffle Functions
         function shuffleString(str) {
             let arr = str.split('');
-            let map = arr.map((_, index) => index); // Generate index mapping
-            map.sort(() => Math.random() - 0.5); // Shuffle indices randomly
+            let map = arr.map((_, index) => index); // Generate index map
+            map.sort(() => Math.random() - 0.5); // Randomly shuffle indices
 
             let shuffled = map.map(index => arr[index]).join('');
-            return { shuffled, map }; // Return shuffled string and map
+            return { shuffled, map };
         }
 
         function unshuffleString(shuffled, map) {
@@ -69,12 +78,12 @@
             let bytes = CryptoJS.AES.decrypt(ciphertext, key);
             return bytes.toString(CryptoJS.enc.Utf8);
         }
-        
+
         // Encoding Function
         function encodeText() {
             let text = document.getElementById("inputText").value;
 
-            // XOR Step
+            // XOR Step with Base64
             let xored = xorEncrypt(text, secretKey);
 
             // Shift Characters
@@ -92,7 +101,7 @@
             let base64 = btoa(JSON.stringify({ encrypted, map }));
             document.getElementById("outputText").value = base64;
         }
-        
+
         // Decoding Function
         function decodeText() {
             let base64 = document.getElementById("outputText").value;
@@ -112,8 +121,8 @@
                 // Reverse Character Shift
                 let unshifted = shiftCharacters(unshuffled, -5);
 
-                // XOR Decryption
-                let xored = xorEncrypt(unshifted, secretKey);
+                // XOR Decryption with Base64
+                let xored = xorDecrypt(unshifted, secretKey);
 
                 document.getElementById("outputText").value = xored;
             } catch (error) {
