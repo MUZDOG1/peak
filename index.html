@@ -58,11 +58,10 @@
 
     const logoutBtn = document.getElementById("logoutBtn");
 
-    // Settings elements for dark/light mode and account deletion
+    // Settings elements for dark/light mode
     const settingsBtn = document.getElementById("settingsBtn");
     const settingsPanel = document.getElementById("settingsPanel");
     const darkModeToggle = document.getElementById("darkModeToggle");
-    const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
     // -------------------------------
     // Dark Mode Initialization
@@ -183,42 +182,6 @@
     });
 
     // -------------------------------
-    // Account Deletion Feature with Cascade Message Deletion
-    // -------------------------------
-    deleteAccountBtn.addEventListener("click", async () => {
-      if (!auth.currentUser) {
-        alert("You must be logged in to delete your account.");
-        return;
-      }
-      if (confirm("Are you sure you want to delete your account? This will remove your record and all your messages, update the user count, and sign you out.")) {
-        try {
-          // Delete the user document from "users" collection.
-          const userUid = auth.currentUser.uid;
-          await deleteDoc(doc(db, "users", userUid));
-
-          // Cascade deletion: delete all messages from this user.
-          const messagesQuery = query(
-            collection(db, "chatrooms/general/messages"),
-            where("senderId", "==", userUid)
-          );
-          const messagesSnapshot = await getDocs(messagesQuery);
-          const deletePromises = messagesSnapshot.docs.map(docSnap => 
-            deleteDoc(doc(db, "chatrooms/general/messages", docSnap.id))
-          );
-          await Promise.all(deletePromises);
-
-          // Update the user count.
-          updateRegisteredUsersCount();
-          // Sign out the user.
-          logout();
-        } catch (error) {
-          console.error("Error deleting account:", error);
-          alert("Failed to delete account. Check the console for details.");
-        }
-      }
-    });
-
-    // -------------------------------
     // Authentication State Listener
     // -------------------------------
     onAuthStateChanged(auth, async (user) => {
@@ -301,7 +264,7 @@
             username = userDoc.data().username;
           }
         }
-        // If admin, include a delete button for each message.
+        // Only show delete button for admins
         const deleteButton = isAdmin 
           ? `<button class="delete-btn" onclick="deleteMessage('${docSnap.id}')">Delete</button>` 
           : "";
@@ -610,15 +573,7 @@
     #settingsPanel.open {
       display: block;
     }
-    /* Delete Account button styling, placed below dark mode toggle */
-    #deleteAccountBtn {
-      margin-top: 10px;
-      padding: 6px 12px;
-      background: #c00;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-    }
+    /* Delete Account button styling removed */
     #adminUserList {
       max-height: 150px;
       overflow-y: auto;
@@ -789,12 +744,11 @@
     </div>
   </header>
 
-  <!-- Settings Panel -->
+  <!-- Settings Panel (Delete Account button removed) -->
   <div id="settingsPanel">
     <h3>Settings</h3>
     <label for="darkModeToggle">Dark Mode:</label>
     <input type="checkbox" id="darkModeToggle">
-    <button id="deleteAccountBtn">Delete Account</button>
   </div>
 
   <!-- Authentication Section -->
