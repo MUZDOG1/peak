@@ -744,6 +744,57 @@
       100% { transform: translateY(calc(100vh + 100px)); }
     }
 
+    /* Dark Mode Specific Styles */
+    body.dark-mode {
+      background: #222 !important;
+      color: #fff !important;
+    }
+    body.dark-mode .muzdog-header {
+      background: #111 !important;
+      border-bottom: 1px solid #333;
+    }
+    body.dark-mode .chat-header {
+      background: #111 !important;
+      color: #ff4500 !important;
+      border-bottom: 1px solid #333;
+    }
+    body.dark-mode .container,
+    body.dark-mode .auth-container,
+    body.dark-mode .chat-input-area {
+      background: #333 !important;
+      border: 1px solid #444 !important;
+    }
+    body.dark-mode #adminPanel {
+      background: #333 !important;
+      border: 2px solid #f00 !important;
+      color: #fff !important;
+    }
+    body.dark-mode #settingsPanel {
+      background: #333 !important;
+      border: 1px solid #444 !important;
+      color: #fff !important;
+    }
+    body.dark-mode input,
+    body.dark-mode button {
+      background: #444 !important;
+      border: 1px solid #555 !important;
+      color: #fff !important;
+    }
+    body.dark-mode .delete-btn {
+      background: #c00 !important;
+      color: #fff !important;
+    }
+    body.dark-mode .chat-messages {
+      background: #222 !important;
+    }
+    body.dark-mode .message {
+      background: #444 !important;
+      border-color: #555 !important;
+    }
+    body.dark-mode .timestamp {
+      color: #bbb !important;
+    }
+
     /* Hacker Mode Specific Styles */
     body.hacker-mode {
       background: #000 !important;
@@ -899,7 +950,6 @@
   </div>
 </body>
 </html>
-
 
 <!--ALSO ADD DELETE ALL USER MESSAGE BUTTON AND USERNAME FILTERING-->
 <!--ADD AI FILTERING-->
