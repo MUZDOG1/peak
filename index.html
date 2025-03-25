@@ -14,7 +14,8 @@
       signUp, 
       logout,
       banUser,
-      unbanUser  
+      unbanUser,
+      checkAdminStatus
     } from "./firebase.js";
     import { 
       collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, 
@@ -104,7 +105,7 @@
       if (canvas) canvas.remove();
     }
 
-    // Theme Management - FIXED VERSION
+    // Theme Management
     function loadTheme() {
       const theme = localStorage.getItem("theme") || "light";
       setTheme(theme);
@@ -312,10 +313,18 @@
     });
 
     window.deleteMessage = async function(messageId) {
-      if (!isAdmin) {
+      if (!auth.currentUser) {
+        alert("You must be logged in to delete messages.");
+        return;
+      }
+
+      // Verify admin status on server side
+      const isActuallyAdmin = await checkAdminStatus(auth.currentUser.uid);
+      if (!isActuallyAdmin) {
         alert("You are not authorized to delete messages.");
         return;
       }
+
       try {
         await deleteDoc(doc(db, "chatrooms/general/messages", messageId));
       } catch (error) {
@@ -720,7 +729,7 @@
       100% { transform: translateY(calc(100vh + 100px)); }
     }
 
-    /* Dark Mode - FIXED */
+    /* Dark Mode */
     body.dark-mode {
       background: #121212 !important;
       color: #e0e0e0 !important;
