@@ -12,7 +12,7 @@
       text-align: center;
       overflow: hidden;
       /* Custom “rage” cursor (optional) */
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
     #gameCanvas {
       display: block;
@@ -45,6 +45,19 @@
       width: 100%;
       background: #ff0000;
     }
+    /* Settings menu styling */
+    #settingsMenu {
+      background: #300000;
+      border: 1px solid #ff4444;
+      padding: 10px;
+      margin: 10px auto;
+      width: 300px;
+      color: #ffaaaa;
+      text-align: left;
+    }
+    #settingsMenu label {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -52,6 +65,11 @@
   <div id="instructions">ARROW KEYS: Move | SPACE: Attack</div>
   <div id="healthBar"><div id="healthFill"></div></div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <!-- Settings Menu -->
+  <div id="settingsMenu">
+    <strong>Settings</strong><br>
+    <input type="checkbox" id="debugCheckbox"> <label for="debugCheckbox">Debug Mode</label>
+  </div>
 
   <script>
     // ====================
@@ -60,6 +78,11 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const healthFill = document.getElementById('healthFill');
+    const debugCheckbox = document.getElementById('debugCheckbox');
+    let debugMode = false;
+    debugCheckbox.addEventListener('change', () => {
+      debugMode = debugCheckbox.checked;
+    });
 
     // ====================
     //   IMAGES
@@ -110,26 +133,23 @@
     // =========================
     //   COLLISION BOXES (UNWALKABLE AREAS)
     // =========================
-    // Adjust these boxes so they cover only the red (unwalkable) areas.
-    // Everything not defined here will be walkable.
     const walls = [
-     // Left bottom wall
-    { x: 1.5, y: 331, width: 250.5, height: 25 },
-    // Right bottom wall
-    { x: 342, y: 330, width: 500, height: 25 }, // ← Added comma here
-    // Top right wall
-    { x: 153, y: 0, width: 25, height: 200 },
-    // Top left wall 
-    { x: 0.5, y: 166, width: 75, height: 25 },
+      // Left bottom wall
+      { x: 1.5, y: 331, width: 250.5, height: 25 },
+      // Right bottom wall
+      { x: 342, y: 330, width: 500, height: 25 },
+      // Top right wall
+      { x: 153, y: 0, width: 25, height: 200 },
+      // Top left wall 
+      { x: 0.5, y: 166, width: 75, height: 25 }
+    ];
 
-  ];
-  
     // ====================
     //   INPUT HANDLING
     // ====================
     const keys = {};
     document.addEventListener('keydown', e => keys[e.key] = true);
-    document.addEventListener('keyup',   e => keys[e.key] = false);
+    document.addEventListener('keyup', e => keys[e.key] = false);
 
     // ====================
     //   COLLISION CHECK
@@ -207,10 +227,10 @@
     function update() {
       // Handle player movement
       let moveX = 0, moveY = 0;
-      if (keys['ArrowUp'])    moveY = -player.speed;
-      if (keys['ArrowDown'])  moveY =  player.speed;
-      if (keys['ArrowLeft'])  moveX = -player.speed;
-      if (keys['ArrowRight']) moveX =  player.speed;
+      if (keys['ArrowUp']) moveY = -player.speed;
+      if (keys['ArrowDown']) moveY = player.speed;
+      if (keys['ArrowLeft']) moveX = -player.speed;
+      if (keys['ArrowRight']) moveX = player.speed;
       moveEntity(player, moveX, moveY);
 
       // Handle attack input
@@ -234,8 +254,8 @@
       // Keep entities within canvas bounds
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-      enemy.x  = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
-      enemy.y  = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
+      enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
+      enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
     }
 
     function draw() {
@@ -247,17 +267,26 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Debug: Visualize collision boxes (unwalkable areas)
-      // Comment out if you don't want the overlay.
-      ctx.save();
-      ctx.globalAlpha = 0.3;
-      ctx.fillStyle = '#ff0000';  // Red = unwalkable
-      walls.forEach(wall => {
-        ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
-      });
-      ctx.restore();
+      // Debug: Draw wall borders and enemy hitbox if Debug Mode is on.
+      if (debugMode) {
+        // Draw walls
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#ff0000'; // Red for walls
+        walls.forEach(wall => {
+          ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+        });
+        ctx.restore();
 
-      // Draw the enemy (select appropriate sprite)
+        // Draw enemy hitbox
+        ctx.save();
+        ctx.strokeStyle = '#00ff00'; // Green for enemy hitbox
+        ctx.lineWidth = 2;
+        ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        ctx.restore();
+      }
+
+      // Draw the enemy (choose appropriate sprite)
       if (enemy.isHurt && enemyHitImage.complete) {
         ctx.drawImage(enemyHitImage, enemy.x, enemy.y, enemy.width, enemy.height);
       } else if (enemyIdleImage.complete) {
@@ -277,7 +306,7 @@
         ctx.fillRect(player.x, player.y, player.width, player.height);
       }
 
-      // Optional: Highlight enemy if within attack range.
+      // Optional: Highlight enemy if within attack range (only in debug mode)
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemy.x + enemy.width / 2;
@@ -285,20 +314,22 @@
       const dx = px - ex;
       const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < 100) {
+      if (distance < 100 && debugMode) {
+        ctx.save();
         ctx.strokeStyle = '#ff0000';
         ctx.lineWidth = 2;
         ctx.strokeRect(enemy.x - 5, enemy.y - 5, enemy.width + 10, enemy.height + 10);
+        ctx.restore();
       }
     }
 
-      canvas.addEventListener('mousemove', (event) => {
+    // Mouse position tracker (for debugging purposes)
+    canvas.addEventListener('mousemove', (event) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
       console.log(`Mouse X: ${mouseX}, Mouse Y: ${mouseY}`);
     });
-
 
     function gameLoop() {
       update();
