@@ -12,7 +12,7 @@
       text-align: center;
       overflow: hidden;
       /* Custom “rage” cursor (optional) */
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
     #gameCanvas {
       display: block;
@@ -62,7 +62,7 @@
 </head>
 <body>
   <h1>RAGE SIMULATOR</h1>
-  <div id="instructions">ARROW KEYS: Move | SPACE: Attack</div>
+  <div id="instructions">WASD: Move | SPACE: Attack</div>
   <div id="healthBar"><div id="healthFill"></div></div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <!-- Settings Menu -->
@@ -148,8 +148,8 @@
     //   INPUT HANDLING
     // ====================
     const keys = {};
-    document.addEventListener('keydown', e => keys[e.key] = true);
-    document.addEventListener('keyup', e => keys[e.key] = false);
+    document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
     // ====================
     //   COLLISION CHECK
@@ -225,12 +225,12 @@
     //   GAME LOOP
     // ====================
     function update() {
-      // Handle player movement
+      // Handle player movement using WASD keys
       let moveX = 0, moveY = 0;
-      if (keys['ArrowUp']) moveY = -player.speed;
-      if (keys['ArrowDown']) moveY = player.speed;
-      if (keys['ArrowLeft']) moveX = -player.speed;
-      if (keys['ArrowRight']) moveX = player.speed;
+      if (keys['w']) moveY = -player.speed;
+      if (keys['s']) moveY = player.speed;
+      if (keys['a']) moveX = -player.speed;
+      if (keys['d']) moveX = player.speed;
       moveEntity(player, moveX, moveY);
 
       // Handle attack input
