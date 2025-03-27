@@ -100,7 +100,8 @@
       width: 50,
       height: 50,
       isHurt: false,
-      isEscaping: false
+      knockbackVelocity: { x: 0, y: 0 },
+      knockbackDuration: 0
     };
 
     // Keyboard input
@@ -129,7 +130,17 @@
         setTimeout(() => player.isPunching = false, 200);
         
         enemy.isHurt = true;
-        enemy.isEscaping = true;  // Enemy starts escaping
+        
+        // Calculate knockback direction and intensity
+        const knockbackIntensity = 15;
+        const knockbackDuration = 15; // How many frames the knockback lasts
+        
+        // Normalize direction vector
+        const mag = Math.sqrt(dx * dx + dy * dy);
+        enemy.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
+        enemy.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
+        enemy.knockbackDuration = knockbackDuration;
+        
         enemyHealth -= 10;
         healthFill.style.width = `${enemyHealth}%`;
         
@@ -142,34 +153,7 @@
         lastAttackTime = now;
         // Show the hit image for 1 second
         setTimeout(() => enemy.isHurt = false, 1000);
-        // Let enemy escape for 2 seconds
-        setTimeout(() => enemy.isEscaping = false, 2000);
       }
-    }
-
-    // Collision detection (unused for attack now but available)
-    function isColliding(a, b) {
-      return a.x < b.x + b.width &&
-             a.x + a.width > b.x &&
-             a.y < b.y + b.height &&
-             a.y + a.height > b.y;
-    }
-
-    // Blood effect (optional)
-    function createBloodEffect(x, y) {
-      const blood = document.createElement('div');
-      blood.className = 'blood-effect';
-      blood.style.left = (x + canvas.offsetLeft + Math.random() * 30) + 'px';
-      blood.style.top = (y + canvas.offsetTop + Math.random() * 30) + 'px';
-      blood.style.width = (10 + Math.random() * 20) + 'px';
-      blood.style.height = blood.style.width;
-      blood.style.opacity = 0.7;
-      document.body.appendChild(blood);
-      
-      setTimeout(() => {
-        blood.style.opacity = 0;
-        setTimeout(() => blood.remove(), 300);
-      }, 50);
     }
 
     // Game loop update
@@ -187,29 +171,25 @@
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       
-      // Enemy movement
-      if (enemy.isEscaping) {
-        // Calculate vector from player to enemy, then normalize it to run away
-        const enemyCenterX = enemy.x + enemy.width / 2;
-        const enemyCenterY = enemy.y + enemy.height / 2;
-        const playerCenterX = player.x + player.width / 2;
-        const playerCenterY = player.y + player.height / 2;
-        let dx = enemyCenterX - playerCenterX;
-        let dy = enemyCenterY - playerCenterY;
-        let mag = Math.sqrt(dx * dx + dy * dy);
-        if (mag === 0) mag = 1;
-        dx /= mag;
-        dy /= mag;
-        const escapeSpeed = 8;
-        enemy.x += dx * escapeSpeed;
-        enemy.y += dy * escapeSpeed;
+      // Enemy knockback movement
+      if (enemy.knockbackDuration > 0) {
+        enemy.x += enemy.knockbackVelocity.x;
+        enemy.y += enemy.knockbackVelocity.y;
+        
+        // Gradually reduce knockback velocity
+        enemy.knockbackVelocity.x *= 0.9;
+        enemy.knockbackVelocity.y *= 0.9;
+        
+        enemy.knockbackDuration--;
       } else {
-        // If not escaping, enemy moves randomly at times
+        // Random wandering when not knocked back
         if (Math.random() < 0.02) {
           enemy.x += (Math.random() * 6 - 3);
           enemy.y += (Math.random() * 6 - 3);
         }
       }
+      
+      // Keep enemy within canvas bounds
       enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
       enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
     }
@@ -226,7 +206,7 @@
         ctx.drawImage(enemyIdleImage, enemy.x, enemy.y, enemy.width, enemy.height);
       } else {
         // Fallback rectangle if image not loaded
-        ctx.fillStyle = enemy.isHurt ? '#ff9999' : enemy.color;
+        ctx.fillStyle = enemy.isHurt ? '#ff9999' : '#ff0000';
         ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
       }
       
