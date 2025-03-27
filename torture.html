@@ -2,43 +2,187 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>torture them.</title>
+  <title>POSTAL 2: Eternal Damnation</title>
   <style>
     body {
       margin: 0;
-      background: #111;
-      color: #fff;
-      font-family: sans-serif;
+      background: #1a0a0a url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAKrVq36zwjjgzhhYWGMYAEYB8RmROaABADeOQ8CXl/xfgAAAABJRU5ErkJggg==');
+      color: #ff4444;
+      font-family: 'Arial Black', Gadget, sans-serif;
       text-align: center;
+      text-transform: uppercase;
+      overflow-x: hidden;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
+
     #gameCanvas {
-      background: #222;
+      background: linear-gradient(45deg, #2a0a0a 0%, #3a1a1a 100%);
       display: block;
       margin: 20px auto;
-      border: 2px solid #444;
+      border: 5px solid #5a3a3a;
+      border-radius: 10px;
+      box-shadow: 0 0 30px #ff00004d,
+                  inset 0 0 20px #00000080;
+      position: relative;
+      transition: transform 0.1s;
     }
+
+    h1 {
+      font-family: 'Creepster', cursive;
+      font-size: 4em;
+      text-shadow: 3px 3px 0 #000,
+                   0 0 10px #ff0000;
+      margin: 20px 0;
+      animation: bloodPulse 2s infinite;
+      letter-spacing: 3px;
+    }
+
     #instructions {
-      margin-top: 10px;
+      background: #300000;
+      border: 2px solid #ff4444;
+      padding: 15px;
+      margin: 20px auto;
+      width: 300px;
+      border-radius: 5px;
+      box-shadow: 0 0 15px #ff000080;
+      font-size: 1.2em;
+      color: #ff9090;
+      text-shadow: 1px 1px 1px #000;
+    }
+
+    #bloodOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    /* CRT effect overlay */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    @keyframes bloodPulse {
+      0% { text-shadow: 3px 3px 0 #000, 0 0 10px #ff0000; }
+      50% { text-shadow: 5px 5px 0 #000, 0 0 20px #ff0000; }
+      100% { text-shadow: 3px 3px 0 #000, 0 0 10px #ff0000; }
+    }
+
+    .blood-text {
+      position: absolute;
+      color: #ff0000;
+      font-size: 24px;
+      animation: bloodSpray 0.5s forwards;
+      pointer-events: none;
+      z-index: 1000;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    @keyframes bloodSpray {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-50px) scale(3); }
+    }
+
+    #healthBar {
+      width: 200px;
+      height: 20px;
+      background: #300000;
+      margin: 0 auto;
+      border: 2px solid #ff4444;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    #healthFill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(to right, #ff0000, #ff6666);
+      transition: width 0.3s;
     }
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>kill them all.</h1>
-  <p id="instructions">Press SPACE to hit when near the enemy.</p>
+  <h1>POSTAL ULTIMATE PAYBACK</h1>
+  <p id="instructions">[ ARROWS ] TO MOVE | [ SPACE ] TO ERADICATE</p>
+  <div id="healthBar"><div id="healthFill"></div></div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="bloodOverlay"></div>
+
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const bloodOverlay = document.getElementById('bloodOverlay');
+    const healthFill = document.getElementById('healthFill');
 
-    // Load the images for the attacker and enemy
-    const attackerImage = new Image();
-    attackerImage.src = 'idle.png';
+    // Game state
+    let enemyHealth = 100;
+    let bloodDecals = [];
+    let lastHitTime = 0;
 
-    const enemyImage = new Image();
-    enemyImage.src = 'enemyidle.png';
+    // Create placeholder graphics (replace with actual sprites)
+    function createPlaceholderGraphics() {
+      // Attacker (Postal Dude)
+      const attackerCanvas = document.createElement('canvas');
+      attackerCanvas.width = 50;
+      attackerCanvas.height = 50;
+      const aCtx = attackerCanvas.getContext('2d');
+      aCtx.fillStyle = '#3333ff';
+      aCtx.fillRect(0, 0, 50, 50);
+      aCtx.fillStyle = '#ffffff';
+      aCtx.fillRect(20, 10, 10, 10); // Eyes
+      aCtx.fillRect(20, 25, 10, 5); // Mouth
+      return attackerCanvas;
+    }
 
-    const hitImage = new Image();
-    hitImage.src = 'hit.png';
+    function createEnemyGraphics() {
+      // Enemy (Hate)
+      const enemyCanvas = document.createElement('canvas');
+      enemyCanvas.width = 50;
+      enemyCanvas.height = 50;
+      const eCtx = enemyCanvas.getContext('2d');
+      eCtx.fillStyle = '#ff3333';
+      eCtx.fillRect(0, 0, 50, 50);
+      eCtx.fillStyle = '#000000';
+      eCtx.fillRect(15, 10, 5, 15); // Eyes
+      eCtx.fillRect(30, 10, 5, 15);
+      eCtx.fillRect(15, 30, 20, 5); // Mouth
+      return enemyCanvas;
+    }
+
+    function createHitGraphics() {
+      // Hit effect
+      const hitCanvas = document.createElement('canvas');
+      hitCanvas.width = 50;
+      hitCanvas.height = 50;
+      const hCtx = hitCanvas.getContext('2d');
+      hCtx.fillStyle = '#ff0000';
+      hCtx.fillRect(0, 0, 50, 50);
+      hCtx.fillStyle = '#ffffff';
+      hCtx.font = 'bold 10px Arial';
+      hCtx.fillText('!', 25, 25);
+      return hitCanvas;
+    }
+
+    // Create placeholder images
+    const attackerImage = createPlaceholderGraphics();
+    const enemyImage = createEnemyGraphics();
+    const hitImage = createHitGraphics();
 
     // Game objects
     const attacker = {
@@ -54,28 +198,39 @@
       y: 300,
       width: 50,
       height: 50,
-      isHurt: false // Used to track hit state
+      isHurt: false
     };
 
-    // Flag to show hit image
-    let enemyHit = false;
-
-    // Keyboard state for movement
+    // Keyboard state
     const keys = {};
 
     window.addEventListener('keydown', (e) => {
       keys[e.key] = true;
-      // Trigger hit interaction on space press if near the enemy
+      
       if (e.key === ' ') {
-        if (isNear(attacker, target, 100)) {  // 100-pixel threshold
-          target.isHurt = true;
-          enemyHit = true;
-          console.log("Torture interaction triggered!");
-          // After 1 second, revert back to normal
-          setTimeout(() => {
-            target.isHurt = false;
-            enemyHit = false;
-          }, 1000);
+        const now = Date.now();
+        if (now - lastHitTime > 500) { // Cooldown
+          if (isNear(attacker, target, 100)) {
+            target.isHurt = true;
+            enemyHealth -= 10;
+            healthFill.style.width = `${enemyHealth}%`;
+            createBloodText(target.x + 25, target.y - 20);
+            addBloodDecal(target.x, target.y);
+            screenShake();
+            
+            if (enemyHealth <= 0) {
+              createBloodText(canvas.width/2, canvas.height/2, "FINISHED!");
+              enemyHealth = 100;
+              setTimeout(() => {
+                healthFill.style.width = '100%';
+              }, 1000);
+            }
+            
+            lastHitTime = now;
+            setTimeout(() => {
+              target.isHurt = false;
+            }, 300);
+          }
         }
       }
     });
@@ -84,47 +239,111 @@
       keys[e.key] = false;
     });
 
-    // Check if attacker is near the target (distance between centers)
     function isNear(a, b, threshold) {
       const ax = a.x + a.width / 2;
       const ay = a.y + a.height / 2;
       const bx = b.x + b.width / 2;
       const by = b.y + b.height / 2;
-      const distance = Math.hypot(ax - bx, ay - by);
-      return distance <= threshold;
+      return Math.hypot(ax - bx, ay - by) <= threshold;
+    }
+
+    function createBloodText(x, y, text = 'KILL!') {
+      const blood = document.createElement('div');
+      blood.className = 'blood-text';
+      blood.style.left = (x + canvas.offsetLeft) + 'px';
+      blood.style.top = (y + canvas.offsetTop) + 'px';
+      blood.textContent = text;
+      document.body.appendChild(blood);
+      setTimeout(() => blood.remove(), 500);
+    }
+
+    function addBloodDecal(x, y) {
+      bloodDecals.push({
+        x: x + Math.random() * 30 - 15,
+        y: y + Math.random() * 30 - 15,
+        size: 10 + Math.random() * 20,
+        opacity: 0.7 + Math.random() * 0.3
+      });
+      
+      // Flash blood overlay
+      bloodOverlay.style.background = 'rgba(255,0,0,0.3)';
+      bloodOverlay.style.opacity = '1';
+      setTimeout(() => {
+        bloodOverlay.style.opacity = '0';
+      }, 100);
+    }
+
+    function screenShake(intensity = 5) {
+      let shakes = 0;
+      const maxShakes = intensity;
+      const shakeInterval = setInterval(() => {
+        if (shakes < maxShakes) {
+          canvas.style.transform = `translate(${Math.random() * 6 - 3}px, ${Math.random() * 6 - 3}px)`;
+          shakes++;
+        } else {
+          clearInterval(shakeInterval);
+          canvas.style.transform = '';
+        }
+      }, 50);
     }
 
     function update() {
-      // Movement controls for the attacker using arrow keys
+      // Movement
       if (keys['ArrowUp']) attacker.y -= attacker.speed;
       if (keys['ArrowDown']) attacker.y += attacker.speed;
       if (keys['ArrowLeft']) attacker.x -= attacker.speed;
       if (keys['ArrowRight']) attacker.x += attacker.speed;
 
-      // Keep attacker within canvas bounds
+      // Boundaries
       attacker.x = Math.max(0, Math.min(canvas.width - attacker.width, attacker.x));
       attacker.y = Math.max(0, Math.min(canvas.height - attacker.height, attacker.y));
+      
+      // Random enemy movement
+      if (Math.random() < 0.02) {
+        target.x += (Math.random() * 6 - 3);
+        target.y += (Math.random() * 6 - 3);
+      }
+      target.x = Math.max(50, Math.min(canvas.width - target.width - 50, target.x));
+      target.y = Math.max(50, Math.min(canvas.height - target.height - 50, target.y));
     }
 
     function draw() {
+      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw the enemy:
-      if (enemyHit && hitImage.complete) {
+      
+      // Draw blood decals
+      ctx.fillStyle = '#990000';
+      bloodDecals.forEach(decal => {
+        ctx.globalAlpha = decal.opacity;
+        ctx.beginPath();
+        ctx.arc(decal.x, decal.y, decal.size/2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      
+      // Draw enemy
+      if (target.isHurt) {
         ctx.drawImage(hitImage, target.x, target.y, target.width, target.height);
-      } else if (enemyImage.complete) {
+      } else {
         ctx.drawImage(enemyImage, target.x, target.y, target.width, target.height);
-      } else {
-        ctx.fillStyle = target.isHurt ? 'orange' : 'red';
-        ctx.fillRect(target.x, target.y, target.width, target.height);
       }
-
-      // Draw the attacker using its image (or fallback to a blue rectangle)
-      if (attackerImage.complete) {
-        ctx.drawImage(attackerImage, attacker.x, attacker.y, attacker.width, attacker.height);
-      } else {
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(attacker.x, attacker.y, attacker.width, attacker.height);
+      
+      // Draw attacker
+      ctx.drawImage(attackerImage, attacker.x, attacker.y, attacker.width, attacker.height);
+      
+      // Draw proximity indicator
+      if (isNear(attacker, target, 150)) {
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(
+          target.x + target.width/2,
+          target.y + target.height/2,
+          100,
+          0,
+          Math.PI * 2
+        );
+        ctx.stroke();
       }
     }
 
@@ -134,7 +353,7 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // Start the game loop
+    // Initialize
     gameLoop();
   </script>
 </body>
