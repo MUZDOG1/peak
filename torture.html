@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fictional Mission Simulation</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    #gameCanvas {
+      background: #222;
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #444;
+    }
+    #instructions {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Fictional Mission Simulation</h1>
+  <p id="instructions">Use arrow keys to move the blue square (attacker) toward the red square (target). Press SPACE to trigger an interaction.</p>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Game objects
+    const attacker = {
+      x: 100,
+      y: 300,
+      width: 50,
+      height: 50,
+      speed: 5,
+      color: 'blue'
+    };
+
+    const target = {
+      x: 600,
+      y: 300,
+      width: 50,
+      height: 50,
+      color: 'red',
+      isHurt: false
+    };
+
+    // Keyboard state
+    const keys = {};
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.key] = true;
+      // Trigger torture action if space is pressed and collision occurs
+      if (e.key === ' ' && isColliding(attacker, target)) {
+        target.isHurt = true;
+        console.log("Torture interaction triggered!");
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.key] = false;
+    });
+
+    // Basic collision detection
+    function isColliding(a, b) {
+      return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+      );
+    }
+
+    function update() {
+      // Movement controls for the attacker
+      if (keys['ArrowUp']) attacker.y -= attacker.speed;
+      if (keys['ArrowDown']) attacker.y += attacker.speed;
+      if (keys['ArrowLeft']) attacker.x -= attacker.speed;
+      if (keys['ArrowRight']) attacker.x += attacker.speed;
+
+      // Keep attacker within canvas bounds
+      attacker.x = Math.max(0, Math.min(canvas.width - attacker.width, attacker.x));
+      attacker.y = Math.max(0, Math.min(canvas.height - attacker.height, attacker.y));
+
+      // Reset target hurt state if attacker moves away
+      if (!isColliding(attacker, target)) {
+        target.isHurt = false;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw the target, change its color if hurt
+      ctx.fillStyle = target.isHurt ? 'orange' : target.color;
+      ctx.fillRect(target.x, target.y, target.width, target.height);
+
+      // Draw the attacker
+      ctx.fillStyle = attacker.color;
+      ctx.fillRect(attacker.x, attacker.y, attacker.width, attacker.height);
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Start the loop
+    gameLoop();
+  </script>
+</body>
+</html>
+
+  

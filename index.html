@@ -369,6 +369,13 @@
         chatInput.value = "";
        return;
       }
+
+      if (text.toLowerCase() === "torture") {
+        window.location.href = "torture.html";
+        chatInput.value = "";
+       return;
+      }
+      
       
       if (text) {
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
