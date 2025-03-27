@@ -287,6 +287,14 @@
       }
     }
 
+      canvas.addEventListener('mousemove', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      console.log(`Mouse X: ${mouseX}, Mouse Y: ${mouseY}`);
+    });
+
+
     function gameLoop() {
       update();
       draw();
