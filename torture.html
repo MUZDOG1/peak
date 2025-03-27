@@ -102,10 +102,17 @@
     const enemyHitImage = new Image();
     enemyHitImage.src = 'hit.png';
 
+    // New images for enemy death
+    const enemyDeadImage = new Image();
+    enemyDeadImage.src = 'dead.png';
+
+    const enemyKneelingImage = new Image();
+    enemyKneelingImage.src = 'kneeling.png';
+
     // ====================
     //   GAME STATE
     // ====================
-    let enemyHealth = 100;
+    let enemyHealth = 300;  // Triple health
     let lastAttackTime = 0;
 
     // ====================
@@ -127,7 +134,9 @@
       height: 50,
       isHurt: false,
       knockbackVelocity: { x: 0, y: 0 },
-      knockbackDuration: 0
+      knockbackDuration: 0,
+      isDead: false,      // New flag for death
+      deathState: ''      // 'dead' then 'kneeling'
     };
 
     // =========================
@@ -183,6 +192,9 @@
     //   ATTACK LOGIC
     // ====================
     function attack() {
+      // If enemy is already dead, ignore attack.
+      if (enemy.isDead) return;
+
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Cooldown
 
@@ -210,10 +222,17 @@
 
         // Update enemy health
         enemyHealth -= 10;
-        healthFill.style.width = `${enemyHealth}%`;
+        healthFill.style.width = `${enemyHealth/3}%`;  // Health bar proportionally (since health is 300)
+        
+        // Check if enemy is dead
         if (enemyHealth <= 0) {
-          enemyHealth = 100;
-          setTimeout(() => (healthFill.style.width = '100%'), 500);
+          enemyHealth = 0;
+          enemy.isDead = true;
+          enemy.deathState = 'dead';
+          // Show dead image for 1 second then switch to kneeling
+          setTimeout(() => {
+            enemy.deathState = 'kneeling';
+          }, 1000);
         }
 
         lastAttackTime = now;
@@ -236,26 +255,29 @@
       // Handle attack input
       if (keys[' ']) attack();
 
-      // Enemy movement
-      if (enemy.knockbackDuration > 0) {
-        moveEntity(enemy, enemy.knockbackVelocity.x, enemy.knockbackVelocity.y);
-        enemy.knockbackVelocity.x *= 0.9;
-        enemy.knockbackVelocity.y *= 0.9;
-        enemy.knockbackDuration--;
-      } else {
-        // Random wandering behavior
-        if (Math.random() < 0.02) {
-          const randX = Math.random() * 6 - 3;
-          const randY = Math.random() * 6 - 3;
-          moveEntity(enemy, randX, randY);
+      // Enemy movement only if not dead
+      if (!enemy.isDead) {
+        if (enemy.knockbackDuration > 0) {
+          moveEntity(enemy, enemy.knockbackVelocity.x, enemy.knockbackVelocity.y);
+          enemy.knockbackVelocity.x *= 0.9;
+          enemy.knockbackVelocity.y *= 0.9;
+          enemy.knockbackDuration--;
+        } else {
+          // Random wandering behavior
+          if (Math.random() < 0.02) {
+            const randX = Math.random() * 6 - 3;
+            const randY = Math.random() * 6 - 3;
+            moveEntity(enemy, randX, randY);
+          }
         }
+        // Keep enemy within canvas bounds
+        enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
+        enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
       }
-
-      // Keep entities within canvas bounds
+      
+      // Keep player within canvas bounds
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-      enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
-      enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
     }
 
     function draw() {
@@ -286,14 +308,26 @@
         ctx.restore();
       }
 
-      // Draw the enemy (choose appropriate sprite)
-      if (enemy.isHurt && enemyHitImage.complete) {
-        ctx.drawImage(enemyHitImage, enemy.x, enemy.y, enemy.width, enemy.height);
-      } else if (enemyIdleImage.complete) {
-        ctx.drawImage(enemyIdleImage, enemy.x, enemy.y, enemy.width, enemy.height);
+      // Draw the enemy
+      if (enemy.isDead) {
+        if (enemy.deathState === 'dead' && enemyDeadImage.complete) {
+          ctx.drawImage(enemyDeadImage, enemy.x, enemy.y, enemy.width, enemy.height);
+        } else if (enemy.deathState === 'kneeling' && enemyKneelingImage.complete) {
+          ctx.drawImage(enemyKneelingImage, enemy.x, enemy.y, enemy.width, enemy.height);
+        } else {
+          // Fallback: show a rectangle
+          ctx.fillStyle = '#555';
+          ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        }
       } else {
-        ctx.fillStyle = enemy.isHurt ? '#ff9999' : '#ff0000';
-        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        if (enemy.isHurt && enemyHitImage.complete) {
+          ctx.drawImage(enemyHitImage, enemy.x, enemy.y, enemy.width, enemy.height);
+        } else if (enemyIdleImage.complete) {
+          ctx.drawImage(enemyIdleImage, enemy.x, enemy.y, enemy.width, enemy.height);
+        } else {
+          ctx.fillStyle = enemy.isHurt ? '#ff9999' : '#ff0000';
+          ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        }
       }
 
       // Draw the player
