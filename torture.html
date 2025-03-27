@@ -11,14 +11,13 @@
       font-family: 'Courier New', monospace;
       text-align: center;
       overflow: hidden;
-      /* Custom cursor remains, you can change or remove it if needed */
+      /* Custom “rage” cursor (optional) */
       cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
     #gameCanvas {
-      background: #222;
       display: block;
       margin: 20px auto;
-      /* Removed the border that previously surrounded the canvas */
+      /* Removed any border around the canvas */
       position: relative;
     }
     h1 {
@@ -56,18 +55,21 @@
   <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <script>
-    // ===========
-    //   SETUP
-    // ===========
+    // ====================
+    //   CANVAS & CONTEXT
+    // ====================
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const healthFill = document.getElementById('healthFill');
 
-    // Load the background image (your house interior)
+    // ====================
+    //   IMAGES
+    // ====================
+    // Replace with your actual background image path/filename
     const backgroundImage = new Image();
-    backgroundImage.src = 'house_background.png'; // Replace with your actual image path
+    backgroundImage.src = 'house_background.png';
 
-    // Preload character images
+    // Player & Enemy Sprites
     const playerImage = new Image();
     playerImage.src = 'idle.png';
 
@@ -80,27 +82,29 @@
     const enemyHitImage = new Image();
     enemyHitImage.src = 'hit.png';
 
-    // ===========
+    // ====================
     //   GAME STATE
-    // ===========
+    // ====================
     let enemyHealth = 100;
     let lastAttackTime = 0;
 
-    // ===========
+    // ====================
     //   ENTITIES
-    // ===========
+    // ====================
+    // Positioned so the player starts in the grass, near the bottom
     const player = {
-      x: 100,
-      y: 300,
+      x: 200,
+      y: 500,
       width: 50,
       height: 50,
       speed: 5,
       isPunching: false
     };
 
+    // Enemy up in the stone area
     const enemy = {
-      x: 600,
-      y: 300,
+      x: 550,
+      y: 350,
       width: 50,
       height: 50,
       isHurt: false,
@@ -108,31 +112,43 @@
       knockbackDuration: 0
     };
 
-    // ===========
-    //   INPUT HANDLING
-    // ===========
-    const keys = {};
-    document.addEventListener('keydown', (e) => keys[e.key] = true);
-    document.addEventListener('keyup', (e) => keys[e.key] = false);
-
-    // ===========
-    //   COLLISION BOXES (Internal Objects Only)
-    // ===========
-    // Estimated coordinates (in pixels) based on an 800x600 layout:
+    // =========================
+    //   COLLISION BOXES (INTERNAL)
+    // =========================
+    // Based on your screenshot, carefully chosen to:
+    // 1) Block the tall left-brick area
+    // 2) Block the stone boundary at bottom EXCEPT where the green bush is
+    // 3) Block the tall red couch
+    // 4) Block the thin black TV
+    //
+    // The “gap” (entry) is around x=370..410, so you can pass through the bush.
     const walls = [
-      // Internal vertical wall (a partition inside the house)
-      { x: 150, y: 100, width: 20, height: 400 },
+      // 1) Tall left bricks
+      { x: 0,   y: 0,   width: 130, height: 320 },
 
-      // Couch (red object) located in the lower-right section
-      { x: 500, y: 420, width: 250, height: 70 },
+      // 2a) Stone boundary on bottom-left (stops at bush)
+      { x: 0,   y: 370, width: 370, height: 30 },
 
-      // TV (black object) placed above/near the couch
-      { x: 620, y: 350, width: 100, height: 50 }
+      // 2b) Stone boundary on bottom-right (picks up after bush)
+      { x: 410, y: 370, width: 390, height: 30 },
+
+      // 3) Red couch (right side)
+      { x: 620, y: 130, width: 40, height: 140 },
+
+      // 4) Black TV (near couch)
+      { x: 670, y: 140, width: 15, height: 70 }
     ];
 
-    // ===========
-    //   COLLISION DETECTION
-    // ===========
+    // ====================
+    //   INPUT HANDLING
+    // ====================
+    const keys = {};
+    document.addEventListener('keydown', e => keys[e.key] = true);
+    document.addEventListener('keyup',   e => keys[e.key] = false);
+
+    // ====================
+    //   COLLISION CHECK
+    // ====================
     function isColliding(rect1, rect2) {
       return (
         rect1.x < rect2.x + rect2.width &&
@@ -142,15 +158,15 @@
       );
     }
 
-    // Try to move an entity and revert if colliding with any object
     function moveEntity(entity, dx, dy) {
       const originalX = entity.x;
       const originalY = entity.y;
       entity.x += dx;
       entity.y += dy;
+
+      // If entity collides with any "wall," revert
       for (const wall of walls) {
         if (isColliding(entity, wall)) {
-          // Revert to original position on collision
           entity.x = originalX;
           entity.y = originalY;
           break;
@@ -158,28 +174,28 @@
       }
     }
 
-    // ===========
+    // ====================
     //   ATTACK LOGIC
-    // ===========
+    // ====================
     function attack() {
       const now = Date.now();
-      if (now - lastAttackTime < 500) return; // Cooldown period
+      if (now - lastAttackTime < 500) return; // Attack cooldown
 
-      const playerCenterX = player.x + player.width / 2;
-      const playerCenterY = player.y + player.height / 2;
-      const enemyCenterX = enemy.x + enemy.width / 2;
-      const enemyCenterY = enemy.y + enemy.height / 2;
-      const dx = playerCenterX - enemyCenterX;
-      const dy = playerCenterY - enemyCenterY;
+      // Distance check
+      const px = player.x + player.width / 2;
+      const py = player.y + player.height / 2;
+      const ex = enemy.x + enemy.width / 2;
+      const ey = enemy.y + enemy.height / 2;
+      const dx = px - ex;
+      const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance < 100) {
         player.isPunching = true;
-        setTimeout(() => player.isPunching = false, 200);
+        setTimeout(() => (player.isPunching = false), 200);
 
         enemy.isHurt = true;
-
-        // Calculate knockback
+        // Knockback
         const knockbackIntensity = 15;
         const knockbackDuration = 15;
         const mag = Math.sqrt(dx * dx + dy * dy);
@@ -187,43 +203,42 @@
         enemy.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
         enemy.knockbackDuration = knockbackDuration;
 
+        // Health
         enemyHealth -= 10;
         healthFill.style.width = `${enemyHealth}%`;
-
         if (enemyHealth <= 0) {
           enemyHealth = 100;
-          setTimeout(() => healthFill.style.width = '100%', 500);
+          setTimeout(() => (healthFill.style.width = '100%'), 500);
         }
 
         lastAttackTime = now;
-        setTimeout(() => enemy.isHurt = false, 1000);
+        setTimeout(() => (enemy.isHurt = false), 1000);
       }
     }
 
-    // ===========
+    // ====================
     //   GAME LOOP
-    // ===========
+    // ====================
     function update() {
-      // Determine movement direction for the player
+      // Player movement
       let moveX = 0, moveY = 0;
-      if (keys['ArrowUp']) moveY = -player.speed;
-      if (keys['ArrowDown']) moveY = player.speed;
-      if (keys['ArrowLeft']) moveX = -player.speed;
-      if (keys['ArrowRight']) moveX = player.speed;
-
-      // Move the player (with collision checks)
+      if (keys['ArrowUp'])    moveY = -player.speed;
+      if (keys['ArrowDown'])  moveY =  player.speed;
+      if (keys['ArrowLeft'])  moveX = -player.speed;
+      if (keys['ArrowRight']) moveX =  player.speed;
       moveEntity(player, moveX, moveY);
 
-      // Check for attack input
+      // Attack
       if (keys[' ']) attack();
 
-      // Enemy movement: apply knockback if in effect, otherwise wander randomly
+      // Enemy movement
       if (enemy.knockbackDuration > 0) {
         moveEntity(enemy, enemy.knockbackVelocity.x, enemy.knockbackVelocity.y);
         enemy.knockbackVelocity.x *= 0.9;
         enemy.knockbackVelocity.y *= 0.9;
         enemy.knockbackDuration--;
       } else {
+        // Random wandering
         if (Math.random() < 0.02) {
           const randX = Math.random() * 6 - 3;
           const randY = Math.random() * 6 - 3;
@@ -231,7 +246,7 @@
         }
       }
 
-      // Ensure entities remain within the canvas boundaries
+      // Keep them in the canvas
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       enemy.x  = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
@@ -239,7 +254,7 @@
     }
 
     function draw() {
-      // Draw the background image (house interior)
+      // Draw background
       if (backgroundImage.complete) {
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
       } else {
@@ -247,7 +262,7 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // (Optional) Debug: Draw collision boxes for internal objects
+      // Uncomment this to visualize collision boxes for fine-tuning
       /*
       ctx.save();
       ctx.globalAlpha = 0.3;
@@ -258,7 +273,7 @@
       ctx.restore();
       */
 
-      // Draw the enemy
+      // Draw enemy
       if (enemy.isHurt && enemyHitImage.complete) {
         ctx.drawImage(enemyHitImage, enemy.x, enemy.y, enemy.width, enemy.height);
       } else if (enemyIdleImage.complete) {
@@ -268,7 +283,7 @@
         ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
       }
 
-      // Draw the player
+      // Draw player
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
@@ -278,13 +293,13 @@
         ctx.fillRect(player.x, player.y, player.width, player.height);
       }
 
-      // (Optional) Visual indicator when within attack range (for testing)
-      const playerCenterX = player.x + player.width / 2;
-      const playerCenterY = player.y + player.height / 2;
-      const enemyCenterX = enemy.x + enemy.width / 2;
-      const enemyCenterY = enemy.y + enemy.height / 2;
-      const dx = playerCenterX - enemyCenterX;
-      const dy = playerCenterY - enemyCenterY;
+      // (Optional) highlight if within attack range
+      const px = player.x + player.width / 2;
+      const py = player.y + player.height / 2;
+      const ex = enemy.x + enemy.width / 2;
+      const ey = enemy.y + enemy.height / 2;
+      const dx = px - ex;
+      const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < 100) {
         ctx.strokeStyle = '#ff0000';
@@ -299,7 +314,6 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // Start the game loop
     gameLoop();
   </script>
 </body>
