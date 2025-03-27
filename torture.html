@@ -2,113 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>POSTAL RAGE</title>
+  <title>RAGE SIMULATOR</title>
   <style>
     body {
       margin: 0;
-      background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uRkZGZmZlpaWmXl5dvb29xcXGTk5NnZ2c8TV1mAAAAG3RSTlNAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAvEOwtAAAFVklEQVR4XpWWB67c2BUFb3g557T/hRo9/WUMZHlgr4Bg8Z4qQgQJlHI4A8SzFVrapvmTF9O7dmYRFZ60YiBhJRCgh1FYhiLAmdvX0CzTOpNE77ME0Zty/nWWzchDtiqrmQDeuv3powQ5ta2eN0FY0InkqDD73lT9c9lEzwUNqgFHs9VQce3TVClFCQrSTfOiYkVJQBmpbq2L6iZavPnAPcoU0dSw0SUTqz/GtrGuXfbyyBniKykOWQWGqwwMA7QiYAxi+IlPdqo+hYHnUt5ZPfnsHJyNiDtnpJyayNBkF6cWoYGAMY92U2hXHF/C1M8uP/ZtYdiuj26UdAdQQSXQErwSOMzt/XWRWAz5GuSBIkwG1H3FabJ2OsUOUhGC6tK4EMtJO0ttC6IBD3kM0ve0tJwMdSfjZo+EEISaeTr9P3wYrGjXqyC1krcKdhMpxEnt5JetoulscpyzhXN5FRpuPHvbeQaKxFAEB6EN+cYN6xD7RYGpXpNndMmeBehD3ICHzBhWsATdRd2k4dh4f3a7tWzD1vt7b0MdwVZ+rU4Ml9VtTk4J/U4xrpAIw == ') #2c2c2c;
-      font-family: 'Arial', sans-serif;
+      background: #1a0a0a;
       color: #ff4444;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      background-size: 50px 50px;
-      background-blend-mode: overlay;
-    }
-    #gameWrapper {
-      background-color: rgba(0,0,0,0.8);
-      border: 4px solid #ff4444;
-      box-shadow: 0 0 30px rgba(255,0,0,0.5);
-      padding: 20px;
+      font-family: 'Courier New', monospace;
       text-align: center;
-      max-width: 900px;
-      width: 100%;
-    }
-    #gameTitle {
-      font-size: 4em;
-      text-transform: uppercase;
-      color: #ff4444;
-      text-shadow: 4px 4px 0 #000, 
-                   -4px -4px 0 #000, 
-                   4px -4px 0 #000, 
-                   -4px 4px 0 #000;
-      margin: 20px 0;
-      letter-spacing: 5px;
-    }
-    #instructions {
-      background: rgba(48,0,0,0.9);
-      border: 3px solid #ff4444;
-      color: #ffaaaa;
-      padding: 15px;
-      margin: 20px 0;
-      font-size: 1.2em;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-    #healthBarContainer {
-      background: #300000;
-      border: 3px solid #ff4444;
-      width: 400px;
-      margin: 20px auto;
       overflow: hidden;
-    }
-    #healthBar {
-      height: 30px;
-      background: linear-gradient(to right, #ff0000, #ff4444);
-      transition: width 0.3s ease;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
     #gameCanvas {
-      border: 4px solid #ff4444;
-      box-shadow: 0 0 20px rgba(255,0,0,0.5);
+      background: #222;
+      display: block;
+      margin: 20px auto;
+      border: 3px solid #444;
+      position: relative;
     }
-    #bloodOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
+    h1 {
+      font-size: 3em;
+      text-shadow: 2px 2px 0 #000;
+      margin: 10px 0;
+      color: #ff5555;
+    }
+    #instructions {
+      background: #300000;
+      border: 1px solid #ff4444;
+      padding: 10px;
+      margin: 10px auto;
+      width: 300px;
+      color: #ffaaaa;
+    }
+    #healthBar {
+      width: 200px;
+      height: 20px;
+      background: #300000;
+      margin: 10px auto;
+      border: 1px solid #ff4444;
+    }
+    #healthFill {
       height: 100%;
+      width: 100%;
+      background: #ff0000;
+    }
+    .blood-effect {
+      position: absolute;
+      background: #f00;
+      border-radius: 50%;
       pointer-events: none;
-      background: radial-gradient(circle, rgba(139,0,0,0.1) 0%, rgba(0,0,0,0) 70%);
-      z-index: 1000;
     }
   </style>
 </head>
 <body>
-  <div id="bloodOverlay"></div>
-  <div id="gameWrapper">
-    <h1 id="gameTitle">POSTAL RAGE</h1>
-    
-    <div id="instructions">
-      ARROW KEYS: MOVE | SPACE: UNLEASH RAGE
-    </div>
-    
-    <div id="healthBarContainer">
-      <div id="healthBar"></div>
-    </div>
-    
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-  </div>
+  <h1>RAGE SIMULATOR</h1>
+  <div id="instructions">ARROW KEYS: Move | SPACE: Attack</div>
+  <div id="healthBar"><div id="healthFill"></div></div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <script>
     // Game setup
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const healthFill = document.getElementById('healthBar');
-    const killCounter = document.getElementById('killCounter');
+    const healthFill = document.getElementById('healthFill');
 
-    // Sounds (simulated with console logs)
-    const sounds = {
-      punch: () => console.log("*BRUTAL PUNCH SOUND*"),
-      hurt: () => console.log("*AGONIZED SCREAM*"),
-      death: () => console.log("*MANIACAL LAUGHTER*")
-    };
+    // Preload images for the player and enemy states
+    const playerImage = new Image();
+    playerImage.src = 'idle.png';
+    
+    const punchImage = new Image();
+    punchImage.src = 'punch.png';
+    
+    const enemyIdleImage = new Image();
+    enemyIdleImage.src = 'enemyidle.png';
+    
+    const enemyHitImage = new Image();
+    enemyHitImage.src = 'hit.png';
 
     // Game state
     let enemyHealth = 100;
     let lastAttackTime = 0;
-    let killCount = 0;
 
     // Player character
     const player = {
@@ -116,9 +89,8 @@
       y: 300,
       width: 50,
       height: 50,
-      speed: 7,
-      isPunching: false,
-      color: '#3498db'
+      speed: 5,
+      isPunching: false
     };
 
     // Enemy
@@ -129,14 +101,7 @@
       height: 50,
       isHurt: false,
       knockbackVelocity: { x: 0, y: 0 },
-      knockbackDuration: 0,
-      color: '#ff0000',
-      quotes: [
-        "WHY ARE YOU DOING THIS?!",
-        "STOP! PLEASE!",
-        "I HAVE A FAMILY!",
-        "THIS ISN'T FAIR!"
-      ]
+      knockbackDuration: 0
     };
 
     // Keyboard input
@@ -144,30 +109,12 @@
     document.addEventListener('keydown', (e) => keys[e.key] = true);
     document.addEventListener('keyup', (e) => keys[e.key] = false);
 
-    // Blood splatter effect
-    function createBloodSplatter(x, y) {
-      for (let i = 0; i < 10; i++) {
-        const blood = document.createElement('div');
-        blood.className = 'blood-effect';
-        blood.style.left = (x + Math.random() * 50 - 25) + 'px';
-        blood.style.top = (y + Math.random() * 50 - 25) + 'px';
-        blood.style.width = (5 + Math.random() * 20) + 'px';
-        blood.style.height = blood.style.width;
-        blood.style.opacity = 0.7;
-        document.body.appendChild(blood);
-        
-        setTimeout(() => {
-          blood.style.opacity = 0;
-          setTimeout(() => blood.remove(), 300);
-        }, 50);
-      }
-    }
-
-    // Attack logic
+    // Attack logic: triggers when player is near enemy (within 100 pixels from centers)
     function attack() {
       const now = Date.now();
-      if (now - lastAttackTime < 500) return;
+      if (now - lastAttackTime < 500) return; // Attack cooldown
       
+      // Calculate centers for distance checking
       const playerCenterX = player.x + player.width / 2;
       const playerCenterY = player.y + player.height / 2;
       const enemyCenterX = enemy.x + enemy.width / 2;
@@ -176,17 +123,19 @@
       const dy = playerCenterY - enemyCenterY;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
+      // If within 100 pixels, perform attack
       if (distance < 100) {
-        sounds.punch();
+        // Change player sprite to punch
         player.isPunching = true;
         setTimeout(() => player.isPunching = false, 200);
         
         enemy.isHurt = true;
         
-        // Knockback
-        const knockbackIntensity = 20;
-        const knockbackDuration = 15;
+        // Calculate knockback direction and intensity
+        const knockbackIntensity = 15;
+        const knockbackDuration = 15; // How many frames the knockback lasts
         
+        // Normalize direction vector
         const mag = Math.sqrt(dx * dx + dy * dy);
         enemy.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
         enemy.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
@@ -195,29 +144,19 @@
         enemyHealth -= 10;
         healthFill.style.width = `${enemyHealth}%`;
         
-        // Random enemy quote when hit
-        if (Math.random() < 0.5) {
-          console.log(enemy.quotes[Math.floor(Math.random() * enemy.quotes.length)]);
-        }
-        
-        // Create blood splatter
-        createBloodSplatter(enemyCenterX, enemyCenterY);
-        
+        // If enemy's health is depleted, reset it after a short delay
         if (enemyHealth <= 0) {
-          sounds.death();
-          killCount++;
-          killCounter.textContent = `KILLS: ${killCount}`;
           enemyHealth = 100;
           setTimeout(() => healthFill.style.width = '100%', 500);
-        } else {
-          sounds.hurt();
         }
         
         lastAttackTime = now;
+        // Show the hit image for 1 second
         setTimeout(() => enemy.isHurt = false, 1000);
       }
     }
 
+    // Game loop update
     function update() {
       // Player movement
       if (keys['ArrowUp']) player.y -= player.speed;
@@ -225,47 +164,63 @@
       if (keys['ArrowLeft']) player.x -= player.speed;
       if (keys['ArrowRight']) player.x += player.speed;
       
-      // Attack
+      // Attack when SPACE is pressed
       if (keys[' ']) attack();
       
-      // Bounds checking for player
+      // Keep player within canvas bounds
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       
-      // Enemy knockback
+      // Enemy knockback movement
       if (enemy.knockbackDuration > 0) {
         enemy.x += enemy.knockbackVelocity.x;
         enemy.y += enemy.knockbackVelocity.y;
         
+        // Gradually reduce knockback velocity
         enemy.knockbackVelocity.x *= 0.9;
         enemy.knockbackVelocity.y *= 0.9;
         
         enemy.knockbackDuration--;
       } else {
-        // Random wandering
+        // Random wandering when not knocked back
         if (Math.random() < 0.02) {
-          enemy.x += (Math.random() * 8 - 4);
-          enemy.y += (Math.random() * 8 - 4);
+          enemy.x += (Math.random() * 6 - 3);
+          enemy.y += (Math.random() * 6 - 3);
         }
       }
       
-      // Enemy bounds
+      // Keep enemy within canvas bounds
       enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
       enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
     }
 
+    // Drawing routine
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Enemy drawing
-      ctx.fillStyle = enemy.isHurt ? '#8B0000' : enemy.color;
-      ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+      // Draw enemy using images:
+      // If enemy is hurt, show hit image; otherwise, show idle image.
+      if (enemy.isHurt && enemyHitImage.complete) {
+        ctx.drawImage(enemyHitImage, enemy.x, enemy.y, enemy.width, enemy.height);
+      } else if (enemyIdleImage.complete) {
+        ctx.drawImage(enemyIdleImage, enemy.x, enemy.y, enemy.width, enemy.height);
+      } else {
+        // Fallback rectangle if image not loaded
+        ctx.fillStyle = enemy.isHurt ? '#ff9999' : '#ff0000';
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+      }
       
-      // Player drawing
-      ctx.fillStyle = player.isPunching ? '#FF4500' : player.color;
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+      // Draw player using the appropriate image
+      if (player.isPunching && punchImage.complete) {
+        ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
+      } else if (playerImage.complete) {
+        ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+      } else {
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+      }
       
-      // Attack range indicator
+      // Optionally, draw an indicator if within attack range (for debugging)
       const playerCenterX = player.x + player.width / 2;
       const playerCenterY = player.y + player.height / 2;
       const enemyCenterX = enemy.x + enemy.width / 2;
@@ -273,9 +228,8 @@
       const dx = playerCenterX - enemyCenterX;
       const dy = playerCenterY - enemyCenterY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
       if (distance < 100) {
-        ctx.strokeStyle = 'rgba(255,0,0,0.5)';
+        ctx.strokeStyle = '#ff0000';
         ctx.lineWidth = 2;
         ctx.strokeRect(enemy.x - 5, enemy.y - 5, enemy.width + 10, enemy.height + 10);
       }
@@ -287,6 +241,7 @@
       requestAnimationFrame(gameLoop);
     }
 
+    // Start game loop
     gameLoop();
   </script>
 </body>
