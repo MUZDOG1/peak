@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Fictional Mission Simulation</title>
+  <title>Fictional Mission Simulation with Sprite</title>
   <style>
     body {
       margin: 0;
@@ -23,12 +23,16 @@
   </style>
 </head>
 <body>
-  <h1>Fictional Mission Simulation</h1>
-  <p id="instructions">Use arrow keys to move the blue square (attacker) toward the red square (target). Press SPACE to trigger an interaction.</p>
+  <h1>kill them all.</h1>
+  <p id="instructions">space to hit.</p>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+
+    // Load the image for the attacker
+    const attackerImage = new Image();
+    attackerImage.src = 'idle.png';
 
     // Game objects
     const attacker = {
@@ -36,8 +40,7 @@
       y: 300,
       width: 50,
       height: 50,
-      speed: 5,
-      color: 'blue'
+      speed: 5
     };
 
     const target = {
@@ -95,13 +98,19 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw the target, change its color if hurt
+      // Draw the target (its color changes if hurt)
       ctx.fillStyle = target.isHurt ? 'orange' : target.color;
       ctx.fillRect(target.x, target.y, target.width, target.height);
 
-      // Draw the attacker
-      ctx.fillStyle = attacker.color;
-      ctx.fillRect(attacker.x, attacker.y, attacker.width, attacker.height);
+      // Draw the attacker using the image
+      // The same image (idle.png) is used for both moving and idle states
+      if (attackerImage.complete) {
+        ctx.drawImage(attackerImage, attacker.x, attacker.y, attacker.width, attacker.height);
+      } else {
+        // Fallback if the image hasn't loaded yet
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(attacker.x, attacker.y, attacker.width, attacker.height);
+      }
     }
 
     function gameLoop() {
