@@ -66,13 +66,16 @@
     const ctx = canvas.getContext('2d');
     const healthFill = document.getElementById('healthFill');
 
-    // Preload images
+    // Preload images for the player and enemy states
     const playerImage = new Image();
     playerImage.src = 'idle.png';
-
+    
+    const punchImage = new Image();
+    punchImage.src = 'punch.png';
+    
     const enemyIdleImage = new Image();
     enemyIdleImage.src = 'enemyidle.png';
-
+    
     const enemyHitImage = new Image();
     enemyHitImage.src = 'hit.png';
 
@@ -86,7 +89,8 @@
       y: 300,
       width: 50,
       height: 50,
-      speed: 5
+      speed: 5,
+      isPunching: false
     };
 
     // Enemy
@@ -95,7 +99,8 @@
       y: 300,
       width: 50,
       height: 50,
-      isHurt: false
+      isHurt: false,
+      isEscaping: false
     };
 
     // Keyboard input
@@ -103,12 +108,12 @@
     document.addEventListener('keydown', (e) => keys[e.key] = true);
     document.addEventListener('keyup', (e) => keys[e.key] = false);
 
-    // Attack logic: triggers when player is near enemy (not necessarily colliding)
+    // Attack logic: triggers when player is near enemy (within 100 pixels from centers)
     function attack() {
       const now = Date.now();
-      if (now - lastAttackTime < 500) return; // Cooldown
+      if (now - lastAttackTime < 500) return; // Attack cooldown
       
-      // Check if player is near enemy (using distance from center)
+      // Calculate centers for distance checking
       const playerCenterX = player.x + player.width / 2;
       const playerCenterY = player.y + player.height / 2;
       const enemyCenterX = enemy.x + enemy.width / 2;
@@ -117,14 +122,18 @@
       const dy = playerCenterY - enemyCenterY;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      // Adjust this threshold as needed (here, 100 pixels)
+      // If within 100 pixels, perform attack
       if (distance < 100) {
+        // Change player sprite to punch
+        player.isPunching = true;
+        setTimeout(() => player.isPunching = false, 200);
+        
         enemy.isHurt = true;
+        enemy.isEscaping = true;  // Enemy starts escaping
         enemyHealth -= 10;
         healthFill.style.width = `${enemyHealth}%`;
-        // Optionally create blood effect here if desired
-        // createBloodEffect(enemy.x, enemy.y);
         
+        // If enemy's health is depleted, reset it after a short delay
         if (enemyHealth <= 0) {
           enemyHealth = 100;
           setTimeout(() => healthFill.style.width = '100%', 500);
@@ -133,10 +142,12 @@
         lastAttackTime = now;
         // Show the hit image for 1 second
         setTimeout(() => enemy.isHurt = false, 1000);
+        // Let enemy escape for 2 seconds
+        setTimeout(() => enemy.isEscaping = false, 2000);
       }
     }
 
-    // Collision detection (unused in attack now but can be used elsewhere)
+    // Collision detection (unused for attack now but available)
     function isColliding(a, b) {
       return a.x < b.x + b.width &&
              a.x + a.width > b.x &&
@@ -169,17 +180,35 @@
       if (keys['ArrowLeft']) player.x -= player.speed;
       if (keys['ArrowRight']) player.x += player.speed;
       
-      // Attack when space is pressed
+      // Attack when SPACE is pressed
       if (keys[' ']) attack();
       
       // Keep player within canvas bounds
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       
-      // Simple enemy AI: random movement
-      if (Math.random() < 0.02) {
-        enemy.x += (Math.random() * 6 - 3);
-        enemy.y += (Math.random() * 6 - 3);
+      // Enemy movement
+      if (enemy.isEscaping) {
+        // Calculate vector from player to enemy, then normalize it to run away
+        const enemyCenterX = enemy.x + enemy.width / 2;
+        const enemyCenterY = enemy.y + enemy.height / 2;
+        const playerCenterX = player.x + player.width / 2;
+        const playerCenterY = player.y + player.height / 2;
+        let dx = enemyCenterX - playerCenterX;
+        let dy = enemyCenterY - playerCenterY;
+        let mag = Math.sqrt(dx * dx + dy * dy);
+        if (mag === 0) mag = 1;
+        dx /= mag;
+        dy /= mag;
+        const escapeSpeed = 8;
+        enemy.x += dx * escapeSpeed;
+        enemy.y += dy * escapeSpeed;
+      } else {
+        // If not escaping, enemy moves randomly at times
+        if (Math.random() < 0.02) {
+          enemy.x += (Math.random() * 6 - 3);
+          enemy.y += (Math.random() * 6 - 3);
+        }
       }
       enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
       enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
@@ -201,11 +230,13 @@
         ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
       }
       
-      // Draw player using its image
-      if (playerImage.complete) {
+      // Draw player using the appropriate image
+      if (player.isPunching && punchImage.complete) {
+        ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
+      } else if (playerImage.complete) {
         ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
       } else {
-        ctx.fillStyle = player.color || '#3498db';
+        ctx.fillStyle = '#3498db';
         ctx.fillRect(player.x, player.y, player.width, player.height);
       }
       
