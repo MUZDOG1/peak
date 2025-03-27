@@ -11,9 +11,8 @@
       font-family: 'Courier New', monospace;
       text-align: center;
       overflow: hidden;
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
-
     #gameCanvas {
       background: #222;
       display: block;
@@ -21,14 +20,12 @@
       border: 3px solid #444;
       position: relative;
     }
-
     h1 {
       font-size: 3em;
       text-shadow: 2px 2px 0 #000;
       margin: 10px 0;
       color: #ff5555;
     }
-
     #instructions {
       background: #300000;
       border: 1px solid #ff4444;
@@ -37,7 +34,6 @@
       width: 300px;
       color: #ffaaaa;
     }
-
     #healthBar {
       width: 200px;
       height: 20px;
@@ -45,13 +41,11 @@
       margin: 10px auto;
       border: 1px solid #ff4444;
     }
-
     #healthFill {
       height: 100%;
       width: 100%;
       background: #ff0000;
     }
-
     .blood-effect {
       position: absolute;
       background: #f00;
@@ -72,10 +66,19 @@
     const ctx = canvas.getContext('2d');
     const healthFill = document.getElementById('healthFill');
 
+    // Preload images
+    const playerImage = new Image();
+    playerImage.src = 'idle.png';
+
+    const enemyIdleImage = new Image();
+    enemyIdleImage.src = 'enemyidle.png';
+
+    const enemyHitImage = new Image();
+    enemyHitImage.src = 'hit.png';
+
     // Game state
     let enemyHealth = 100;
     let lastAttackTime = 0;
-    const bloodEffects = [];
 
     // Player character
     const player = {
@@ -83,8 +86,7 @@
       y: 300,
       width: 50,
       height: 50,
-      speed: 5,
-      color: '#3498db'
+      speed: 5
     };
 
     // Enemy
@@ -93,7 +95,6 @@
       y: 300,
       width: 50,
       height: 50,
-      color: '#e74c3c',
       isHurt: false
     };
 
@@ -102,16 +103,27 @@
     document.addEventListener('keydown', (e) => keys[e.key] = true);
     document.addEventListener('keyup', (e) => keys[e.key] = false);
 
-    // Attack logic
+    // Attack logic: triggers when player is near enemy (not necessarily colliding)
     function attack() {
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Cooldown
       
-      if (isColliding(player, enemy)) {
+      // Check if player is near enemy (using distance from center)
+      const playerCenterX = player.x + player.width / 2;
+      const playerCenterY = player.y + player.height / 2;
+      const enemyCenterX = enemy.x + enemy.width / 2;
+      const enemyCenterY = enemy.y + enemy.height / 2;
+      const dx = playerCenterX - enemyCenterX;
+      const dy = playerCenterY - enemyCenterY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Adjust this threshold as needed (here, 100 pixels)
+      if (distance < 100) {
         enemy.isHurt = true;
         enemyHealth -= 10;
         healthFill.style.width = `${enemyHealth}%`;
-        createBloodEffect(enemy.x, enemy.y);
+        // Optionally create blood effect here if desired
+        // createBloodEffect(enemy.x, enemy.y);
         
         if (enemyHealth <= 0) {
           enemyHealth = 100;
@@ -119,11 +131,12 @@
         }
         
         lastAttackTime = now;
-        setTimeout(() => enemy.isHurt = false, 200);
+        // Show the hit image for 1 second
+        setTimeout(() => enemy.isHurt = false, 1000);
       }
     }
 
-    // Collision detection
+    // Collision detection (unused in attack now but can be used elsewhere)
     function isColliding(a, b) {
       return a.x < b.x + b.width &&
              a.x + a.width > b.x &&
@@ -131,7 +144,7 @@
              a.y + a.height > b.y;
     }
 
-    // Blood effect
+    // Blood effect (optional)
     function createBloodEffect(x, y) {
       const blood = document.createElement('div');
       blood.className = 'blood-effect';
@@ -148,7 +161,7 @@
       }, 50);
     }
 
-    // Game loop
+    // Game loop update
     function update() {
       // Player movement
       if (keys['ArrowUp']) player.y -= player.speed;
@@ -156,14 +169,14 @@
       if (keys['ArrowLeft']) player.x -= player.speed;
       if (keys['ArrowRight']) player.x += player.speed;
       
-      // Attack
+      // Attack when space is pressed
       if (keys[' ']) attack();
       
-      // Boundaries
+      // Keep player within canvas bounds
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       
-      // Simple enemy AI
+      // Simple enemy AI: random movement
       if (Math.random() < 0.02) {
         enemy.x += (Math.random() * 6 - 3);
         enemy.y += (Math.random() * 6 - 3);
@@ -172,20 +185,39 @@
       enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
     }
 
+    // Drawing routine
     function draw() {
-      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Draw enemy
-      ctx.fillStyle = enemy.isHurt ? '#ff9999' : enemy.color;
-      ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+      // Draw enemy using images:
+      // If enemy is hurt, show hit image; otherwise, show idle image.
+      if (enemy.isHurt && enemyHitImage.complete) {
+        ctx.drawImage(enemyHitImage, enemy.x, enemy.y, enemy.width, enemy.height);
+      } else if (enemyIdleImage.complete) {
+        ctx.drawImage(enemyIdleImage, enemy.x, enemy.y, enemy.width, enemy.height);
+      } else {
+        // Fallback rectangle if image not loaded
+        ctx.fillStyle = enemy.isHurt ? '#ff9999' : enemy.color;
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+      }
       
-      // Draw player
-      ctx.fillStyle = player.color;
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+      // Draw player using its image
+      if (playerImage.complete) {
+        ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+      } else {
+        ctx.fillStyle = player.color || '#3498db';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+      }
       
-      // Draw attack range indicator
-      if (isColliding(player, enemy)) {
+      // Optionally, draw an indicator if within attack range (for debugging)
+      const playerCenterX = player.x + player.width / 2;
+      const playerCenterY = player.y + player.height / 2;
+      const enemyCenterX = enemy.x + enemy.width / 2;
+      const enemyCenterY = enemy.y + enemy.height / 2;
+      const dx = playerCenterX - enemyCenterX;
+      const dy = playerCenterY - enemyCenterY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < 100) {
         ctx.strokeStyle = '#ff0000';
         ctx.lineWidth = 2;
         ctx.strokeRect(enemy.x - 5, enemy.y - 5, enemy.width + 10, enemy.height + 10);
@@ -198,7 +230,7 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // Start game
+    // Start game loop
     gameLoop();
   </script>
 </body>
