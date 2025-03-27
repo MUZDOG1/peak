@@ -24,21 +24,19 @@
 </head>
 <body>
   <h1>kill them all.</h1>
-  <p id="instructions">Left click to hit.</p>
+  <p id="instructions">Press SPACE to hit when near the enemy.</p>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Load the image for the attacker
+    // Load the images for the attacker and enemy
     const attackerImage = new Image();
     attackerImage.src = 'idle.png';
 
-    // Load the normal enemy image
     const enemyImage = new Image();
     enemyImage.src = 'enemyidle.png';
 
-    // Load the enemy hit image
     const hitImage = new Image();
     hitImage.src = 'hit.png';
 
@@ -59,7 +57,7 @@
       isHurt: false // Used to track hit state
     };
 
-    // This flag will determine if we display the hit image
+    // Flag to show hit image
     let enemyHit = false;
 
     // Keyboard state for movement
@@ -67,36 +65,33 @@
 
     window.addEventListener('keydown', (e) => {
       keys[e.key] = true;
+      // Trigger hit interaction on space press if near the enemy
+      if (e.key === ' ') {
+        if (isNear(attacker, target, 100)) {  // 100-pixel threshold
+          target.isHurt = true;
+          enemyHit = true;
+          console.log("Torture interaction triggered!");
+          // After 1 second, revert back to normal
+          setTimeout(() => {
+            target.isHurt = false;
+            enemyHit = false;
+          }, 1000);
+        }
+      }
     });
 
     window.addEventListener('keyup', (e) => {
       keys[e.key] = false;
     });
 
-    // Listen for left mouse click to trigger the hit
-    canvas.addEventListener('mousedown', (e) => {
-      if (e.button === 0) { // Left mouse button
-        if (isColliding(attacker, target)) {
-          enemyHit = true;
-          target.isHurt = true;
-          console.log("Torture interaction triggered!");
-          // After 1 second, revert back to normal state
-          setTimeout(() => {
-            enemyHit = false;
-            target.isHurt = false;
-          }, 1000);
-        }
-      }
-    });
-
-    // Basic collision detection between two rectangles
-    function isColliding(a, b) {
-      return (
-        a.x < b.x + b.width &&
-        a.x + a.width > b.x &&
-        a.y < b.y + b.height &&
-        a.y + a.height > b.y
-      );
+    // Check if attacker is near the target (distance between centers)
+    function isNear(a, b, threshold) {
+      const ax = a.x + a.width / 2;
+      const ay = a.y + a.height / 2;
+      const bx = b.x + b.width / 2;
+      const by = b.y + b.height / 2;
+      const distance = Math.hypot(ax - bx, ay - by);
+      return distance <= threshold;
     }
 
     function update() {
@@ -115,18 +110,16 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Draw the enemy:
-      // If enemy was hit and hit image is loaded, display it.
       if (enemyHit && hitImage.complete) {
         ctx.drawImage(hitImage, target.x, target.y, target.width, target.height);
       } else if (enemyImage.complete) {
         ctx.drawImage(enemyImage, target.x, target.y, target.width, target.height);
       } else {
-        // Fallback: Draw a rectangle (orange if hurt, red otherwise)
         ctx.fillStyle = target.isHurt ? 'orange' : 'red';
         ctx.fillRect(target.x, target.y, target.width, target.height);
       }
 
-      // Draw the attacker using its image or a blue rectangle as fallback
+      // Draw the attacker using its image (or fallback to a blue rectangle)
       if (attackerImage.complete) {
         ctx.drawImage(attackerImage, attacker.x, attacker.y, attacker.width, attacker.height);
       } else {
