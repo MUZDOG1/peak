@@ -12,12 +12,11 @@
       text-align: center;
       overflow: hidden;
       /* Custom “rage” cursor (optional) */
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
     #gameCanvas {
       display: block;
       margin: 20px auto;
-      /* Removed any border around the canvas */
       position: relative;
     }
     h1 {
@@ -65,11 +64,9 @@
     // ====================
     //   IMAGES
     // ====================
-    // Replace with your actual background image path/filename
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
 
-    // Player & Enemy Sprites
     const playerImage = new Image();
     playerImage.src = 'idle.png';
 
@@ -91,7 +88,6 @@
     // ====================
     //   ENTITIES
     // ====================
-    // Positioned so the player starts in the grass, near the bottom
     const player = {
       x: 200,
       y: 500,
@@ -101,7 +97,6 @@
       isPunching: false
     };
 
-    // Enemy up in the stone area
     const enemy = {
       x: 550,
       y: 350,
@@ -113,30 +108,16 @@
     };
 
     // =========================
-    //   COLLISION BOXES (INTERNAL)
+    //   COLLISION BOXES (UNWALKABLE AREAS)
     // =========================
-    // Based on your screenshot, carefully chosen to:
-    // 1) Block the tall left-brick area
-    // 2) Block the stone boundary at bottom EXCEPT where the green bush is
-    // 3) Block the tall red couch
-    // 4) Block the thin black TV
-    //
-    // The “gap” (entry) is around x=370..410, so you can pass through the bush.
+    // In your design, only the "red" areas are unwalkable. Everything else (like blue) is free.
+    // Adjust these bounding boxes to perfectly line up with your background image.
     const walls = [
-      // 1) Tall left bricks
-      { x: 0,   y: 0,   width: 130, height: 320 },
-
-      // 2a) Stone boundary on bottom-left (stops at bush)
-      { x: 0,   y: 370, width: 370, height: 30 },
-
-      // 2b) Stone boundary on bottom-right (picks up after bush)
-      { x: 410, y: 370, width: 390, height: 30 },
-
-      // 3) Red couch (right side)
-      { x: 620, y: 130, width: 40, height: 140 },
-
-      // 4) Black TV (near couch)
-      { x: 670, y: 140, width: 15, height: 70 }
+      // Example: Unwalkable red area at the left side of the house
+      { x: 50, y: 50, width: 200, height: 150 },
+      // Example: Unwalkable red area on the right side (e.g., a wall or furniture)
+      { x: 400, y: 200, width: 150, height: 150 },
+      // Add more boxes as needed to cover all red (unwalkable) zones!
     ];
 
     // ====================
@@ -164,7 +145,7 @@
       entity.x += dx;
       entity.y += dy;
 
-      // If entity collides with any "wall," revert
+      // If entity collides with any wall, revert the movement.
       for (const wall of walls) {
         if (isColliding(entity, wall)) {
           entity.x = originalX;
@@ -179,9 +160,9 @@
     // ====================
     function attack() {
       const now = Date.now();
-      if (now - lastAttackTime < 500) return; // Attack cooldown
+      if (now - lastAttackTime < 500) return; // Cooldown
 
-      // Distance check
+      // Check distance between player and enemy
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemy.x + enemy.width / 2;
@@ -195,7 +176,7 @@
         setTimeout(() => (player.isPunching = false), 200);
 
         enemy.isHurt = true;
-        // Knockback
+        // Knockback logic
         const knockbackIntensity = 15;
         const knockbackDuration = 15;
         const mag = Math.sqrt(dx * dx + dy * dy);
@@ -203,7 +184,7 @@
         enemy.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
         enemy.knockbackDuration = knockbackDuration;
 
-        // Health
+        // Update enemy health
         enemyHealth -= 10;
         healthFill.style.width = `${enemyHealth}%`;
         if (enemyHealth <= 0) {
@@ -220,7 +201,7 @@
     //   GAME LOOP
     // ====================
     function update() {
-      // Player movement
+      // Handle player movement
       let moveX = 0, moveY = 0;
       if (keys['ArrowUp'])    moveY = -player.speed;
       if (keys['ArrowDown'])  moveY =  player.speed;
@@ -228,7 +209,7 @@
       if (keys['ArrowRight']) moveX =  player.speed;
       moveEntity(player, moveX, moveY);
 
-      // Attack
+      // Handle attack input
       if (keys[' ']) attack();
 
       // Enemy movement
@@ -238,7 +219,7 @@
         enemy.knockbackVelocity.y *= 0.9;
         enemy.knockbackDuration--;
       } else {
-        // Random wandering
+        // Random wandering behavior
         if (Math.random() < 0.02) {
           const randX = Math.random() * 6 - 3;
           const randY = Math.random() * 6 - 3;
@@ -246,7 +227,7 @@
         }
       }
 
-      // Keep them in the canvas
+      // Keep entities within the canvas bounds
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       enemy.x  = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
@@ -254,7 +235,7 @@
     }
 
     function draw() {
-      // Draw background
+      // Draw the background image or fallback color if not loaded.
       if (backgroundImage.complete) {
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
       } else {
@@ -262,18 +243,17 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Uncomment this to visualize collision boxes for fine-tuning
-      /*
+      // Debug: Visualize collision boxes for unwalkable areas.
+      // Comment this out if you don't want to see the debug overlay.
       ctx.save();
       ctx.globalAlpha = 0.3;
-      ctx.fillStyle = '#FF0000';
+      ctx.fillStyle = '#ff0000';  // Red = unwalkable
       walls.forEach(wall => {
         ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
       });
       ctx.restore();
-      */
 
-      // Draw enemy
+      // Draw the enemy (choose the appropriate sprite)
       if (enemy.isHurt && enemyHitImage.complete) {
         ctx.drawImage(enemyHitImage, enemy.x, enemy.y, enemy.width, enemy.height);
       } else if (enemyIdleImage.complete) {
@@ -283,7 +263,7 @@
         ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
       }
 
-      // Draw player
+      // Draw the player
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
@@ -293,7 +273,7 @@
         ctx.fillRect(player.x, player.y, player.width, player.height);
       }
 
-      // (Optional) highlight if within attack range
+      // Optional: highlight enemy if within attack range
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemy.x + enemy.width / 2;
