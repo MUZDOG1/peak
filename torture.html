@@ -6,82 +6,96 @@
   <style>
     body {
       margin: 0;
-      background: #2c2c2c;
-      color: #ff4444;
+      background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3OLi4ubm5uVlZWPj4+NjY19fX2JiYl/f39ra2uRkZGZmZlpaWmXl5dvb29xcXGTk5NnZ2c8TV1mAAAAG3RSTlNAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAvEOwtAAAFVklEQVR4XpWWB67c2BUFb3g557T/hRo9/WUMZHlgr4Bg8Z4qQgQJlHI4A8SzFVrapvmTF9O7dmYRFZ60YiBhJRCgh1FYhiLAmdvX0CzTOpNE77ME0Zty/nWWzchDtiqrmQDeuv3powQ5ta2eN0FY0InkqDD73lT9c9lEzwUNqgFHs9VQce3TVClFCQrSTfOiYkVJQBmpbq2L6iZavPnAPcoU0dSw0SUTqz/GtrGuXfbyyBniKykOWQWGqwwMA7QiYAxi+IlPdqo+hYHnUt5ZPfnsHJyNiDtnpJyayNBkF6cWoYGAMY92U2hXHF/C1M8uP/ZtYdiuj26UdAdQQSXQErwSOMzt/XWRWAz5GuSBIkwG1H3FabJ2OsUOUhGC6tK4EMtJO0ttC6IBD3kM0ve0tJwMdSfjZo+EEISaeTr9P3wYrGjXqyC1krcKdhMpxEnt5JetoulscpyzhXN5FRpuPHvbeQaKxFAEB6EN+cYN6xD7RYGpXpNndMmeBehD3ICHzBhWsATdRd2k4dh4f3a7tWzD1vt7b0MdwVZ+rU4Ml9VtTk4J/U4xrpAIw == ') #2c2c2c;
       font-family: 'Arial', sans-serif;
+      color: #ff4444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-size: 50px 50px;
+      background-blend-mode: overlay;
+    }
+    #gameWrapper {
+      background-color: rgba(0,0,0,0.8);
+      border: 4px solid #ff4444;
+      box-shadow: 0 0 30px rgba(255,0,0,0.5);
+      padding: 20px;
       text-align: center;
-      overflow: hidden;
-      cursor: crosshair;
+      max-width: 900px;
+      width: 100%;
     }
-    #gameCanvas {
-      background: #1c1c1c;
-      display: block;
-      margin: 20px auto;
-      border: 3px solid #ff4444;
-      box-shadow: 0 0 20px rgba(255,0,0,0.5);
-      position: relative;
-    }
-    h1 {
-      font-size: 3em;
-      text-shadow: 3px 3px 0 #000;
-      margin: 10px 0;
-      color: #ff5555;
+    #gameTitle {
+      font-size: 4em;
       text-transform: uppercase;
-      letter-spacing: 3px;
+      color: #ff4444;
+      text-shadow: 4px 4px 0 #000, 
+                   -4px -4px 0 #000, 
+                   4px -4px 0 #000, 
+                   -4px 4px 0 #000;
+      margin: 20px 0;
+      letter-spacing: 5px;
     }
     #instructions {
-      background: rgba(48,0,0,0.8);
-      border: 2px solid #ff4444;
-      padding: 15px;
-      margin: 10px auto;
-      width: 400px;
+      background: rgba(48,0,0,0.9);
+      border: 3px solid #ff4444;
       color: #ffaaaa;
-      font-size: 1.1em;
+      padding: 15px;
+      margin: 20px 0;
+      font-size: 1.2em;
       text-transform: uppercase;
+      letter-spacing: 2px;
     }
-    #healthBar {
-      width: 300px;
-      height: 30px;
+    #healthBarContainer {
       background: #300000;
-      margin: 10px auto;
-      border: 2px solid #ff4444;
+      border: 3px solid #ff4444;
+      width: 400px;
+      margin: 20px auto;
       overflow: hidden;
     }
-    #healthFill {
-      height: 100%;
-      width: 100%;
+    #healthBar {
+      height: 30px;
       background: linear-gradient(to right, #ff0000, #ff4444);
       transition: width 0.3s ease;
     }
-    .blood-effect {
-      position: absolute;
-      background: #8B0000;
-      border-radius: 50%;
-      pointer-events: none;
-      filter: blur(2px);
+    #gameCanvas {
+      border: 4px solid #ff4444;
+      box-shadow: 0 0 20px rgba(255,0,0,0.5);
     }
-    #killCounter {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      color: #ff4444;
-      font-size: 1.5em;
-      text-shadow: 2px 2px 0 #000;
+    #bloodOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(139,0,0,0.1) 0%, rgba(0,0,0,0) 70%);
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
-  <div id="killCounter">KILLS: 0</div>
-  <h1>POSTAL RAGE</h1>
-  <div id="instructions">ARROW KEYS: MOVE | SPACE: UNLEASH RAGE</div>
-  <div id="healthBar"><div id="healthFill"></div></div>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="bloodOverlay"></div>
+  <div id="gameWrapper">
+    <h1 id="gameTitle">POSTAL RAGE</h1>
+    
+    <div id="instructions">
+      ARROW KEYS: MOVE | SPACE: UNLEASH RAGE
+    </div>
+    
+    <div id="healthBarContainer">
+      <div id="healthBar"></div>
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+  </div>
 
   <script>
     // Game setup
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const healthFill = document.getElementById('healthFill');
+    const healthFill = document.getElementById('healthBar');
     const killCounter = document.getElementById('killCounter');
 
     // Sounds (simulated with console logs)
