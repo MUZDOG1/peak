@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Ensures proper scaling on mobile/laptop devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>bacon egg and cheese</title>
   <style>
@@ -11,10 +12,13 @@
       color: #ff4444;
       font-family: 'Courier New', monospace;
       text-align: center;
-      overflow: hidden;
+      overflow-y: auto; /* allow vertical scrolling if needed */
       /* Custom “rage” cursor (optional) */
       cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
+    /* Responsive canvas container:
+       The canvas element will always be at most 800px wide and scale down with the viewport.
+       Its height is scaled proportionally (maintaining the 4:3 aspect ratio of 800x600). */
     #gameCanvas {
       display: block;
       margin: 20px auto;
@@ -29,16 +33,20 @@
       margin: 10px 0;
       color: #ff5555;
     }
-    #instructions {
+    /* Make UI elements use percentage widths with a max-width for smaller screens */
+    #instructions,
+    #settingsMenu {
       background: #300000;
       border: 1px solid #ff4444;
       padding: 10px;
       margin: 10px auto;
-      width: 300px;
+      width: 90%;
+      max-width: 300px;
       color: #ffaaaa;
     }
     #healthBar {
-      width: 200px;
+      width: 90%;
+      max-width: 200px;
       height: 20px;
       background: #300000;
       margin: 10px auto;
@@ -49,14 +57,7 @@
       width: 100%;
       background: #ff0000;
     }
-    /* Settings menu styling */
     #settingsMenu {
-      background: #300000;
-      border: 1px solid #ff4444;
-      padding: 10px;
-      margin: 10px auto;
-      width: 300px;
-      color: #ffaaaa;
       text-align: left;
     }
     #settingsMenu label {
@@ -68,6 +69,7 @@
   <h1>RAGE SIMULATOR</h1>
   <div id="instructions">WASD: Move | SPACE: Attack</div>
   <div id="healthBar"><div id="healthFill"></div></div>
+  <!-- The canvas is defined at 800×600 internally -->
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <!-- Settings Menu -->
   <div id="settingsMenu">
@@ -76,6 +78,20 @@
   </div>
 
   <script>
+    // Responsive Canvas Resizing:
+    // Although the canvas's internal coordinate system remains 800x600,
+    // we scale its CSS dimensions so that it fits within the viewport.
+    function resizeCanvas() {
+      const aspect = 800 / 600; // original aspect ratio
+      const containerWidth = window.innerWidth * 0.95; // use 95% of viewport width
+      let newWidth = Math.min(containerWidth, 800);
+      let newHeight = newWidth / aspect;
+      document.getElementById('gameCanvas').style.width = newWidth + 'px';
+      document.getElementById('gameCanvas').style.height = newHeight + 'px';
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
     // ====================
     //   CANVAS & CONTEXT
     // ====================
