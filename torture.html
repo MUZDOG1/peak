@@ -65,7 +65,7 @@
     // ====================
     //   IMAGES
     // ====================
-    // 1) Background: your house image
+    // 1) Background: use your house image here
     //    Replace "house_background.png" with the actual filename/path of your image
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
@@ -114,25 +114,26 @@
     // ====================
     //   COLLISION BOXES
     // ====================
-    // Each object that shouldn't be passable is a rectangle:
-    // (x, y, width, height). Adjust these so they line up
-    // correctly with your drawn walls, couch, and TV.
+    // The numbers below are ESTIMATES to prevent passing
+    // through the left bricks, top/bottom edges, couch (red),
+    // and TV (black). Adjust as needed for perfect alignment!
     const walls = [
-      // Example "house wall" bounding box:
-      { x: 0,   y: 0,   width: 800, height: 50  },  // Top edge
-      { x: 0,   y: 0,   width: 50,  height: 600 },  // Left edge
-      { x: 750, y: 0,   width: 50,  height: 600 },  // Right edge
-      { x: 0,   y: 550, width: 800, height: 50  },  // Bottom edge
+      // 1) Left-side stone/brick area (vertical wall)
+      { x: 0,   y: 0,  width: 80,  height: 300 },
 
-      // Example "couch" bounding box (the red item):
-      // Tweak these numbers to match your couch's position
-      { x: 620, y: 250, width: 80, height: 50 },
+      // 2) Top horizontal wall area (just enough to block the very top)
+      { x: 0,   y: 0,  width: 800, height: 50 },
 
-      // Example "TV" bounding box (the black rectangle):
-      { x: 730, y: 200, width: 20, height: 80 },
+      // 3) Bottom stone boundary between house & grass
+      //    If the walkway is at ~ y=380 to 420
+      { x: 0,   y: 380, width: 800, height: 40 },
 
-      // You can add more bounding boxes for other furniture or walls
-      // { x: someX, y: someY, width: someW, height: someH }
+      // 4) Couch (red rectangle), approx. near the right side
+      //    Adjust x,y if needed
+      { x: 600, y: 200, width: 70, height: 60 },
+
+      // 5) TV (black rectangle), near couch
+      { x: 690, y: 190, width: 20, height: 80 },
     ];
 
     // ====================
@@ -225,8 +226,7 @@
     // ====================
     function update() {
       // Player movement
-      let moveX = 0,
-          moveY = 0;
+      let moveX = 0, moveY = 0;
       if (keys['ArrowUp'])    moveY = -player.speed;
       if (keys['ArrowDown'])  moveY =  player.speed;
       if (keys['ArrowLeft'])  moveX = -player.speed;
@@ -270,7 +270,7 @@
       }
 
       // (Optional) Draw collision boxes for debugging
-      // Comment out if you don't want to see them.
+      // Uncomment to see where your bounding boxes are:
       /*
       ctx.save();
       ctx.globalAlpha = 0.3;
@@ -327,3 +327,4 @@
   </script>
 </body>
 </html>
+
