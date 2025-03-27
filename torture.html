@@ -24,7 +24,7 @@
 </head>
 <body>
   <h1>kill them all.</h1>
-  <p id="instructions">space to hit.</p>
+  <p id="instructions">Left click to hit.</p>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -33,10 +33,14 @@
     // Load the image for the attacker
     const attackerImage = new Image();
     attackerImage.src = 'idle.png';
-    
-    // Load the image for the enemy (target)
+
+    // Load the normal enemy image
     const enemyImage = new Image();
     enemyImage.src = 'enemyidle.png';
+
+    // Load the enemy hit image
+    const hitImage = new Image();
+    hitImage.src = 'hit.png';
 
     // Game objects
     const attacker = {
@@ -52,26 +56,40 @@
       y: 300,
       width: 50,
       height: 50,
-      isHurt: false // This flag is still here if you wanna trigger a state change later
+      isHurt: false // Used to track hit state
     };
 
-    // Keyboard state
+    // This flag will determine if we display the hit image
+    let enemyHit = false;
+
+    // Keyboard state for movement
     const keys = {};
 
     window.addEventListener('keydown', (e) => {
       keys[e.key] = true;
-      // Trigger interaction if space is pressed and collision occurs
-      if (e.key === ' ' && isColliding(attacker, target)) {
-        target.isHurt = true;
-        console.log("Torture interaction triggered!");
-      }
     });
 
     window.addEventListener('keyup', (e) => {
       keys[e.key] = false;
     });
 
-    // Basic collision detection
+    // Listen for left mouse click to trigger the hit
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button === 0) { // Left mouse button
+        if (isColliding(attacker, target)) {
+          enemyHit = true;
+          target.isHurt = true;
+          console.log("Torture interaction triggered!");
+          // After 1 second, revert back to normal state
+          setTimeout(() => {
+            enemyHit = false;
+            target.isHurt = false;
+          }, 1000);
+        }
+      }
+    });
+
+    // Basic collision detection between two rectangles
     function isColliding(a, b) {
       return (
         a.x < b.x + b.width &&
@@ -82,7 +100,7 @@
     }
 
     function update() {
-      // Movement controls for the attacker
+      // Movement controls for the attacker using arrow keys
       if (keys['ArrowUp']) attacker.y -= attacker.speed;
       if (keys['ArrowDown']) attacker.y += attacker.speed;
       if (keys['ArrowLeft']) attacker.x -= attacker.speed;
@@ -91,30 +109,27 @@
       // Keep attacker within canvas bounds
       attacker.x = Math.max(0, Math.min(canvas.width - attacker.width, attacker.x));
       attacker.y = Math.max(0, Math.min(canvas.height - attacker.height, attacker.y));
-
-      // Reset target hurt state if attacker moves away
-      if (!isColliding(attacker, target)) {
-        target.isHurt = false;
-      }
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw the enemy using its image
-      if (enemyImage.complete) {
+      // Draw the enemy:
+      // If enemy was hit and hit image is loaded, display it.
+      if (enemyHit && hitImage.complete) {
+        ctx.drawImage(hitImage, target.x, target.y, target.width, target.height);
+      } else if (enemyImage.complete) {
         ctx.drawImage(enemyImage, target.x, target.y, target.width, target.height);
       } else {
-        // Fallback: draw a rectangle, color changes if hurt
+        // Fallback: Draw a rectangle (orange if hurt, red otherwise)
         ctx.fillStyle = target.isHurt ? 'orange' : 'red';
         ctx.fillRect(target.x, target.y, target.width, target.height);
       }
 
-      // Draw the attacker using its image
+      // Draw the attacker using its image or a blue rectangle as fallback
       if (attackerImage.complete) {
         ctx.drawImage(attackerImage, attacker.x, attacker.y, attacker.width, attacker.height);
       } else {
-        // Fallback: draw a blue rectangle if the image hasn't loaded
         ctx.fillStyle = 'blue';
         ctx.fillRect(attacker.x, attacker.y, attacker.width, attacker.height);
       }
@@ -131,5 +146,3 @@
   </script>
 </body>
 </html>
-
-  
