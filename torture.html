@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>RAGE SIMULATOR</title>
+  <title>RAGE SIMULATOR with House Objects</title>
   <style>
     body {
       margin: 0;
@@ -11,7 +11,7 @@
       font-family: 'Courier New', monospace;
       text-align: center;
       overflow: hidden;
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
     #gameCanvas {
       background: #222;
@@ -46,12 +46,6 @@
       width: 100%;
       background: #ff0000;
     }
-    .blood-effect {
-      position: absolute;
-      background: #f00;
-      border-radius: 50%;
-      pointer-events: none;
-    }
   </style>
 </head>
 <body>
@@ -61,29 +55,43 @@
   <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <script>
-    // Game setup
+    // ====================
+    //   CANVAS & CONTEXT
+    // ====================
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const healthFill = document.getElementById('healthFill');
 
-    // Preload images for the player and enemy states
+    // ====================
+    //   IMAGES
+    // ====================
+    // 1) Background: your house image
+    //    Replace "house_background.png" with the actual filename/path of your image
+    const backgroundImage = new Image();
+    backgroundImage.src = 'house_background.png';
+
+    // 2) Player & Enemy Sprites
     const playerImage = new Image();
     playerImage.src = 'idle.png';
-    
+
     const punchImage = new Image();
     punchImage.src = 'punch.png';
-    
+
     const enemyIdleImage = new Image();
     enemyIdleImage.src = 'enemyidle.png';
-    
+
     const enemyHitImage = new Image();
     enemyHitImage.src = 'hit.png';
 
-    // Game state
+    // ====================
+    //   GAME STATE
+    // ====================
     let enemyHealth = 100;
     let lastAttackTime = 0;
 
-    // Player character
+    // ====================
+    //   ENTITIES
+    // ====================
     const player = {
       x: 100,
       y: 300,
@@ -93,7 +101,6 @@
       isPunching: false
     };
 
-    // Enemy
     const enemy = {
       x: 600,
       y: 300,
@@ -104,17 +111,77 @@
       knockbackDuration: 0
     };
 
-    // Keyboard input
+    // ====================
+    //   COLLISION BOXES
+    // ====================
+    // Each object that shouldn't be passable is a rectangle:
+    // (x, y, width, height). Adjust these so they line up
+    // correctly with your drawn walls, couch, and TV.
+    const walls = [
+      // Example "house wall" bounding box:
+      { x: 0,   y: 0,   width: 800, height: 50  },  // Top edge
+      { x: 0,   y: 0,   width: 50,  height: 600 },  // Left edge
+      { x: 750, y: 0,   width: 50,  height: 600 },  // Right edge
+      { x: 0,   y: 550, width: 800, height: 50  },  // Bottom edge
+
+      // Example "couch" bounding box (the red item):
+      // Tweak these numbers to match your couch's position
+      { x: 620, y: 250, width: 80, height: 50 },
+
+      // Example "TV" bounding box (the black rectangle):
+      { x: 730, y: 200, width: 20, height: 80 },
+
+      // You can add more bounding boxes for other furniture or walls
+      // { x: someX, y: someY, width: someW, height: someH }
+    ];
+
+    // ====================
+    //   INPUT HANDLING
+    // ====================
     const keys = {};
     document.addEventListener('keydown', (e) => keys[e.key] = true);
     document.addEventListener('keyup', (e) => keys[e.key] = false);
 
-    // Attack logic: triggers when player is near enemy (within 100 pixels from centers)
+    // ====================
+    //   COLLISION CHECK
+    // ====================
+    function isColliding(rect1, rect2) {
+      return (
+        rect1.x < rect2.x + rect2.width &&
+        rect1.x + rect1.width > rect2.x &&
+        rect1.y < rect2.y + rect2.height &&
+        rect1.y + rect1.height > rect2.y
+      );
+    }
+
+    // Try to move an entity; revert if colliding with a wall
+    function moveEntity(entity, dx, dy) {
+      const originalX = entity.x;
+      const originalY = entity.y;
+
+      // Attempt movement
+      entity.x += dx;
+      entity.y += dy;
+
+      // Check collisions against all walls
+      for (const wall of walls) {
+        if (isColliding(entity, wall)) {
+          // If collided, revert to original position
+          entity.x = originalX;
+          entity.y = originalY;
+          break;
+        }
+      }
+    }
+
+    // ====================
+    //   ATTACK LOGIC
+    // ====================
     function attack() {
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Attack cooldown
-      
-      // Calculate centers for distance checking
+
+      // Distance check
       const playerCenterX = player.x + player.width / 2;
       const playerCenterY = player.y + player.height / 2;
       const enemyCenterX = enemy.x + enemy.width / 2;
@@ -122,95 +189,109 @@
       const dx = playerCenterX - enemyCenterX;
       const dy = playerCenterY - enemyCenterY;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      // If within 100 pixels, perform attack
+
+      // If close enough
       if (distance < 100) {
-        // Change player sprite to punch
         player.isPunching = true;
-        setTimeout(() => player.isPunching = false, 200);
-        
+        setTimeout(() => (player.isPunching = false), 200);
+
         enemy.isHurt = true;
-        
-        // Calculate knockback direction and intensity
+
+        // Knockback
         const knockbackIntensity = 15;
-        const knockbackDuration = 15; // How many frames the knockback lasts
-        
-        // Normalize direction vector
+        const knockbackDuration = 15;
         const mag = Math.sqrt(dx * dx + dy * dy);
+
         enemy.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
         enemy.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
         enemy.knockbackDuration = knockbackDuration;
-        
+
+        // Decrease health
         enemyHealth -= 10;
         healthFill.style.width = `${enemyHealth}%`;
-        
-        // If enemy's health is depleted, reset it after a short delay
+
         if (enemyHealth <= 0) {
           enemyHealth = 100;
-          setTimeout(() => healthFill.style.width = '100%', 500);
+          setTimeout(() => (healthFill.style.width = '100%'), 500);
         }
-        
+
         lastAttackTime = now;
-        // Show the hit image for 1 second
-        setTimeout(() => enemy.isHurt = false, 1000);
+        setTimeout(() => (enemy.isHurt = false), 1000);
       }
     }
 
-    // Game loop update
+    // ====================
+    //   GAME LOOP
+    // ====================
     function update() {
       // Player movement
-      if (keys['ArrowUp']) player.y -= player.speed;
-      if (keys['ArrowDown']) player.y += player.speed;
-      if (keys['ArrowLeft']) player.x -= player.speed;
-      if (keys['ArrowRight']) player.x += player.speed;
-      
-      // Attack when SPACE is pressed
+      let moveX = 0,
+          moveY = 0;
+      if (keys['ArrowUp'])    moveY = -player.speed;
+      if (keys['ArrowDown'])  moveY =  player.speed;
+      if (keys['ArrowLeft'])  moveX = -player.speed;
+      if (keys['ArrowRight']) moveX =  player.speed;
+
+      // Move player with collision checks
+      moveEntity(player, moveX, moveY);
+
+      // Attack
       if (keys[' ']) attack();
-      
-      // Keep player within canvas bounds
-      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-      player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-      
-      // Enemy knockback movement
+
+      // Enemy knockback or random movement
       if (enemy.knockbackDuration > 0) {
-        enemy.x += enemy.knockbackVelocity.x;
-        enemy.y += enemy.knockbackVelocity.y;
-        
-        // Gradually reduce knockback velocity
+        moveEntity(enemy, enemy.knockbackVelocity.x, enemy.knockbackVelocity.y);
         enemy.knockbackVelocity.x *= 0.9;
         enemy.knockbackVelocity.y *= 0.9;
-        
         enemy.knockbackDuration--;
       } else {
-        // Random wandering when not knocked back
+        // Random wandering
         if (Math.random() < 0.02) {
-          enemy.x += (Math.random() * 6 - 3);
-          enemy.y += (Math.random() * 6 - 3);
+          const randX = Math.random() * 6 - 3;
+          const randY = Math.random() * 6 - 3;
+          moveEntity(enemy, randX, randY);
         }
       }
-      
-      // Keep enemy within canvas bounds
-      enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
-      enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
+
+      // Keep both within canvas
+      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+      player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+      enemy.x  = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
+      enemy.y  = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
     }
 
-    // Drawing routine
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw enemy using images:
-      // If enemy is hurt, show hit image; otherwise, show idle image.
+      // Draw the background
+      if (backgroundImage.complete) {
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = '#333';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // (Optional) Draw collision boxes for debugging
+      // Comment out if you don't want to see them.
+      /*
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = '#FF0000';
+      for (const wall of walls) {
+        ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+      }
+      ctx.restore();
+      */
+
+      // Draw enemy
       if (enemy.isHurt && enemyHitImage.complete) {
         ctx.drawImage(enemyHitImage, enemy.x, enemy.y, enemy.width, enemy.height);
       } else if (enemyIdleImage.complete) {
         ctx.drawImage(enemyIdleImage, enemy.x, enemy.y, enemy.width, enemy.height);
       } else {
-        // Fallback rectangle if image not loaded
         ctx.fillStyle = enemy.isHurt ? '#ff9999' : '#ff0000';
         ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
       }
-      
-      // Draw player using the appropriate image
+
+      // Draw player
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
@@ -219,8 +300,8 @@
         ctx.fillStyle = '#3498db';
         ctx.fillRect(player.x, player.y, player.width, player.height);
       }
-      
-      // Optionally, draw an indicator if within attack range (for debugging)
+
+      // (Optional) draw an indicator if within attack range
       const playerCenterX = player.x + player.width / 2;
       const playerCenterY = player.y + player.height / 2;
       const enemyCenterX = enemy.x + enemy.width / 2;
@@ -241,7 +322,7 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // Start game loop
+    // Start the loop
     gameLoop();
   </script>
 </body>
