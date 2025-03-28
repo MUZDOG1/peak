@@ -129,11 +129,16 @@
     const enemyKneelingImage = new Image();
     enemyKneelingImage.src = 'kneeling.png';
 
+    // New image for destroyed screen effect
+    const destroyedImage = new Image();
+    destroyedImage.src = 'destroyed.png';
+
     // ====================
     //   GAME STATE
     // ====================
     let enemyHealth = 300;  // Triple health
     let lastAttackTime = 0;
+    let destroyedScreen = false; // Flag for destroyed screen effect
 
     // ====================
     //   ENTITIES
@@ -155,7 +160,7 @@
       isHurt: false,
       knockbackVelocity: { x: 0, y: 0 },
       knockbackDuration: 0,
-      isDead: false,      // New flag for death
+      isDead: false,      // Flag for death
       deathState: ''      // 'dead' then 'kneeling'
     };
 
@@ -249,6 +254,13 @@
           enemyHealth = 0;
           enemy.isDead = true;
           enemy.deathState = 'dead';
+          
+          // Trigger the destroyed screen effect for 5 seconds
+          destroyedScreen = true;
+          setTimeout(() => {
+            destroyedScreen = false;
+          }, 5000);
+          
           // Show dead image for 1 second then switch to kneeling
           setTimeout(() => {
             enemy.deathState = 'kneeling';
@@ -301,6 +313,17 @@
     }
 
     function draw() {
+      // If destroyed screen is active, draw it and return early
+      if (destroyedScreen) {
+        if (destroyedImage.complete) {
+          ctx.drawImage(destroyedImage, 0, 0, canvas.width, canvas.height);
+        } else {
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        return;
+      }
+
       // Draw the background image or fallback color if not loaded.
       if (backgroundImage.complete) {
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
@@ -395,6 +418,7 @@
   </script>
 </body>
 </html>
+
 
 <!--BUGS: 
 1: PLAYER STICKS TO WALL WHEN COLLIDING WITH IT
