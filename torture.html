@@ -51,7 +51,7 @@
     #settingsMenu label {
       cursor: pointer;
     }
-    /* Container for canvas and overlay */
+    /* Container for canvas and overlays */
     #gameContainer {
       position: relative;
       margin: 20px auto;
@@ -74,6 +74,16 @@
       display: none;
       pointer-events: none;
     }
+    /* Intro video overlay covering the entire game container */
+    #introVideo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      background: #000;
+    }
   </style>
 </head>
 <body>
@@ -83,6 +93,8 @@
   <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
+    <!-- Intro video element -->
+    <video id="introVideo" src="gps.mp4" autoplay playsinline></video>
   </div>
   <div id="settingsMenu">
     <strong>Settings</strong><br>
@@ -90,7 +102,7 @@
   </div>
 
   <script>
-    // Responsive resizing for canvas, container, and overlay.
+    // Responsive resizing for canvas, container, overlays, and intro video.
     function resizeCanvas() {
       const aspect = 800 / 600;
       const containerWidth = window.innerWidth * 0.95;
@@ -108,9 +120,19 @@
       const deathOverlay = document.getElementById('deathGifOverlay');
       deathOverlay.style.width = newWidth + 'px';
       deathOverlay.style.height = newHeight + 'px';
+      
+      const introVideo = document.getElementById('introVideo');
+      introVideo.style.width = newWidth + 'px';
+      introVideo.style.height = newHeight + 'px';
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
+
+    // Hide the intro video when it ends.
+    const introVideo = document.getElementById('introVideo');
+    introVideo.addEventListener('ended', () => {
+      introVideo.style.display = 'none';
+    });
 
     // ====================
     //   CANVAS & CONTEXT
@@ -173,7 +195,6 @@
       health: 300,
       idleImage: new Image(),
       hitImage: new Image(),
-      // For non-woman enemy, leave type undefined or set to something else.
       type: 'default'
     };
     enemyActive.idleImage.src = 'enemyidle.png';
@@ -264,7 +285,7 @@
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
-          // If enemy is the woman, simply change image and do nothing else.
+          // If enemy is the woman, change image only.
           if (enemyActive.type === 'woman') {
             enemyActive.idleImage.src = "womandead.png";
           } else {
@@ -308,7 +329,7 @@
         health: 300,
         idleImage: new Image(),
         hitImage: new Image(),
-        type: 'woman'  // Mark this enemy as the woman
+        type: 'woman'
       };
       enemyActive.idleImage.src = 'woman.png';
       enemyActive.hitImage.src = 'womanhit.png';
@@ -319,6 +340,9 @@
     //   GAME LOOP
     // ====================
     function update() {
+      // During intro video playback, game logic is paused.
+      if (introVideo.style.display !== 'none') return;
+
       let moveX = 0, moveY = 0;
       if (keys['w']) moveY = -player.speed;
       if (keys['s']) moveY = player.speed;
@@ -451,6 +475,7 @@
   </script>
 </body>
 </html>
+
 
 
 
