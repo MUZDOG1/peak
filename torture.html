@@ -13,12 +13,9 @@
       font-family: 'Courier New', monospace;
       text-align: center;
       overflow-y: auto; /* allow vertical scrolling if needed */
-      /* Custom “rage” cursor (optional) */
       cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
-    /* Responsive canvas container:
-       The canvas element will always be at most 800px wide and scale down with the viewport.
-       Its height is scaled proportionally (maintaining the 4:3 aspect ratio of 800x600). */
+    /* Responsive canvas container */
     #gameCanvas {
       display: block;
       margin: 20px auto;
@@ -33,7 +30,7 @@
       margin: 10px 0;
       color: #ff5555;
     }
-    /* Make UI elements use percentage widths with a max-width for smaller screens */
+    /* UI Elements */
     #instructions,
     #settingsMenu {
       background: #300000;
@@ -69,9 +66,7 @@
   <h1>RAGE SIMULATOR</h1>
   <div id="instructions">WASD: Move | SPACE: Attack</div>
   <div id="healthBar"><div id="healthFill"></div></div>
-  <!-- The canvas is defined at 800×600 internally -->
   <canvas id="gameCanvas" width="800" height="600"></canvas>
-  <!-- Settings Menu -->
   <div id="settingsMenu">
     <strong>Settings</strong><br>
     <input type="checkbox" id="debugCheckbox"> <label for="debugCheckbox">Debug Mode</label>
@@ -79,11 +74,9 @@
 
   <script>
     // Responsive Canvas Resizing:
-    // Although the canvas's internal coordinate system remains 800x600,
-    // we scale its CSS dimensions so that it fits within the viewport.
     function resizeCanvas() {
-      const aspect = 800 / 600; // original aspect ratio
-      const containerWidth = window.innerWidth * 0.95; // use 95% of viewport width
+      const aspect = 800 / 600;
+      const containerWidth = window.innerWidth * 0.95;
       let newWidth = Math.min(containerWidth, 800);
       let newHeight = newWidth / aspect;
       document.getElementById('gameCanvas').style.width = newWidth + 'px';
@@ -100,9 +93,7 @@
     const healthFill = document.getElementById('healthFill');
     const debugCheckbox = document.getElementById('debugCheckbox');
     let debugMode = false;
-    debugCheckbox.addEventListener('change', () => {
-      debugMode = debugCheckbox.checked;
-    });
+    debugCheckbox.addEventListener('change', () => { debugMode = debugCheckbox.checked; });
 
     // ====================
     //   IMAGES
@@ -116,32 +107,23 @@
     const punchImage = new Image();
     punchImage.src = 'punch.png';
 
-    // Original enemy images (for the first NPC)
-    let enemyIdleImage = new Image();
-    enemyIdleImage.src = 'enemyidle.png';
-
-    let enemyHitImage = new Image();
-    enemyHitImage.src = 'hit.png';
-
+    // Global images for death states
     const enemyDeadImage = new Image();
     enemyDeadImage.src = 'dead.png';
 
     const enemyKneelingImage = new Image();
     enemyKneelingImage.src = 'kneeling.png';
 
-    // New image for destroyed screen effect
     const destroyedImage = new Image();
     destroyedImage.src = 'destroyed.png';
 
     // ====================
     //   GAME STATE
     // ====================
-    let enemyHealth = 300;  // Triple health
-    let lastAttackTime = 0;
     let destroyedScreen = false; // Flag for destroyed screen effect
 
     // ====================
-    //   ENTITIES
+    //   PLAYER ENTITY
     // ====================
     const player = {
       x: 200,
@@ -152,7 +134,13 @@
       isPunching: false
     };
 
-    let enemy = {
+    // ====================
+    //   ENEMY ENTITIES
+    // ====================
+    // activeEnemy: the enemy that can be attacked and moves.
+    // enemyCorpse: the dead enemy that remains on screen.
+    let enemyCorpse = null;
+    let enemyActive = {
       x: 326.5,
       y: 194,
       width: 50,
@@ -160,21 +148,23 @@
       isHurt: false,
       knockbackVelocity: { x: 0, y: 0 },
       knockbackDuration: 0,
-      isDead: false,      // Flag for death
-      deathState: ''      // 'dead' then 'kneeling'
+      isDead: false,
+      deathState: '',
+      health: 300,
+      // Original enemy assets
+      idleImage: new Image(),
+      hitImage: new Image()
     };
+    enemyActive.idleImage.src = 'enemyidle.png';
+    enemyActive.hitImage.src = 'hit.png';
 
-    // =========================
-    //   COLLISION BOXES (UNWALKABLE AREAS)
-    // =========================
+    // ====================
+    //   COLLISION BOXES
+    // ====================
     const walls = [
-      // Left bottom wall
       { x: 1.5, y: 331, width: 250.5, height: 25 },
-      // Right bottom wall
       { x: 342, y: 330, width: 500, height: 25 },
-      // Top right wall
       { x: 153, y: 0, width: 25, height: 200 },
-      // Top left wall 
       { x: 0.5, y: 166, width: 75, height: 25 }
     ];
 
@@ -197,9 +187,8 @@
       );
     }
 
-    // Separate axis collision handling to fix the border glitch
+    // Separate axis collision to fix border glitch
     function moveEntity(entity, dx, dy) {
-      // Move horizontally and check collisions
       entity.x += dx;
       for (const wall of walls) {
         if (isColliding(entity, wall)) {
@@ -207,7 +196,6 @@
           break;
         }
       }
-      // Then move vertically and check collisions
       entity.y += dy;
       for (const wall of walls) {
         if (isColliding(entity, wall)) {
@@ -220,18 +208,18 @@
     // ====================
     //   ATTACK LOGIC
     // ====================
+    let lastAttackTime = 0;
     function attack() {
-      // If enemy is already dead, ignore attack.
-      if (enemy.isDead) return;
-
+      // If no active enemy or it's already dead, do nothing.
+      if (!enemyActive || enemyActive.isDead) return;
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Cooldown
 
-      // Check distance between player and enemy
+      // Check distance between player and enemyActive
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
-      const ex = enemy.x + enemy.width / 2;
-      const ey = enemy.y + enemy.height / 2;
+      const ex = enemyActive.x + enemyActive.width / 2;
+      const ey = enemyActive.y + enemyActive.height / 2;
       const dx = px - ex;
       const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -240,73 +228,73 @@
         player.isPunching = true;
         setTimeout(() => (player.isPunching = false), 200);
 
-        enemy.isHurt = true;
-        // Knockback logic (intensity halved to 7.5)
+        enemyActive.isHurt = true;
+        // Knockback: intensity halved to 7.5
         const knockbackIntensity = 7.5;
         const knockbackDuration = 15;
         const mag = Math.sqrt(dx * dx + dy * dy);
-        enemy.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
-        enemy.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
-        enemy.knockbackDuration = knockbackDuration;
+        enemyActive.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
+        enemyActive.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
+        enemyActive.knockbackDuration = knockbackDuration;
 
-        // Update enemy health
-        enemyHealth -= 10;
-        healthFill.style.width = `${enemyHealth/3}%`;  // Health bar proportionally (since health is 300)
-        
-        // Check if enemy is dead
-        if (enemyHealth <= 0) {
-          enemyHealth = 0;
-          enemy.isDead = true;
-          enemy.deathState = 'dead';
-          
+        // Decrease enemy health
+        enemyActive.health -= 10;
+        healthFill.style.width = `${enemyActive.health / 3}%`;  // 300 health equals 100%
+
+        // Check if enemy dies
+        if (enemyActive.health <= 0) {
+          enemyActive.health = 0;
+          enemyActive.isDead = true;
+          enemyActive.deathState = 'dead';
+          // After 2.5 sec, transition to kneeling state
+          setTimeout(() => {
+            enemyActive.deathState = 'kneeling';
+          }, 2500);
+
           // After 4 seconds, show the destroyed screen for 5 seconds.
           setTimeout(() => {
             destroyedScreen = true;
             setTimeout(() => {
               destroyedScreen = false;
-              // After destroyed screen goes away, respawn new NPC (using woman assets)
-              respawnEnemy();
+              // Save the dead enemy as a corpse so it stays on screen.
+              enemyCorpse = enemyActive;
+              // Then spawn the new enemy ("woman") at fixed coordinates.
+              spawnNewEnemy();
             }, 5000);
           }, 4000);
-          
-          // Transition to kneeling state after 2.5 seconds
-          setTimeout(() => {
-            enemy.deathState = 'kneeling';
-          }, 2500);
         }
 
         lastAttackTime = now;
-        setTimeout(() => (enemy.isHurt = false), 1000);
+        setTimeout(() => (enemyActive.isHurt = false), 1000);
       }
     }
 
-    // Function to respawn enemy with new assets (woman.png and womanhit.png)
-    function respawnEnemy() {
-      // Reset enemy state
-      enemy = {
-        x: 326.5,
-        y: 194,
+    // Spawn new enemy using woman assets at (338, 74)
+    function spawnNewEnemy() {
+      enemyActive = {
+        x: 338,
+        y: 74,
         width: 50,
         height: 50,
         isHurt: false,
         knockbackVelocity: { x: 0, y: 0 },
         knockbackDuration: 0,
         isDead: false,
-        deathState: ''
+        deathState: '',
+        health: 300,
+        idleImage: new Image(),
+        hitImage: new Image()
       };
-      enemyHealth = 300;
+      enemyActive.idleImage.src = 'woman.png';
+      enemyActive.hitImage.src = 'womanhit.png';
       healthFill.style.width = "100%";
-      // Switch enemy images to the new assets
-      enemyIdleImage.src = 'woman.png';
-      enemyHitImage.src = 'womanhit.png';
-      // Optionally, you could also change dead/kneeling images if needed.
     }
 
     // ====================
     //   GAME LOOP
     // ====================
     function update() {
-      // Handle player movement using WASD keys
+      // Handle player movement (WASD)
       let moveX = 0, moveY = 0;
       if (keys['w']) moveY = -player.speed;
       if (keys['s']) moveY = player.speed;
@@ -314,36 +302,36 @@
       if (keys['d']) moveX = player.speed;
       moveEntity(player, moveX, moveY);
 
-      // Handle attack input
+      // Attack input
       if (keys[' ']) attack();
 
-      // Enemy movement only if not dead
-      if (!enemy.isDead) {
-        if (enemy.knockbackDuration > 0) {
-          moveEntity(enemy, enemy.knockbackVelocity.x, enemy.knockbackVelocity.y);
-          enemy.knockbackVelocity.x *= 0.9;
-          enemy.knockbackVelocity.y *= 0.9;
-          enemy.knockbackDuration--;
+      // Update active enemy if it's not dead.
+      if (enemyActive && !enemyActive.isDead) {
+        if (enemyActive.knockbackDuration > 0) {
+          moveEntity(enemyActive, enemyActive.knockbackVelocity.x, enemyActive.knockbackVelocity.y);
+          enemyActive.knockbackVelocity.x *= 0.9;
+          enemyActive.knockbackVelocity.y *= 0.9;
+          enemyActive.knockbackDuration--;
         } else {
           // Random wandering behavior
           if (Math.random() < 0.02) {
             const randX = Math.random() * 6 - 3;
             const randY = Math.random() * 6 - 3;
-            moveEntity(enemy, randX, randY);
+            moveEntity(enemyActive, randX, randY);
           }
         }
-        // Keep enemy within canvas bounds
-        enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
-        enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
+        // Constrain within canvas
+        enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
+        enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
       }
-      
-      // Keep player within canvas bounds
+
+      // Constrain player within canvas
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     }
 
     function draw() {
-      // If destroyed screen is active, draw it and return early
+      // If destroyed screen active, draw it and return early
       if (destroyedScreen) {
         if (destroyedImage.complete) {
           ctx.drawImage(destroyedImage, 0, 0, canvas.width, canvas.height);
@@ -354,7 +342,7 @@
         return;
       }
 
-      // Draw the background image or fallback color if not loaded.
+      // Draw background
       if (backgroundImage.complete) {
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
       } else {
@@ -362,7 +350,7 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Debug: Draw wall borders and enemy hitbox if Debug Mode is on.
+      // Debug: Draw walls and hitbox if enabled
       if (debugMode) {
         ctx.save();
         ctx.globalAlpha = 0.3;
@@ -372,36 +360,51 @@
         });
         ctx.restore();
 
-        // Draw enemy hitbox
-        ctx.save();
-        ctx.strokeStyle = '#00ff00';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
-        ctx.restore();
+        if (enemyActive) {
+          ctx.save();
+          ctx.strokeStyle = '#00ff00';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          ctx.restore();
+        }
       }
 
-      // Draw the enemy
-      if (enemy.isDead) {
-        if (enemy.deathState === 'dead' && enemyDeadImage.complete) {
-          ctx.drawImage(enemyDeadImage, enemy.x, enemy.y, enemy.width, enemy.height);
-        } else if (enemy.deathState === 'kneeling' && enemyKneelingImage.complete) {
-          ctx.drawImage(enemyKneelingImage, enemy.x, enemy.y, enemy.width, enemy.height);
+      // Draw enemy corpse if exists (stays static)
+      if (enemyCorpse) {
+        if (enemyCorpse.deathState === 'dead' && enemyDeadImage.complete) {
+          ctx.drawImage(enemyDeadImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
+        } else if (enemyCorpse.deathState === 'kneeling' && enemyKneelingImage.complete) {
+          ctx.drawImage(enemyKneelingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         } else {
           ctx.fillStyle = '#555';
-          ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-        }
-      } else {
-        if (enemy.isHurt && enemyHitImage.complete) {
-          ctx.drawImage(enemyHitImage, enemy.x, enemy.y, enemy.width, enemy.height);
-        } else if (enemyIdleImage.complete) {
-          ctx.drawImage(enemyIdleImage, enemy.x, enemy.y, enemy.width, enemy.height);
-        } else {
-          ctx.fillStyle = enemy.isHurt ? '#ff9999' : '#ff0000';
-          ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+          ctx.fillRect(enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         }
       }
 
-      // Draw the player
+      // Draw active enemy if exists
+      if (enemyActive) {
+        if (enemyActive.isDead) {
+          if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
+            ctx.drawImage(enemyDeadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          } else if (enemyActive.deathState === 'kneeling' && enemyKneelingImage.complete) {
+            ctx.drawImage(enemyKneelingImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          } else {
+            ctx.fillStyle = '#555';
+            ctx.fillRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          }
+        } else {
+          if (enemyActive.isHurt && enemyActive.hitImage.complete) {
+            ctx.drawImage(enemyActive.hitImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          } else if (enemyActive.idleImage.complete) {
+            ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          } else {
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          }
+        }
+      }
+
+      // Draw player
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
@@ -411,24 +414,26 @@
         ctx.fillRect(player.x, player.y, player.width, player.height);
       }
 
-      // Optional: Highlight enemy if within attack range (only in debug mode)
-      const px = player.x + player.width / 2;
-      const py = player.y + player.height / 2;
-      const ex = enemy.x + enemy.width / 2;
-      const ey = enemy.y + enemy.height / 2;
-      const dx = px - ex;
-      const dy = py - ey;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < 100 && debugMode) {
-        ctx.save();
-        ctx.strokeStyle = '#ff0000';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(enemy.x - 5, enemy.y - 5, enemy.width + 10, enemy.height + 10);
-        ctx.restore();
+      // Optionally highlight active enemy if in attack range (debug)
+      if (enemyActive) {
+        const px = player.x + player.width / 2;
+        const py = player.y + player.height / 2;
+        const ex = enemyActive.x + enemyActive.width / 2;
+        const ey = enemyActive.y + enemyActive.height / 2;
+        const dx = px - ex;
+        const dy = py - ey;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 100 && debugMode) {
+          ctx.save();
+          ctx.strokeStyle = '#ff0000';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(enemyActive.x - 5, enemyActive.y - 5, enemyActive.width + 10, enemyActive.height + 10);
+          ctx.restore();
+        }
       }
     }
 
-    // Mouse position tracker (for debugging purposes)
+    // Mouse position tracker (for debugging)
     canvas.addEventListener('mousemove', (event) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
@@ -441,11 +446,11 @@
       draw();
       requestAnimationFrame(gameLoop);
     }
-
     gameLoop();
   </script>
 </body>
 </html>
+
 
 
 
