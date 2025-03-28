@@ -79,6 +79,7 @@
     
     /* Extra spacing for readability */
     
+    
   </style>
 </head>
 <body>
@@ -173,18 +174,18 @@
     const punchImage = new Image();
     punchImage.src = 'punch.png';
 
-    // Enemy images for woman
+    // Enemy images for the man (we want the game to start with the man)
     const enemyIdleImage = new Image();
-    enemyIdleImage.src = 'woman.png';  // woman's idle sprite
+    enemyIdleImage.src = 'enemyidle.png';  // man's idle sprite
     const enemyHitImage = new Image();
-    enemyHitImage.src = 'womanhit.png';  // woman's hit sprite
-    const womanDeadImage = new Image();
-    womanDeadImage.src = 'womandead.png';  // when health reaches zero
+    enemyHitImage.src = 'hit.png';         // man's hit sprite
+    const enemyDeadImage = new Image();
+    enemyDeadImage.src = 'mandead.png';      // man's dead sprite
 
     /**************************************
      *   ENEMY ENTITY SETUP
      **************************************/
-    // Initially, the enemy is the woman
+    // Initially, the enemy is the man
     let enemyActive = {
       x: 518,
       y: 475,
@@ -197,7 +198,7 @@
       health: 300,
       idleImage: enemyIdleImage,
       hitImage: enemyHitImage,
-      deadImage: womanDeadImage
+      deadImage: enemyDeadImage
     };
 
     /**************************************
@@ -302,7 +303,7 @@
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
-          // Now enemy will display the dead image (womandead.png)
+          // Now enemy will display the dead image (mandead.png)
         }
 
         lastAttackTime = now;
@@ -416,13 +417,10 @@
       requestAnimationFrame(gameLoop);
     }
     gameLoop();
-    
-    /**************************************
-     *   END OF GAME CODE
-     **************************************/
   </script>
 </body>
 </html>
+
 
 
 
