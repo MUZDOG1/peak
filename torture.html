@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>bacon egg and cheese</title>
   <style>
+    /* Base styling for body and text */
     body {
       margin: 0;
       background: #1a0a0a;
@@ -15,13 +16,16 @@
       overflow-y: auto;
       cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
+
+    /* Header styling */
     h1 {
       font-size: 3em;
       text-shadow: 2px 2px 0 #000;
       margin: 10px 0;
       color: #ff5555;
     }
-    /* UI Elements */
+
+    /* Instruction and settings styling */
     #instructions,
     #settingsMenu {
       background: #300000;
@@ -32,6 +36,8 @@
       max-width: 300px;
       color: #ffaaaa;
     }
+
+    /* Health bar styling */
     #healthBar {
       width: 90%;
       max-width: 200px;
@@ -45,86 +51,106 @@
       width: 100%;
       background: #ff0000;
     }
+
+    /* Settings menu label */
     #settingsMenu {
       text-align: left;
     }
     #settingsMenu label {
       cursor: pointer;
     }
-    /* Container for canvas and overlay */
+
+    /* Container for canvas */
     #gameContainer {
       position: relative;
       margin: 20px auto;
       width: 800px;  /* initial width */
       height: 600px; /* initial height */
+      border: 1px solid #ff4444;  /* optional border */
+      background: #000;  /* fallback background */
     }
-    /* Canvas fills container */
+
+    /* Canvas fills container completely */
     #gameCanvas {
       display: block;
       width: 100%;
       height: 100%;
     }
-    /* The death gif overlay covers the canvas exactly */
-    #deathGifOverlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: none;
-      pointer-events: none;
-    }
+    
+    /* Extra spacing for readability */
+    
   </style>
 </head>
 <body>
+  <!-- Title -->
   <h1>RAGE SIMULATOR</h1>
-  <div id="instructions">WASD: Move | SPACE: Attack</div>
-  <div id="healthBar"><div id="healthFill"></div></div>
+  
+  <!-- Instructions -->
+  <div id="instructions">
+    WASD: Move | SPACE: Attack
+  </div>
+  
+  <!-- Health bar -->
+  <div id="healthBar">
+    <div id="healthFill"></div>
+  </div>
+  
+  <!-- Game container with canvas -->
   <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
   </div>
+  
+  <!-- Settings menu -->
   <div id="settingsMenu">
     <strong>Settings</strong><br>
-    <input type="checkbox" id="debugCheckbox"> <label for="debugCheckbox">Debug Mode</label>
+    <input type="checkbox" id="debugCheckbox"> 
+    <label for="debugCheckbox">Debug Mode</label>
   </div>
-
+  
+  <!-- JavaScript Section -->
   <script>
-    // Responsive resizing for canvas, container, and overlay.
+    /**************************************
+     *   RESIZING FUNCTIONS
+     **************************************/
     function resizeCanvas() {
+      // Maintain a fixed aspect ratio (800x600)
       const aspect = 800 / 600;
       const containerWidth = window.innerWidth * 0.95;
       const newWidth = Math.min(containerWidth, 800);
       const newHeight = newWidth / aspect;
       
+      // Update canvas size
       const canvas = document.getElementById('gameCanvas');
       canvas.style.width = newWidth + 'px';
       canvas.style.height = newHeight + 'px';
       
+      // Update game container size
       const container = document.getElementById('gameContainer');
       container.style.width = newWidth + 'px';
       container.style.height = newHeight + 'px';
-      
-      const deathOverlay = document.getElementById('deathGifOverlay');
-      deathOverlay.style.width = newWidth + 'px';
-      deathOverlay.style.height = newHeight + 'px';
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // ====================
-    //   CANVAS & CONTEXT
-    // ====================
+    /**************************************
+     *   CANVAS & CONTEXT SETUP
+     **************************************/
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    
+    // Health bar element
     const healthFill = document.getElementById('healthFill');
+
+    // Debug checkbox
     const debugCheckbox = document.getElementById('debugCheckbox');
     let debugMode = false;
-    debugCheckbox.addEventListener('change', () => { debugMode = debugCheckbox.checked; });
+    debugCheckbox.addEventListener('change', () => {
+      debugMode = debugCheckbox.checked;
+    });
 
-    // ====================
-    //   PLAYER ENTITY
-    // ====================
+    /**************************************
+     *   PLAYER ENTITY
+     **************************************/
     const player = {
       x: 200,
       y: 500,
@@ -134,52 +160,49 @@
       isPunching: false
     };
 
-    // ====================
-    //   IMAGES
-    // ====================
+    /**************************************
+     *   IMAGE ASSETS
+     **************************************/
+    // Background image
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
 
+    // Player images
     const playerImage = new Image();
     playerImage.src = 'idle.png';
-
     const punchImage = new Image();
     punchImage.src = 'punch.png';
 
-    const enemyDeadImage = new Image();
-    enemyDeadImage.src = 'dead.png';
+    // Enemy images for woman
+    const enemyIdleImage = new Image();
+    enemyIdleImage.src = 'woman.png';  // woman's idle sprite
+    const enemyHitImage = new Image();
+    enemyHitImage.src = 'womanhit.png';  // woman's hit sprite
+    const womanDeadImage = new Image();
+    womanDeadImage.src = 'womandead.png';  // when health reaches zero
 
-    const enemyKneelingImage = new Image();
-    enemyKneelingImage.src = 'kneeling.png';
-
-    // Image for corpse after death.gif
-    const lyingImage = new Image();
-    lyingImage.src = 'lying.png';
-
-    // ====================
-    //   ENEMY ENTITIES
-    // ====================
-    let enemyCorpse = null;
+    /**************************************
+     *   ENEMY ENTITY SETUP
+     **************************************/
+    // Initially, the enemy is the woman
     let enemyActive = {
-      x: 326.5,
-      y: 194,
+      x: 518,
+      y: 475,
       width: 50,
       height: 50,
       isHurt: false,
       knockbackVelocity: { x: 0, y: 0 },
       knockbackDuration: 0,
       isDead: false,
-      deathState: '',
       health: 300,
-      idleImage: new Image(),
-      hitImage: new Image()
+      idleImage: enemyIdleImage,
+      hitImage: enemyHitImage,
+      deadImage: womanDeadImage
     };
-    enemyActive.idleImage.src = 'enemyidle.png';
-    enemyActive.hitImage.src = 'hit.png';
 
-    // ====================
-    //   COLLISION BOXES
-    // ====================
+    /**************************************
+     *   COLLISION BOXES
+     **************************************/
     const walls = [
       { x: 1.5, y: 331, width: 250.5, height: 25 },
       { x: 342, y: 330, width: 500, height: 25 },
@@ -187,16 +210,20 @@
       { x: 0.5, y: 166, width: 75, height: 25 }
     ];
 
-    // ====================
-    //   INPUT HANDLING
-    // ====================
+    /**************************************
+     *   INPUT HANDLING
+     **************************************/
     const keys = {};
-    document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
-    document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+    document.addEventListener('keydown', e => {
+      keys[e.key.toLowerCase()] = true;
+    });
+    document.addEventListener('keyup', e => {
+      keys[e.key.toLowerCase()] = false;
+    });
 
-    // ====================
-    //   COLLISION CHECK
-    // ====================
+    /**************************************
+     *   COLLISION CHECK FUNCTION
+     **************************************/
     function isColliding(rect1, rect2) {
       return (
         rect1.x < rect2.x + rect2.width &&
@@ -205,8 +232,13 @@
         rect1.y + rect1.height > rect2.y
       );
     }
+
+    /**************************************
+     *   ENTITY MOVEMENT FUNCTION
+     **************************************/
     function moveEntity(entity, dx, dy) {
       entity.x += dx;
+      // Check horizontal collisions
       for (const wall of walls) {
         if (isColliding(entity, wall)) {
           entity.x -= dx;
@@ -214,6 +246,7 @@
         }
       }
       entity.y += dy;
+      // Check vertical collisions
       for (const wall of walls) {
         if (isColliding(entity, wall)) {
           entity.y -= dy;
@@ -222,34 +255,36 @@
       }
     }
 
-    // ====================
-    //   OVERLAY HANDLING
-    // ====================
-    function showDeathGif() {
-      document.getElementById('deathGifOverlay').style.display = 'block';
-    }
-    function hideDeathGif() {
-      document.getElementById('deathGifOverlay').style.display = 'none';
-    }
-
-    // ====================
-    //   ATTACK LOGIC
-    // ====================
+    /**************************************
+     *   ATTACK LOGIC
+     **************************************/
     let lastAttackTime = 0;
     function attack() {
-      if (!enemyActive || enemyActive.isDead) return;
+      // If enemy is already dead, do nothing
+      if (enemyActive.isDead) return;
+
       const now = Date.now();
-      if (now - lastAttackTime < 500) return; // Cooldown
+      if (now - lastAttackTime < 500) return;  // Cooldown check
+
+      // Calculate centers of player and enemy
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemyActive.x + enemyActive.width / 2;
       const ey = enemyActive.y + enemyActive.height / 2;
+
+      // Determine distance between player and enemy
       const dx = px - ex;
       const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
+
       if (distance < 100) {
+        // Trigger punch animation for the player
         player.isPunching = true;
-        setTimeout(() => { player.isPunching = false; }, 200);
+        setTimeout(() => {
+          player.isPunching = false;
+        }, 200);
+
+        // Enemy gets hurt and knocked back
         enemyActive.isHurt = true;
         const knockbackIntensity = 7.5;
         const knockbackDuration = 15;
@@ -257,90 +292,79 @@
         enemyActive.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
         enemyActive.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
         enemyActive.knockbackDuration = knockbackDuration;
+
+        // Decrease enemy health
         enemyActive.health -= 10;
-        healthFill.style.width = `${enemyActive.health / 3}%`; // 300 health equals 100%
+        // Update health bar (300 health == 100%)
+        healthFill.style.width = `${enemyActive.health / 3}%`;
+
+        // If health reaches zero, mark enemy as dead
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
-          enemyActive.deathState = 'dead';
-          setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
-          // After 4 seconds, show death.gif overlay for 5 seconds.
-          setTimeout(() => {
-            showDeathGif();
-            setTimeout(() => {
-              hideDeathGif();
-              enemyActive.deathState = 'lying'; // Change state so lying.png is drawn
-              enemyCorpse = enemyActive;
-              spawnNewEnemy();
-            }, 5000);
-          }, 4000);
+          // Now enemy will display the dead image (womandead.png)
         }
+
         lastAttackTime = now;
-        setTimeout(() => { enemyActive.isHurt = false; }, 1000);
+        setTimeout(() => {
+          enemyActive.isHurt = false;
+        }, 1000);
       }
     }
 
-    // ====================
-    //   SPAWN NEW ENEMY
-    // ====================
-    function spawnNewEnemy() {
-      enemyActive = {
-        x: 518,
-        y: 475,
-        width: 50,
-        height: 50,
-        isHurt: false,
-        knockbackVelocity: { x: 0, y: 0 },
-        knockbackDuration: 0,
-        isDead: false,
-        deathState: '',
-        health: 300,
-        idleImage: new Image(),
-        hitImage: new Image()
-      };
-      enemyActive.idleImage.src = 'woman.png';
-      enemyActive.hitImage.src = 'womanhit.png';
-      healthFill.style.width = "100%";
-    }
-
-    // ====================
-    //   GAME LOOP
-    // ====================
+    /**************************************
+     *   GAME UPDATE FUNCTION
+     **************************************/
     function update() {
+      // Player movement
       let moveX = 0, moveY = 0;
       if (keys['w']) moveY = -player.speed;
       if (keys['s']) moveY = player.speed;
       if (keys['a']) moveX = -player.speed;
       if (keys['d']) moveX = player.speed;
       moveEntity(player, moveX, moveY);
+
+      // Attack input (space bar)
       if (keys[' ']) attack();
-      if (enemyActive && !enemyActive.isDead) {
+
+      // Update enemy movement if not dead
+      if (!enemyActive.isDead) {
         if (enemyActive.knockbackDuration > 0) {
           moveEntity(enemyActive, enemyActive.knockbackVelocity.x, enemyActive.knockbackVelocity.y);
           enemyActive.knockbackVelocity.x *= 0.9;
           enemyActive.knockbackVelocity.y *= 0.9;
           enemyActive.knockbackDuration--;
         } else {
+          // Random wandering behavior
           if (Math.random() < 0.02) {
             const randX = Math.random() * 6 - 3;
             const randY = Math.random() * 6 - 3;
             moveEntity(enemyActive, randX, randY);
           }
         }
+        // Keep enemy within canvas bounds
         enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
         enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
       }
+
+      // Keep player within canvas bounds
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     }
 
+    /**************************************
+     *   GAME DRAW FUNCTION
+     **************************************/
     function draw() {
+      // Draw background
       if (backgroundImage.complete) {
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
       } else {
         ctx.fillStyle = '#333';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
+
+      // If debug mode, draw collision boxes
       if (debugMode) {
         ctx.save();
         ctx.globalAlpha = 0.3;
@@ -349,34 +373,13 @@
           ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
         });
         ctx.restore();
-        if (enemyActive) {
-          ctx.save();
-          ctx.strokeStyle = '#00ff00';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-          ctx.restore();
-        }
       }
-      // Draw enemy corpse (if any)
-      if (enemyCorpse) {
-        if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
-          ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
-        } else if (enemyCorpse.deathState === 'dead' && enemyDeadImage.complete) {
-          ctx.drawImage(enemyDeadImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
-        } else if (enemyCorpse.deathState === 'kneeling' && enemyKneelingImage.complete) {
-          ctx.drawImage(enemyKneelingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
-        } else {
-          ctx.fillStyle = '#555';
-          ctx.fillRect(enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
-        }
-      }
-      // Draw active enemy
+
+      // Draw enemy: if dead, show dead image; if hurt, show hit image; otherwise, idle image.
       if (enemyActive) {
         if (enemyActive.isDead) {
-          if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
-            ctx.drawImage(enemyDeadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-          } else if (enemyActive.deathState === 'kneeling' && enemyKneelingImage.complete) {
-            ctx.drawImage(enemyKneelingImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          if (enemyActive.deadImage.complete) {
+            ctx.drawImage(enemyActive.deadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
           } else {
             ctx.fillStyle = '#555';
             ctx.fillRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
@@ -392,7 +395,8 @@
           }
         }
       }
-      // Draw player
+
+      // Draw player character
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
@@ -401,31 +405,21 @@
         ctx.fillStyle = '#3498db';
         ctx.fillRect(player.x, player.y, player.width, player.height);
       }
-      // Debug: highlight enemy in range
-      if (enemyActive) {
-        const px = player.x + player.width / 2;
-        const py = player.y + player.height / 2;
-        const ex = enemyActive.x + enemyActive.width / 2;
-        const ey = enemyActive.y + enemyActive.height / 2;
-        const dx = px - ex;
-        const dy = py - ey;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 100 && debugMode) {
-          ctx.save();
-          ctx.strokeStyle = '#ff0000';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(enemyActive.x - 5, enemyActive.y - 5, enemyActive.width + 10, enemyActive.height + 10);
-          ctx.restore();
-        }
-      }
     }
 
+    /**************************************
+     *   MAIN GAME LOOP
+     **************************************/
     function gameLoop() {
       update();
       draw();
       requestAnimationFrame(gameLoop);
     }
     gameLoop();
+    
+    /**************************************
+     *   END OF GAME CODE
+     **************************************/
   </script>
 </body>
 </html>
