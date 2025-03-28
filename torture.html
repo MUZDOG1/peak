@@ -14,7 +14,7 @@
       text-align: center;
       overflow-y: auto; /* allow vertical scrolling if needed */
       /* Custom “rage” cursor (optional) */
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
     /* Responsive canvas container:
        The canvas element will always be at most 800px wide and scale down with the viewport.
@@ -197,17 +197,21 @@
       );
     }
 
+    // Separate axis collision handling fixes the border glitch
     function moveEntity(entity, dx, dy) {
-      const originalX = entity.x;
-      const originalY = entity.y;
+      // Move horizontally and check collisions
       entity.x += dx;
-      entity.y += dy;
-
-      // Revert movement if colliding with any wall.
       for (const wall of walls) {
         if (isColliding(entity, wall)) {
-          entity.x = originalX;
-          entity.y = originalY;
+          entity.x -= dx;
+          break;
+        }
+      }
+      // Then move vertically and check collisions
+      entity.y += dy;
+      for (const wall of walls) {
+        if (isColliding(entity, wall)) {
+          entity.y -= dy;
           break;
         }
       }
@@ -255,13 +259,15 @@
           enemy.isDead = true;
           enemy.deathState = 'dead';
           
-          // Trigger the destroyed screen effect for 5 seconds
-          destroyedScreen = true;
+          // After 4 seconds, show the destroyed screen for 5 seconds
           setTimeout(() => {
-            destroyedScreen = false;
-          }, 5000);
+            destroyedScreen = true;
+            setTimeout(() => {
+              destroyedScreen = false;
+            }, 5000);
+          }, 4000);
           
-          // Show dead image for 1 second then switch to kneeling
+          // Transition to kneeling state after 2.5 seconds
           setTimeout(() => {
             enemy.deathState = 'kneeling';
           }, 2500);
