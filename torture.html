@@ -172,7 +172,9 @@
       deathState: '',
       health: 300,
       idleImage: new Image(),
-      hitImage: new Image()
+      hitImage: new Image(),
+      // For non-woman enemy, leave type undefined or set to something else.
+      type: 'default'
     };
     enemyActive.idleImage.src = 'enemyidle.png';
     enemyActive.hitImage.src = 'hit.png';
@@ -262,18 +264,26 @@
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
-          enemyActive.deathState = 'dead';
-          setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
-          // After 4 seconds, show death.gif overlay for 5 seconds.
-          setTimeout(() => {
-            showDeathGif();
+          // If enemy is the woman, simply change image and do nothing else.
+          if (enemyActive.type === 'woman') {
+            enemyActive.idleImage.src = "womandead.png";
+          } else {
+            enemyActive.deathState = 'dead';
+            setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
+            // After 4 seconds, show death.gif overlay for 5 seconds.
             setTimeout(() => {
-              hideDeathGif();
-              enemyActive.deathState = 'lying'; // Change state so lying.png is drawn
-              enemyCorpse = enemyActive;
-              spawnNewEnemy();
-            }, 5000);
-          }, 4000);
+              showDeathGif();
+              setTimeout(() => {
+                hideDeathGif();
+                enemyActive.deathState = 'lying'; // Change state so lying.png is drawn
+                enemyCorpse = enemyActive;
+                spawnNewEnemy();
+              }, 5000);
+            }, 4000);
+          }
+          lastAttackTime = now;
+          setTimeout(() => { enemyActive.isHurt = false; }, 1000);
+          return;
         }
         lastAttackTime = now;
         setTimeout(() => { enemyActive.isHurt = false; }, 1000);
@@ -284,6 +294,7 @@
     //   SPAWN NEW ENEMY
     // ====================
     function spawnNewEnemy() {
+      // Spawn the woman enemy.
       enemyActive = {
         x: 518,
         y: 475,
@@ -296,7 +307,8 @@
         deathState: '',
         health: 300,
         idleImage: new Image(),
-        hitImage: new Image()
+        hitImage: new Image(),
+        type: 'woman'  // Mark this enemy as the woman
       };
       enemyActive.idleImage.src = 'woman.png';
       enemyActive.hitImage.src = 'womanhit.png';
@@ -373,13 +385,23 @@
       // Draw active enemy
       if (enemyActive) {
         if (enemyActive.isDead) {
-          if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
-            ctx.drawImage(enemyDeadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-          } else if (enemyActive.deathState === 'kneeling' && enemyKneelingImage.complete) {
-            ctx.drawImage(enemyKneelingImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          // For the woman enemy, simply draw its idleImage (which will be "womandead.png")
+          if (enemyActive.type === 'woman') {
+            if (enemyActive.idleImage.complete) {
+              ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            } else {
+              ctx.fillStyle = '#555';
+              ctx.fillRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            }
           } else {
-            ctx.fillStyle = '#555';
-            ctx.fillRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
+              ctx.drawImage(enemyDeadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            } else if (enemyActive.deathState === 'kneeling' && enemyKneelingImage.complete) {
+              ctx.drawImage(enemyKneelingImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            } else {
+              ctx.fillStyle = '#555';
+              ctx.fillRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            }
           }
         } else {
           if (enemyActive.isHurt && enemyActive.hitImage.complete) {
