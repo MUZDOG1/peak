@@ -116,13 +116,13 @@
     const punchImage = new Image();
     punchImage.src = 'punch.png';
 
-    const enemyIdleImage = new Image();
+    // Original enemy images (for the first NPC)
+    let enemyIdleImage = new Image();
     enemyIdleImage.src = 'enemyidle.png';
 
-    const enemyHitImage = new Image();
+    let enemyHitImage = new Image();
     enemyHitImage.src = 'hit.png';
 
-    // New images for enemy death
     const enemyDeadImage = new Image();
     enemyDeadImage.src = 'dead.png';
 
@@ -152,7 +152,7 @@
       isPunching: false
     };
 
-    const enemy = {
+    let enemy = {
       x: 326.5,
       y: 194,
       width: 50,
@@ -197,7 +197,7 @@
       );
     }
 
-    // Separate axis collision handling fixes the border glitch
+    // Separate axis collision handling to fix the border glitch
     function moveEntity(entity, dx, dy) {
       // Move horizontally and check collisions
       entity.x += dx;
@@ -241,8 +241,8 @@
         setTimeout(() => (player.isPunching = false), 200);
 
         enemy.isHurt = true;
-        // Knockback logic
-        const knockbackIntensity = 15;
+        // Knockback logic (intensity halved to 7.5)
+        const knockbackIntensity = 7.5;
         const knockbackDuration = 15;
         const mag = Math.sqrt(dx * dx + dy * dy);
         enemy.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
@@ -259,11 +259,13 @@
           enemy.isDead = true;
           enemy.deathState = 'dead';
           
-          // After 4 seconds, show the destroyed screen for 5 seconds
+          // After 4 seconds, show the destroyed screen for 5 seconds.
           setTimeout(() => {
             destroyedScreen = true;
             setTimeout(() => {
               destroyedScreen = false;
+              // After destroyed screen goes away, respawn new NPC (using woman assets)
+              respawnEnemy();
             }, 5000);
           }, 4000);
           
@@ -276,6 +278,28 @@
         lastAttackTime = now;
         setTimeout(() => (enemy.isHurt = false), 1000);
       }
+    }
+
+    // Function to respawn enemy with new assets (woman.png and womanhit.png)
+    function respawnEnemy() {
+      // Reset enemy state
+      enemy = {
+        x: 326.5,
+        y: 194,
+        width: 50,
+        height: 50,
+        isHurt: false,
+        knockbackVelocity: { x: 0, y: 0 },
+        knockbackDuration: 0,
+        isDead: false,
+        deathState: ''
+      };
+      enemyHealth = 300;
+      healthFill.style.width = "100%";
+      // Switch enemy images to the new assets
+      enemyIdleImage.src = 'woman.png';
+      enemyHitImage.src = 'womanhit.png';
+      // Optionally, you could also change dead/kneeling images if needed.
     }
 
     // ====================
@@ -340,10 +364,9 @@
 
       // Debug: Draw wall borders and enemy hitbox if Debug Mode is on.
       if (debugMode) {
-        // Draw walls
         ctx.save();
         ctx.globalAlpha = 0.3;
-        ctx.fillStyle = '#ff0000'; // Red for walls
+        ctx.fillStyle = '#ff0000';
         walls.forEach(wall => {
           ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
         });
@@ -351,7 +374,7 @@
 
         // Draw enemy hitbox
         ctx.save();
-        ctx.strokeStyle = '#00ff00'; // Green for enemy hitbox
+        ctx.strokeStyle = '#00ff00';
         ctx.lineWidth = 2;
         ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
         ctx.restore();
@@ -364,7 +387,6 @@
         } else if (enemy.deathState === 'kneeling' && enemyKneelingImage.complete) {
           ctx.drawImage(enemyKneelingImage, enemy.x, enemy.y, enemy.width, enemy.height);
         } else {
-          // Fallback: show a rectangle
           ctx.fillStyle = '#555';
           ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
         }
@@ -424,6 +446,7 @@
   </script>
 </body>
 </html>
+
 
 
 <!--BUGS: 
