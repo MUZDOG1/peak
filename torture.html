@@ -12,8 +12,13 @@
       color: #ff4444;
       font-family: 'Courier New', monospace;
       text-align: center;
-      overflow-y: auto; /* allow vertical scrolling if needed */
+      overflow-y: auto;
       cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
+    }
+    /* Container to stack the canvas and overlay */
+    #gameContainer {
+      position: relative;
+      display: inline-block;
     }
     /* Responsive canvas container */
     #gameCanvas {
@@ -23,6 +28,18 @@
       width: 100%;
       max-width: 800px;
       height: auto;
+    }
+    /* The death gif overlay is absolutely positioned over the canvas */
+    #deathGifOverlay {
+      position: absolute;
+      top: 20px; /* same as canvas margin-top */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 800px;
+      height: auto;
+      display: none;
+      pointer-events: none;
     }
     h1 {
       font-size: 3em;
@@ -66,7 +83,10 @@
   <h1>RAGE SIMULATOR</h1>
   <div id="instructions">WASD: Move | SPACE: Attack</div>
   <div id="healthBar"><div id="healthFill"></div></div>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
+  </div>
   <div id="settingsMenu">
     <strong>Settings</strong><br>
     <input type="checkbox" id="debugCheckbox"> <label for="debugCheckbox">Debug Mode</label>
@@ -81,6 +101,10 @@
       let newHeight = newWidth / aspect;
       document.getElementById('gameCanvas').style.width = newWidth + 'px';
       document.getElementById('gameCanvas').style.height = newHeight + 'px';
+      // Adjust overlay size too
+      const deathOverlay = document.getElementById('deathGifOverlay');
+      deathOverlay.style.width = newWidth + 'px';
+      deathOverlay.style.height = newHeight + 'px';
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -107,39 +131,19 @@
     const punchImage = new Image();
     punchImage.src = 'punch.png';
 
-    // Global images for death states
     const enemyDeadImage = new Image();
     enemyDeadImage.src = 'dead.png';
 
     const enemyKneelingImage = new Image();
     enemyKneelingImage.src = 'kneeling.png';
 
-    // Replace destroyedImage with deathGif
-    const deathGif = new Image();
-    deathGif.src = 'death.gif';
+    // Lying image for corpse after gif is done.
+    const lyingImage = new Image();
+    lyingImage.src = 'lying.png';
 
     // ====================
     //   GAME STATE
     // ====================
-    let destroyedScreen = false; // Flag for destroyed screen effect
-
-    // ====================
-    //   PLAYER ENTITY
-    // ====================
-    const player = {
-      x: 200,
-      y: 500,
-      width: 50,
-      height: 50,
-      speed: 5,
-      isPunching: false
-    };
-
-    // ====================
-    //   ENEMY ENTITIES
-    // ====================
-    // activeEnemy: the enemy that can be attacked and moves.
-    // enemyCorpse: the dead enemy that remains on screen.
     let enemyCorpse = null;
     let enemyActive = {
       x: 326.5,
@@ -152,7 +156,6 @@
       isDead: false,
       deathState: '',
       health: 300,
-      // Original enemy assets
       idleImage: new Image(),
       hitImage: new Image()
     };
@@ -187,8 +190,6 @@
         rect1.y + rect1.height > rect2.y
       );
     }
-
-    // Separate axis collision to fix border glitch
     function moveEntity(entity, dx, dy) {
       entity.x += dx;
       for (const wall of walls) {
@@ -207,16 +208,25 @@
     }
 
     // ====================
+    //   OVERLAY HANDLING
+    // ====================
+    function showDeathGif() {
+      const deathOverlay = document.getElementById('deathGifOverlay');
+      deathOverlay.style.display = 'block';
+    }
+    function hideDeathGif() {
+      const deathOverlay = document.getElementById('deathGifOverlay');
+      deathOverlay.style.display = 'none';
+    }
+
+    // ====================
     //   ATTACK LOGIC
     // ====================
     let lastAttackTime = 0;
     function attack() {
-      // If no active enemy or it's already dead, do nothing.
       if (!enemyActive || enemyActive.isDead) return;
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Cooldown
-
-      // Check distance between player and enemyActive
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemyActive.x + enemyActive.width / 2;
@@ -224,53 +234,43 @@
       const dx = px - ex;
       const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
-
       if (distance < 100) {
         player.isPunching = true;
-        setTimeout(() => (player.isPunching = false), 200);
-
+        setTimeout(() => player.isPunching = false, 200);
         enemyActive.isHurt = true;
-        // Knockback: intensity halved to 7.5
         const knockbackIntensity = 7.5;
         const knockbackDuration = 15;
         const mag = Math.sqrt(dx * dx + dy * dy);
         enemyActive.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
         enemyActive.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
         enemyActive.knockbackDuration = knockbackDuration;
-
-        // Decrease enemy health
         enemyActive.health -= 10;
-        healthFill.style.width = `${enemyActive.health / 3}%`;  // 300 health equals 100%
-
-        // Check if enemy dies
+        healthFill.style.width = `${enemyActive.health / 3}%`;
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
           enemyActive.deathState = 'dead';
-          // After 2.5 sec, transition to kneeling state
           setTimeout(() => {
             enemyActive.deathState = 'kneeling';
           }, 2500);
-
-          // After 4 seconds, show the death.gif screen for 5 seconds.
+          // After 4 seconds, show the death.gif overlay for 5 seconds.
           setTimeout(() => {
-            destroyedScreen = true;
+            showDeathGif();
             setTimeout(() => {
-              destroyedScreen = false;
-              // Save the dead enemy as a corpse so it stays on screen.
+              hideDeathGif();
+              // Change corpse state to "lying" so that lying.png gets drawn.
+              enemyActive.deathState = 'lying';
               enemyCorpse = enemyActive;
-              // Then spawn the new enemy ("woman") at fixed coordinates.
               spawnNewEnemy();
             }, 5000);
           }, 4000);
         }
-
         lastAttackTime = now;
-        setTimeout(() => (enemyActive.isHurt = false), 1000);
+        setTimeout(() => enemyActive.isHurt = false, 1000);
       }
     }
 
-    // Spawn new enemy using woman assets at (518, 475)
+    // Spawn new enemy using woman assets at (518,475)
     function spawnNewEnemy() {
       enemyActive = {
         x: 518,
@@ -295,18 +295,13 @@
     //   GAME LOOP
     // ====================
     function update() {
-      // Handle player movement (WASD)
       let moveX = 0, moveY = 0;
       if (keys['w']) moveY = -player.speed;
       if (keys['s']) moveY = player.speed;
       if (keys['a']) moveX = -player.speed;
       if (keys['d']) moveX = player.speed;
       moveEntity(player, moveX, moveY);
-
-      // Attack input
       if (keys[' ']) attack();
-
-      // Update active enemy if it's not dead.
       if (enemyActive && !enemyActive.isDead) {
         if (enemyActive.knockbackDuration > 0) {
           moveEntity(enemyActive, enemyActive.knockbackVelocity.x, enemyActive.knockbackVelocity.y);
@@ -314,44 +309,26 @@
           enemyActive.knockbackVelocity.y *= 0.9;
           enemyActive.knockbackDuration--;
         } else {
-          // Random wandering behavior
           if (Math.random() < 0.02) {
             const randX = Math.random() * 6 - 3;
             const randY = Math.random() * 6 - 3;
             moveEntity(enemyActive, randX, randY);
           }
         }
-        // Constrain within canvas
         enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
         enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
       }
-
-      // Constrain player within canvas
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     }
 
     function draw() {
-      // If death.gif screen active, draw it and return early
-      if (destroyedScreen) {
-        if (deathGif.complete) {
-          ctx.drawImage(deathGif, 0, 0, canvas.width, canvas.height);
-        } else {
-          ctx.fillStyle = '#000';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        return;
-      }
-
-      // Draw background
       if (backgroundImage.complete) {
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
       } else {
         ctx.fillStyle = '#333';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-
-      // Debug: Draw walls and hitbox if enabled
       if (debugMode) {
         ctx.save();
         ctx.globalAlpha = 0.3;
@@ -360,7 +337,6 @@
           ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
         });
         ctx.restore();
-
         if (enemyActive) {
           ctx.save();
           ctx.strokeStyle = '#00ff00';
@@ -369,10 +345,11 @@
           ctx.restore();
         }
       }
-
-      // Draw enemy corpse if exists (stays static)
+      // Draw enemy corpse if it exists
       if (enemyCorpse) {
-        if (enemyCorpse.deathState === 'dead' && enemyDeadImage.complete) {
+        if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
+          ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
+        } else if (enemyCorpse.deathState === 'dead' && enemyDeadImage.complete) {
           ctx.drawImage(enemyDeadImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         } else if (enemyCorpse.deathState === 'kneeling' && enemyKneelingImage.complete) {
           ctx.drawImage(enemyKneelingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
@@ -381,7 +358,6 @@
           ctx.fillRect(enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         }
       }
-
       // Draw active enemy if exists
       if (enemyActive) {
         if (enemyActive.isDead) {
@@ -404,7 +380,6 @@
           }
         }
       }
-
       // Draw player
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
@@ -414,8 +389,7 @@
         ctx.fillStyle = '#3498db';
         ctx.fillRect(player.x, player.y, player.width, player.height);
       }
-
-      // Optionally highlight active enemy if in attack range (debug)
+      // Debug: Optionally highlight enemy if in attack range
       if (enemyActive) {
         const px = player.x + player.width / 2;
         const py = player.y + player.height / 2;
@@ -433,14 +407,6 @@
         }
       }
     }
-
-    // Mouse position tracker (for debugging)
-    canvas.addEventListener('mousemove', (event) => {
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = event.clientX - rect.left;
-      const mouseY = event.clientY - rect.top;
-      console.log(`Mouse X: ${mouseX}, Mouse Y: ${mouseY}`);
-    });
 
     function gameLoop() {
       update();
