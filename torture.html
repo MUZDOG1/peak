@@ -90,21 +90,21 @@
   </div>
 
   <script>
-    // Responsive Canvas & Container Resizing:
+    // Responsive resizing for canvas, container, and overlay.
     function resizeCanvas() {
       const aspect = 800 / 600;
       const containerWidth = window.innerWidth * 0.95;
-      let newWidth = Math.min(containerWidth, 800);
-      let newHeight = newWidth / aspect;
-      // Update canvas size
+      const newWidth = Math.min(containerWidth, 800);
+      const newHeight = newWidth / aspect;
+      
       const canvas = document.getElementById('gameCanvas');
       canvas.style.width = newWidth + 'px';
       canvas.style.height = newHeight + 'px';
-      // Update container size
+      
       const container = document.getElementById('gameContainer');
       container.style.width = newWidth + 'px';
       container.style.height = newHeight + 'px';
-      // Update overlay size
+      
       const deathOverlay = document.getElementById('deathGifOverlay');
       deathOverlay.style.width = newWidth + 'px';
       deathOverlay.style.height = newHeight + 'px';
@@ -121,6 +121,18 @@
     const debugCheckbox = document.getElementById('debugCheckbox');
     let debugMode = false;
     debugCheckbox.addEventListener('change', () => { debugMode = debugCheckbox.checked; });
+
+    // ====================
+    //   PLAYER ENTITY
+    // ====================
+    const player = {
+      x: 200,
+      y: 500,
+      width: 50,
+      height: 50,
+      speed: 5,
+      isPunching: false
+    };
 
     // ====================
     //   IMAGES
@@ -140,12 +152,12 @@
     const enemyKneelingImage = new Image();
     enemyKneelingImage.src = 'kneeling.png';
 
-    // Lying image for corpse after gif is done.
+    // Image for corpse after death.gif
     const lyingImage = new Image();
     lyingImage.src = 'lying.png';
 
     // ====================
-    //   GAME STATE
+    //   ENEMY ENTITIES
     // ====================
     let enemyCorpse = null;
     let enemyActive = {
@@ -179,8 +191,8 @@
     //   INPUT HANDLING
     // ====================
     const keys = {};
-    document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-    document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+    document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+    document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
     // ====================
     //   COLLISION CHECK
@@ -214,12 +226,10 @@
     //   OVERLAY HANDLING
     // ====================
     function showDeathGif() {
-      const deathOverlay = document.getElementById('deathGifOverlay');
-      deathOverlay.style.display = 'block';
+      document.getElementById('deathGifOverlay').style.display = 'block';
     }
     function hideDeathGif() {
-      const deathOverlay = document.getElementById('deathGifOverlay');
-      deathOverlay.style.display = 'none';
+      document.getElementById('deathGifOverlay').style.display = 'none';
     }
 
     // ====================
@@ -239,7 +249,7 @@
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < 100) {
         player.isPunching = true;
-        setTimeout(() => player.isPunching = false, 200);
+        setTimeout(() => { player.isPunching = false; }, 200);
         enemyActive.isHurt = true;
         const knockbackIntensity = 7.5;
         const knockbackDuration = 15;
@@ -248,32 +258,31 @@
         enemyActive.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
         enemyActive.knockbackDuration = knockbackDuration;
         enemyActive.health -= 10;
-        healthFill.style.width = `${enemyActive.health / 3}%`;
+        healthFill.style.width = `${enemyActive.health / 3}%`; // 300 health equals 100%
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
           enemyActive.deathState = 'dead';
-          setTimeout(() => {
-            enemyActive.deathState = 'kneeling';
-          }, 2500);
-          // After 4 seconds, show the death.gif overlay for 5 seconds.
+          setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
+          // After 4 seconds, show death.gif overlay for 5 seconds.
           setTimeout(() => {
             showDeathGif();
             setTimeout(() => {
               hideDeathGif();
-              // Change corpse state to "lying" so that lying.png gets drawn.
-              enemyActive.deathState = 'lying';
+              enemyActive.deathState = 'lying'; // Change state so lying.png is drawn
               enemyCorpse = enemyActive;
               spawnNewEnemy();
             }, 5000);
           }, 4000);
         }
         lastAttackTime = now;
-        setTimeout(() => enemyActive.isHurt = false, 1000);
+        setTimeout(() => { enemyActive.isHurt = false; }, 1000);
       }
     }
 
-    // Spawn new enemy using woman assets at (518, 475)
+    // ====================
+    //   SPAWN NEW ENEMY
+    // ====================
     function spawnNewEnemy() {
       enemyActive = {
         x: 518,
@@ -348,7 +357,7 @@
           ctx.restore();
         }
       }
-      // Draw enemy corpse if it exists
+      // Draw enemy corpse (if any)
       if (enemyCorpse) {
         if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
           ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
@@ -361,7 +370,7 @@
           ctx.fillRect(enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         }
       }
-      // Draw active enemy if exists
+      // Draw active enemy
       if (enemyActive) {
         if (enemyActive.isDead) {
           if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
@@ -392,7 +401,7 @@
         ctx.fillStyle = '#3498db';
         ctx.fillRect(player.x, player.y, player.width, player.height);
       }
-      // Debug: Optionally highlight enemy if in attack range
+      // Debug: highlight enemy in range
       if (enemyActive) {
         const px = player.x + player.width / 2;
         const py = player.y + player.height / 2;
