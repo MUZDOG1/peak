@@ -15,32 +15,6 @@
       overflow-y: auto;
       cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
-    /* Container to stack the canvas and overlay */
-    #gameContainer {
-      position: relative;
-      display: inline-block;
-    }
-    /* Responsive canvas container */
-    #gameCanvas {
-      display: block;
-      margin: 20px auto;
-      position: relative;
-      width: 100%;
-      max-width: 800px;
-      height: auto;
-    }
-    /* The death gif overlay is absolutely positioned over the canvas */
-    #deathGifOverlay {
-      position: absolute;
-      top: 20px; /* same as canvas margin-top */
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 800px;
-      height: auto;
-      display: none;
-      pointer-events: none;
-    }
     h1 {
       font-size: 3em;
       text-shadow: 2px 2px 0 #000;
@@ -77,6 +51,29 @@
     #settingsMenu label {
       cursor: pointer;
     }
+    /* Container for canvas and overlay */
+    #gameContainer {
+      position: relative;
+      margin: 20px auto;
+      width: 800px;  /* initial width */
+      height: 600px; /* initial height */
+    }
+    /* Canvas fills container */
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    /* The death gif overlay covers the canvas exactly */
+    #deathGifOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -93,15 +90,21 @@
   </div>
 
   <script>
-    // Responsive Canvas Resizing:
+    // Responsive Canvas & Container Resizing:
     function resizeCanvas() {
       const aspect = 800 / 600;
       const containerWidth = window.innerWidth * 0.95;
       let newWidth = Math.min(containerWidth, 800);
       let newHeight = newWidth / aspect;
-      document.getElementById('gameCanvas').style.width = newWidth + 'px';
-      document.getElementById('gameCanvas').style.height = newHeight + 'px';
-      // Adjust overlay size too
+      // Update canvas size
+      const canvas = document.getElementById('gameCanvas');
+      canvas.style.width = newWidth + 'px';
+      canvas.style.height = newHeight + 'px';
+      // Update container size
+      const container = document.getElementById('gameContainer');
+      container.style.width = newWidth + 'px';
+      container.style.height = newHeight + 'px';
+      // Update overlay size
       const deathOverlay = document.getElementById('deathGifOverlay');
       deathOverlay.style.width = newWidth + 'px';
       deathOverlay.style.height = newHeight + 'px';
@@ -270,7 +273,7 @@
       }
     }
 
-    // Spawn new enemy using woman assets at (518,475)
+    // Spawn new enemy using woman assets at (518, 475)
     function spawnNewEnemy() {
       enemyActive = {
         x: 518,
