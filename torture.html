@@ -114,8 +114,9 @@
     const enemyKneelingImage = new Image();
     enemyKneelingImage.src = 'kneeling.png';
 
-    const destroyedImage = new Image();
-    destroyedImage.src = 'destroyed.png';
+    // Replace destroyedImage with deathGif
+    const deathGif = new Image();
+    deathGif.src = 'death.gif';
 
     // ====================
     //   GAME STATE
@@ -251,7 +252,7 @@
             enemyActive.deathState = 'kneeling';
           }, 2500);
 
-          // After 4 seconds, show the destroyed screen for 5 seconds.
+          // After 4 seconds, show the death.gif screen for 5 seconds.
           setTimeout(() => {
             destroyedScreen = true;
             setTimeout(() => {
@@ -269,7 +270,7 @@
       }
     }
 
-    // Spawn new enemy using woman assets at (338, 74)
+    // Spawn new enemy using woman assets at (518, 475)
     function spawnNewEnemy() {
       enemyActive = {
         x: 518,
@@ -331,10 +332,10 @@
     }
 
     function draw() {
-      // If destroyed screen active, draw it and return early
+      // If death.gif screen active, draw it and return early
       if (destroyedScreen) {
-        if (destroyedImage.complete) {
-          ctx.drawImage(destroyedImage, 0, 0, canvas.width, canvas.height);
+        if (deathGif.complete) {
+          ctx.drawImage(deathGif, 0, 0, canvas.width, canvas.height);
         } else {
           ctx.fillStyle = '#000';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
