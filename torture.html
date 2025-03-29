@@ -22,22 +22,22 @@
       height: 100vh;
       background: black;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     /* Centered game wrapper with fixed size (800x600) */
     #gameWrapper {
-      position: absolute;
+      position: relative;
       width: 800px;
       height: 600px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       background: black;
     }
-    /* Canvas and overlays fill the wrapper */
+    /* Canvas and overlays fill the wrapper without scaling */
     #gameCanvas {
       display: block;
-      width: 100%;
-      height: 100%;
+      width: 800px;
+      height: 600px;
     }
     #deathGifOverlay, #introVideo, #womanExecutionVideo {
       position: absolute;
@@ -241,7 +241,6 @@
             womanVideo.currentTime = 0;
             womanVideo.play();
             womanVideo.onended = () => {
-              // When video ends, set her image to "womandead.png" and freeze movement.
               enemyActive.idleImage.src = "womandead.png";
               womanVideo.style.display = 'none';
             };
