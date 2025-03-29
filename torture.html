@@ -106,8 +106,8 @@
     <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
     <!-- Intro video element with autoplay, playsinline, and muted -->
     <video id="introVideo" src="gps.mp4" autoplay playsinline muted></video>
-    <!-- Woman execution video overlay -->
-    <video id="womanExecutionVideo" src="womanexecution.mp4" playsinline muted></video>
+    <!-- Woman execution video overlay with preload for smooth playback -->
+    <video id="womanExecutionVideo" src="womanexecution.mp4" preload="auto" playsinline muted></video>
   </div>
   <div id="settingsMenu">
     <strong>Settings</strong><br>
@@ -115,6 +115,9 @@
   </div>
 
   <script>
+    // Flag to indicate if the execution video is playing.
+    let isExecutionPlaying = false;
+
     // Responsive resizing for canvas, container, overlays, and videos.
     function resizeCanvas() {
       const aspect = 800 / 600;
@@ -285,7 +288,7 @@
     let lastAttackTime = 0;
     function attack() {
       // prevent attacking a dead enemy
-      if (!enemyActive || enemyActive.isDead) return;
+      if (!enemyActive || enemyActive.isDead || isExecutionPlaying) return;
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Cooldown
 
@@ -320,15 +323,18 @@
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
-          // If enemy is the woman, play the execution video.
+          // If enemy is the woman, trigger the execution video overlay.
           if (enemyActive.type === 'woman') {
+            isExecutionPlaying = true;
             const womanVideo = document.getElementById('womanExecutionVideo');
             womanVideo.style.display = 'block';
             womanVideo.play();
-            womanVideo.onended = () => {
+            // Use a timeout as a fallback to ensure the video overlay is hidden.
+            setTimeout(() => {
               womanVideo.style.display = 'none';
+              isExecutionPlaying = false;
               spawnNewEnemy();
-            };
+            }, 3000); // adjust this duration to match your video length
           } else {
             enemyActive.deathState = 'dead';
             setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
@@ -381,8 +387,7 @@
     //   GAME LOOP
     // ====================
     function update() {
-      // NOTE: We used to pause game updates when the intro video was visible.
-      // Now we let the game update continuously so that player and enemy remain rendered.
+      // Always update so player and enemy remain rendered.
       let moveX = 0, moveY = 0;
       if (keys['w']) moveY = -player.speed;
       if (keys['s']) moveY = player.speed;
@@ -460,8 +465,7 @@
       // Draw active enemy
       if (enemyActive) {
         if (enemyActive.isDead) {
-          // For the woman enemy, if she’s dead the execution video will play,
-          // so we still draw her idle image behind the video.
+          // For a woman enemy, even if dead we draw the idle image behind the execution video.
           if (enemyActive.type === 'woman') {
             if (enemyActive.idleImage.complete) {
               ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
