@@ -146,7 +146,15 @@
       try {
         const source = audioContext.createBufferSource();
         source.buffer = punchSoundBuffer;
-        source.connect(audioContext.destination);
+        
+        // Add a gain node to control volume
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = 3.0; // Increase this value to make it louder
+        
+        // Connect the source to the gain node, then to the destination
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
         source.start(0);
       } catch (error) {
         console.error("Error playing punch sound:", error);
@@ -503,7 +511,6 @@
   </script>
 </body>
 </html>
-
 
 <!--BUGS: 
 1: PLAYER STICKS TO WALL WHEN COLLIDING WITH IT
