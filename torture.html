@@ -97,6 +97,12 @@
     let timerInterval = null;
     const menuMusic = document.getElementById('menuMusic');
 
+    // Audio system - improved initialization
+    let audioContext;
+    let punchSoundBuffer;
+    let audioInitialized = false;
+    const audioPromises = [];
+
     // Initialize title screen
     document.getElementById('continueBtn').addEventListener('click', function() {
       // Start music when continuing from title screen
@@ -105,37 +111,51 @@
       // Hide title screen and show main menu
       document.getElementById('titleScreen').style.display = 'none';
       document.getElementById('mainMenu').style.display = 'block';
+      
+      // Initialize audio context on first user interaction
+      initAudio();
     });
-
-    // Audio system
-    let audioContext;
-    let punchSoundBuffer;
-    let audioInitialized = false;
 
     function initAudio() {
       if (audioInitialized) return;
+      
+      // Create audio context
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      fetch('punch.mp3')
+      
+      // Load punch sound
+      const loadPunchSound = fetch('punch.mp3')
         .then(response => response.arrayBuffer())
         .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
         .then(buffer => {
           punchSoundBuffer = buffer;
           audioInitialized = true;
+        })
+        .catch(error => {
+          console.error('Error loading audio:', error);
         });
+      
+      audioPromises.push(loadPunchSound);
     }
 
     function playPunchSound() {
-      if (!audioInitialized) return;
-      const source = audioContext.createBufferSource();
-      source.buffer = punchSoundBuffer;
-      source.connect(audioContext.destination);
-      source.start(0);
+      if (!audioInitialized) {
+        console.log("Audio not initialized yet");
+        return;
+      }
+      
+      try {
+        const source = audioContext.createBufferSource();
+        source.buffer = punchSoundBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+      } catch (error) {
+        console.error("Error playing punch sound:", error);
+      }
     }
 
     // Initialize menu
     document.getElementById('startBtn').addEventListener('click', function() {
       menuMusic.pause();
-      initAudio();
       startGame();
     });
     
