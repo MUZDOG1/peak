@@ -67,6 +67,10 @@
       speedrunEnabled = true;
     }
 
+    // Audio elements
+    const punchSound = new Audio('punch.mp3');
+    punchSound.preload = 'auto';
+
     function startGame() {
       gameStarted = true;
       document.getElementById('mainMenu').style.display = 'none';
@@ -233,6 +237,10 @@
       const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < 100) {
+        // Play punch sound
+        punchSound.currentTime = 0;
+        punchSound.play();
+        
         player.isPunching = true;
         setTimeout(() => { player.isPunching = false; }, 200);
         enemyActive.isHurt = true;
@@ -395,7 +403,6 @@
   </script>
 </body>
 </html>
-
 
 
 
