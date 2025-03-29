@@ -2,28 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Fullscreen viewport -->
+  <!-- Ensure proper scaling on mobile/laptop devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rage Simulator</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: black;
+      background: #000;
       overflow: hidden;
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
       font-family: 'Courier New', monospace;
     }
-    /* Fullscreen game container */
+    /* Center the game container with a fixed size of 800x600 */
     #gameContainer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      position: relative;
+      width: 800px;
+      height: 600px;
+      margin: 20px auto;
       background: black;
-      overflow: hidden;
-      z-index: 1;
     }
     /* Canvas fills the container */
     #gameCanvas {
@@ -31,7 +27,7 @@
       width: 100%;
       height: 100%;
     }
-    /* Overlays (death GIF, intro video, woman execution video) */
+    /* Overlays */
     #deathGifOverlay, #introVideo, #womanExecutionVideo {
       position: absolute;
       top: 0;
@@ -66,27 +62,13 @@
   </div>
 
   <script>
-    // Resize the canvas to fill the viewport and update overlays.
-    function resizeCanvas() {
+    // Set canvas to fixed 800x600 (internal resolution matches container)
+    function setupCanvas() {
       const canvas = document.getElementById('gameCanvas');
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-      
-      document.getElementById('deathGifOverlay').style.width = width + 'px';
-      document.getElementById('deathGifOverlay').style.height = height + 'px';
-      
-      const introVideo = document.getElementById('introVideo');
-      introVideo.style.width = width + 'px';
-      introVideo.style.height = height + 'px';
-      
-      const womanVideo = document.getElementById('womanExecutionVideo');
-      womanVideo.style.width = width + 'px';
-      womanVideo.style.height = height + 'px';
+      canvas.width = 800;
+      canvas.height = 600;
     }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    setupCanvas();
 
     // Hide the intro video when it ends.
     const introVideo = document.getElementById('introVideo');
@@ -246,7 +228,7 @@
             womanVideo.currentTime = 0;
             womanVideo.play();
             womanVideo.onended = () => {
-              // When video ends, set her image to "womandead.png" and freeze movement.
+              // When the video finishes, set her image to "womandead.png"
               enemyActive.idleImage.src = "womandead.png";
               womanVideo.style.display = 'none';
             };
@@ -276,7 +258,7 @@
     //   SPAWN NEW ENEMY
     // ====================
     function spawnNewEnemy() {
-      // Spawn a new enemy (a woman enemy).
+      // Spawn a new enemy (a woman enemy)
       enemyActive = {
         x: 518,
         y: 475,
@@ -311,7 +293,7 @@
       moveEntity(player, moveX, moveY);
       if (keys[' ']) attack();
       
-      // Update enemy movement only if it is alive.
+      // Update enemy movement only if alive.
       if (enemyActive && !enemyActive.isDead) {
         if (enemyActive.knockbackDuration > 0) {
           moveEntity(enemyActive, enemyActive.knockbackVelocity.x, enemyActive.knockbackVelocity.y);
@@ -332,18 +314,15 @@
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     }
 
-    // ====================
-    //   DRAW FUNCTION
-    // ====================
     function draw() {
-      // Draw background: fill canvas black then draw the background image using "contain"
+      // Fill canvas black then draw background image using "contain" method.
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       if (backgroundImage.complete) {
         const canvasRatio = canvas.width / canvas.height;
         const bgRatio = backgroundImage.width / backgroundImage.height;
         let drawWidth, drawHeight, offsetX, offsetY;
-        if(bgRatio > canvasRatio) {
+        if (bgRatio > canvasRatio) {
           drawWidth = canvas.width;
           drawHeight = canvas.width / bgRatio;
           offsetX = 0;
@@ -357,7 +336,7 @@
         ctx.drawImage(backgroundImage, offsetX, offsetY, drawWidth, drawHeight);
       }
       
-      // Draw enemy (corpse or active).
+      // Draw enemy corpse if available.
       if (enemyCorpse) {
         if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
           ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
@@ -368,6 +347,7 @@
         }
       }
       
+      // Draw active enemy.
       if (enemyActive) {
         if (enemyActive.isDead) {
           if (enemyActive.type === 'woman') {
@@ -419,6 +399,7 @@
   </script>
 </body>
 </html>
+
 
 
 
