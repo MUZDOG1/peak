@@ -83,7 +83,7 @@
       <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
       <video id="introVideo" src="gps.mp4" playsinline muted></video>
       <video id="womanExecutionVideo" src="womanexecution.mp4" playsinline muted></video>
-      <video id="crashVideo" src="crash.mp4" playsinline muted></video>
+      <video id="crashVideo" src="crash.mp4" playsinline></video>
     </div>
   </div>
 
@@ -342,7 +342,18 @@
       const crashVideo = document.getElementById('crashVideo');
       crashVideo.style.display = 'block';
       crashVideo.currentTime = 0;
-      crashVideo.play();
+      crashVideo.volume = 1.0; // Ensure volume is at maximum
+      
+      // Try to play with user interaction to avoid browser autoplay restrictions
+      const playPromise = crashVideo.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Error playing crash video:", error);
+          // If autoplay is prevented, we can add a fallback here if needed
+        });
+      }
+      
       crashVideo.onended = () => {
         crashVideo.style.display = 'none';
       };
@@ -522,6 +533,17 @@
         ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
       }
     }
+
+    // Pre-load the crash video and enable audio when user interacts
+    const crashVideo = document.getElementById('crashVideo');
+    
+    // This will enable audio for the crash video when the user first interacts with the page
+    document.addEventListener('click', function enableAudio() {
+      // Just trying to interact with the video element is enough
+      crashVideo.volume = 1.0;
+      // Remove the event listener after first interaction
+      document.removeEventListener('click', enableAudio);
+    }, { once: true });
 
     function gameLoop() {
       update();
