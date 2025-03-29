@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rage Simulator</title>
+  <title>Clockwork Desolation</title>
   <style>
     html, body { margin: 0; padding: 0; background: black; overflow: hidden; font-family: 'Courier New', monospace; }
     #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; overflow: hidden; display: flex; align-items: center; justify-content: center; }
@@ -14,8 +14,42 @@
     #introVideo { z-index: 10; background: #000; }
     #womanExecutionVideo { z-index: 11; background: #000; }
 
+    /* Title screen styles */
+    #titleScreen { 
+      position: absolute; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      background: black; 
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+    #titleText {
+      font-size: 4em;
+      margin-bottom: 50px;
+      text-align: center;
+    }
+    #continueBtn {
+      background: #222; 
+      border: 2px solid #444; 
+      color: white; 
+      padding: 15px 30px; 
+      cursor: pointer; 
+      font-size: 1.2em; 
+      transition: all 0.3s;
+    }
+    #continueBtn:hover {
+      background: #333; 
+      border-color: #666;
+    }
+
     /* Menu styles */
-    #mainMenu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; text-align: center; }
+    #mainMenu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; text-align: center; display: none; }
     .menu-btn { background: #222; border: 2px solid #444; color: white; padding: 15px 30px; margin: 10px; cursor: pointer; font-size: 1.2em; transition: all 0.3s; }
     .menu-btn:hover { background: #333; border-color: #666; }
     #settingsMenu { display: none; position: absolute; background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #444; }
@@ -25,6 +59,13 @@
 </head>
 <body>
   <div id="gameContainer">
+    <!-- Title Screen -->
+    <div id="titleScreen">
+      <div id="titleText">CLOCKWORK DESOLATION</div>
+      <button id="continueBtn">CONTINUE</button>
+    </div>
+
+    <!-- Main Menu -->
     <div id="mainMenu">
       <button class="menu-btn" id="startBtn">START</button>
       <button class="menu-btn" id="settingsBtn">SETTINGS</button>
@@ -34,6 +75,7 @@
         </label>
       </div>
     </div>
+
     <div id="speedrunClock">00:00:00</div>
     <div id="gameWrapper">
       <canvas id="gameCanvas"></canvas>
@@ -55,11 +97,15 @@
     let timerInterval = null;
     const menuMusic = document.getElementById('menuMusic');
 
-    // Initialize menu music on first user interaction
-    document.addEventListener('click', function initMusic() {
+    // Initialize title screen
+    document.getElementById('continueBtn').addEventListener('click', function() {
+      // Start music when continuing from title screen
       menuMusic.play().catch(e => console.log("Audio play failed:", e));
-      document.removeEventListener('click', initMusic);
-    }, { once: true });
+      
+      // Hide title screen and show main menu
+      document.getElementById('titleScreen').style.display = 'none';
+      document.getElementById('mainMenu').style.display = 'block';
+    });
 
     // Audio system
     let audioContext;
