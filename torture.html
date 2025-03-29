@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Use full viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rage Simulator</title>
   <style>
@@ -13,7 +12,6 @@
       overflow: hidden;
       font-family: 'Courier New', monospace;
     }
-    /* Fullscreen container */
     #gameContainer {
       position: fixed;
       top: 0;
@@ -26,18 +24,19 @@
       align-items: center;
       justify-content: center;
     }
-    /* Centered game wrapper with fixed size (800x600) */
     #gameWrapper {
       position: relative;
       width: 800px;
       height: 600px;
-      background: black;
+      transform-origin: center center;
+      transform: scale(var(--game-scale));
     }
-    /* Canvas and overlays fill the wrapper without scaling */
     #gameCanvas {
-      display: block;
       width: 800px;
       height: 600px;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: pixelated;
     }
     #deathGifOverlay, #introVideo, #womanExecutionVideo {
       position: absolute;
@@ -67,15 +66,12 @@
     <div id="gameWrapper">
       <canvas id="gameCanvas"></canvas>
       <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
-      <!-- Intro video -->
       <video id="introVideo" src="gps.mp4" autoplay playsinline muted></video>
-      <!-- Woman execution video -->
       <video id="womanExecutionVideo" src="womanexecution.mp4" preload="auto" playsinline muted></video>
     </div>
   </div>
 
   <script>
-    // Set up the canvas with internal resolution of 800x600.
     function setupCanvas() {
       const canvas = document.getElementById('gameCanvas');
       canvas.width = 800;
@@ -83,21 +79,27 @@
     }
     setupCanvas();
 
-    // Hide the intro video when it ends.
     const introVideo = document.getElementById('introVideo');
     introVideo.addEventListener('ended', () => {
       introVideo.style.display = 'none';
     });
 
-    // ====================
-    //   CANVAS & CONTEXT
-    // ====================
+    function handleResize() {
+      const container = document.getElementById('gameContainer');
+      const wrapper = document.getElementById('gameWrapper');
+      const scale = Math.min(
+        container.clientWidth / 800,
+        container.clientHeight / 600
+      );
+      wrapper.style.setProperty('--game-scale', scale);
+    }
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // ====================
-    //   GAME ASSETS
-    // ====================
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
 
@@ -116,9 +118,6 @@
     const lyingImage = new Image();
     lyingImage.src = 'lying.png';
 
-    // ====================
-    //   GAME ENTITIES
-    // ====================
     const player = {
       x: 200,
       y: 500,
@@ -148,9 +147,6 @@
 
     let enemyCorpse = null;
 
-    // ====================
-    //   COLLISION BOXES
-    // ====================
     const walls = [
       { x: 1.5, y: 331, width: 250.5, height: 25 },
       { x: 342, y: 330, width: 500, height: 25 },
@@ -158,16 +154,10 @@
       { x: 0.5, y: 166, width: 75, height: 25 }
     ];
 
-    // ====================
-    //   INPUT HANDLING
-    // ====================
     const keys = {};
     document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
     document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
-    // ====================
-    //   COLLISION CHECK
-    // ====================
     function isColliding(rect1, rect2) {
       return (
         rect1.x < rect2.x + rect2.width &&
@@ -176,6 +166,7 @@
         rect1.y + rect1.height > rect2.y
       );
     }
+
     function moveEntity(entity, dx, dy) {
       entity.x += dx;
       for (const wall of walls) {
@@ -193,26 +184,20 @@
       }
     }
 
-    // ====================
-    //   OVERLAY HANDLING
-    // ====================
     function showDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'block';
     }
+
     function hideDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'none';
     }
 
-    // ====================
-    //   ATTACK LOGIC
-    // ====================
     let lastAttackTime = 0;
     function attack() {
       if (!enemyActive || enemyActive.isDead) return;
       const now = Date.now();
-      if (now - lastAttackTime < 500) return; // Cooldown
+      if (now - lastAttackTime < 500) return;
       
-      // Calculate distance between centers.
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemyActive.x + enemyActive.width / 2;
@@ -234,7 +219,6 @@
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
-          // For a woman enemy, play the execution video.
           if (enemyActive.type === 'woman') {
             const womanVideo = document.getElementById('womanExecutionVideo');
             womanVideo.style.display = 'block';
@@ -266,11 +250,7 @@
       }
     }
 
-    // ====================
-    //   SPAWN NEW ENEMY
-    // ====================
     function spawnNewEnemy() {
-      // Spawn a new enemy (a woman enemy).
       enemyActive = {
         x: 518,
         y: 475,
@@ -290,11 +270,7 @@
       enemyActive.hitImage.src = 'womanhit.png';
     }
 
-    // ====================
-    //   GAME LOOP
-    // ====================
     function update() {
-      // Pause game logic during intro video.
       if (introVideo.style.display !== 'none') return;
       
       let moveX = 0, moveY = 0;
@@ -305,7 +281,6 @@
       moveEntity(player, moveX, moveY);
       if (keys[' ']) attack();
       
-      // Update enemy movement only if alive.
       if (enemyActive && !enemyActive.isDead) {
         if (enemyActive.knockbackDuration > 0) {
           moveEntity(enemyActive, enemyActive.knockbackVelocity.x, enemyActive.knockbackVelocity.y);
@@ -327,29 +302,13 @@
     }
 
     function draw() {
-      // Fill the canvas with black.
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // Draw background image using "contain" method.
-      if (backgroundImage.complete) {
-        const canvasRatio = canvas.width / canvas.height;
-        const bgRatio = backgroundImage.width / backgroundImage.height;
-        let drawWidth, drawHeight, offsetX, offsetY;
-        if (bgRatio > canvasRatio) {
-          drawWidth = canvas.width;
-          drawHeight = canvas.width / bgRatio;
-          offsetX = 0;
-          offsetY = (canvas.height - drawHeight) / 2;
-        } else {
-          drawHeight = canvas.height;
-          drawWidth = canvas.height * bgRatio;
-          offsetX = (canvas.width - drawWidth) / 2;
-          offsetY = 0;
-        }
-        ctx.drawImage(backgroundImage, offsetX, offsetY, drawWidth, drawHeight);
-      }
       
-      // Draw enemy corpse if available.
+      if (backgroundImage.complete) {
+        ctx.drawImage(backgroundImage, 0, 0, 800, 600);
+      }
+
       if (enemyCorpse) {
         if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
           ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
@@ -359,25 +318,18 @@
           ctx.drawImage(enemyKneelingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         }
       }
-      
-      // Draw active enemy.
+
       if (enemyActive) {
         if (enemyActive.isDead) {
           if (enemyActive.type === 'woman') {
             if (enemyActive.idleImage.complete) {
               ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-            } else {
-              ctx.fillStyle = '#555';
-              ctx.fillRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
             }
           } else {
             if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
               ctx.drawImage(enemyDeadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
             } else if (enemyActive.deathState === 'kneeling' && enemyKneelingImage.complete) {
               ctx.drawImage(enemyKneelingImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-            } else {
-              ctx.fillStyle = '#555';
-              ctx.fillRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
             }
           }
         } else {
@@ -385,21 +337,14 @@
             ctx.drawImage(enemyActive.hitImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
           } else if (enemyActive.idleImage.complete) {
             ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-          } else {
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
           }
         }
       }
-      
-      // Draw player.
+
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
         ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-      } else {
-        ctx.fillStyle = '#3498db';
-        ctx.fillRect(player.x, player.y, player.width, player.height);
       }
     }
 
