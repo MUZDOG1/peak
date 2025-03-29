@@ -107,7 +107,7 @@
     <!-- Intro video element with autoplay, playsinline, and muted -->
     <video id="introVideo" src="gps.mp4" autoplay playsinline muted></video>
     <!-- Woman execution video overlay -->
-    <video id="womanExecutionVideo" src="womanexecution.mp4" autoplay playsinline muted></video>
+    <video id="womanExecutionVideo" src="womanexecution.mp4" playsinline muted></video>
   </div>
   <div id="settingsMenu">
     <strong>Settings</strong><br>
@@ -284,9 +284,11 @@
     // ====================
     let lastAttackTime = 0;
     function attack() {
+      // prevent attacking a dead enemy
       if (!enemyActive || enemyActive.isDead) return;
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Cooldown
+
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemyActive.x + enemyActive.width / 2;
@@ -379,9 +381,8 @@
     //   GAME LOOP
     // ====================
     function update() {
-      // During intro video playback, game logic is paused.
-      if (introVideo.style.display !== 'none') return;
-
+      // NOTE: We used to pause game updates when the intro video was visible.
+      // Now we let the game update continuously so that player and enemy remain rendered.
       let moveX = 0, moveY = 0;
       if (keys['w']) moveY = -player.speed;
       if (keys['s']) moveY = player.speed;
@@ -460,7 +461,7 @@
       if (enemyActive) {
         if (enemyActive.isDead) {
           // For the woman enemy, if she’s dead the execution video will play,
-          // so we don't need to draw her idle image here.
+          // so we still draw her idle image behind the video.
           if (enemyActive.type === 'woman') {
             if (enemyActive.idleImage.complete) {
               ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
@@ -526,6 +527,7 @@
   </script>
 </body>
 </html>
+
 
 
 
