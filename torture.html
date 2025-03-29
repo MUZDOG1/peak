@@ -13,7 +13,7 @@
       font-family: 'Courier New', monospace;
       text-align: center;
       overflow-y: auto;
-      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
+      cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
     h1 {
       font-size: 3em;
@@ -64,13 +64,9 @@
       width: 100%;
       height: 100%;
     }
-    /* The death gif overlay covers the canvas exactly */
+    /* Localized death gif overlay */
     #deathGifOverlay {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
       display: none;
       pointer-events: none;
     }
@@ -133,10 +129,7 @@
       container.style.width = newWidth + 'px';
       container.style.height = newHeight + 'px';
       
-      const deathOverlay = document.getElementById('deathGifOverlay');
-      deathOverlay.style.width = newWidth + 'px';
-      deathOverlay.style.height = newHeight + 'px';
-      
+      // Resize intro and woman execution videos
       const introVideo = document.getElementById('introVideo');
       introVideo.style.width = newWidth + 'px';
       introVideo.style.height = newHeight + 'px';
@@ -275,8 +268,18 @@
     // ====================
     //   OVERLAY HANDLING
     // ====================
+    // This function positions the death overlay over the enemy only.
     function showDeathGif() {
-      document.getElementById('deathGifOverlay').style.display = 'block';
+      const deathOverlay = document.getElementById('deathGifOverlay');
+      // Calculate scale factors (displayed size vs. internal canvas size)
+      const scaleX = canvas.offsetWidth / canvas.width;
+      const scaleY = canvas.offsetHeight / canvas.height;
+      // Position and size the overlay to match enemy position and dimensions.
+      deathOverlay.style.left = (enemyActive.x * scaleX) + 'px';
+      deathOverlay.style.top = (enemyActive.y * scaleY) + 'px';
+      deathOverlay.style.width = (enemyActive.width * scaleX) + 'px';
+      deathOverlay.style.height = (enemyActive.height * scaleY) + 'px';
+      deathOverlay.style.display = 'block';
     }
     function hideDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'none';
@@ -346,13 +349,14 @@
           } else {
             enemyActive.deathState = 'dead';
             setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
-            // After 4 seconds, show death.gif overlay for 5 seconds.
+            // After 4 seconds, show the localized death.gif overlay for 5 seconds.
             setTimeout(() => {
               showDeathGif();
               setTimeout(() => {
                 hideDeathGif();
                 enemyActive.deathState = 'lying'; // Change state so lying.png is drawn
-                enemyCorpse = enemyActive;
+                // Clone enemyActive so that enemyCorpse remains unchanged when spawning a new enemy.
+                enemyCorpse = { ...enemyActive };
                 spawnNewEnemy();
               }, 5000);
             }, 4000);
