@@ -5,60 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rage Simulator</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: black;
-      overflow: hidden;
-      font-family: 'Courier New', monospace;
-    }
-    #gameContainer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: black;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #gameWrapper {
-      position: relative;
-      width: 800px;
-      height: 600px;
-      transform-origin: center center;
-      transform: scale(var(--game-scale));
-    }
-    #gameCanvas {
-      width: 800px;
-      height: 600px;
-      image-rendering: -moz-crisp-edges;
-      image-rendering: -webkit-optimize-contrast;
-      image-rendering: pixelated;
-    }
-    #deathGifOverlay, #introVideo, #womanExecutionVideo {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-    #deathGifOverlay {
-      display: none;
-      z-index: 5;
-    }
-    #introVideo {
-      z-index: 10;
-      background: #000;
-    }
-    #womanExecutionVideo {
-      z-index: 11;
-      background: #000;
-      display: none;
-    }
+    /* Keep all previous CSS the same */
+    html, body { margin: 0; padding: 0; background: black; overflow: hidden; font-family: 'Courier New', monospace; }
+    #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    #gameWrapper { position: relative; width: 800px; height: 600px; transform-origin: center center; transform: scale(var(--game-scale)); }
+    #gameCanvas { width: 800px; height: 600px; image-rendering: -moz-crisp-edges; image-rendering: -webkit-optimize-contrast; image-rendering: pixelated; }
+    #deathGifOverlay, #introVideo, #womanExecutionVideo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    #deathGifOverlay { display: none; z-index: 5; }
+    #introVideo { z-index: 10; background: #000; }
+    #womanExecutionVideo { z-index: 11; background: #000; display: none; }
   </style>
 </head>
 <body>
@@ -72,6 +27,11 @@
   </div>
 
   <script>
+    // Add car image preload
+    const carImage = new Image();
+    carImage.src = 'car1.png';
+    let car = null;
+
     function setupCanvas() {
       const canvas = document.getElementById('gameCanvas');
       canvas.width = 800;
@@ -251,6 +211,7 @@
     }
 
     function spawnNewEnemy() {
+      // Spawn woman enemy
       enemyActive = {
         x: 518,
         y: 475,
@@ -268,6 +229,15 @@
       };
       enemyActive.idleImage.src = 'woman.png';
       enemyActive.hitImage.src = 'womanhit.png';
+
+      // Spawn car in bottom right garden
+      car = {
+        x: 650,
+        y: 450,
+        width: 120,
+        height: 60,
+        image: carImage
+      };
     }
 
     function update() {
@@ -319,6 +289,11 @@
         }
       }
 
+      // Draw car if exists
+      if (car && car.image.complete) {
+        ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
+      }
+
       if (enemyActive) {
         if (enemyActive.isDead) {
           if (enemyActive.type === 'woman') {
@@ -357,7 +332,6 @@
   </script>
 </body>
 </html>
-
 
 
 
