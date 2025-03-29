@@ -2,32 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Ensure proper scaling on mobile/laptop devices -->
+  <!-- Use full viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rage Simulator</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: #000;
+      background: black;
       overflow: hidden;
       font-family: 'Courier New', monospace;
     }
-    /* Center the game container with a fixed size of 800x600 */
+    /* Fullscreen container */
     #gameContainer {
-      position: relative;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      overflow: hidden;
+    }
+    /* Centered game wrapper with fixed size (800x600) */
+    #gameWrapper {
+      position: absolute;
       width: 800px;
       height: 600px;
-      margin: 20px auto;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: black;
     }
-    /* Canvas fills the container */
+    /* Canvas and overlays fill the wrapper */
     #gameCanvas {
       display: block;
       width: 100%;
       height: 100%;
     }
-    /* Overlays */
     #deathGifOverlay, #introVideo, #womanExecutionVideo {
       position: absolute;
       top: 0;
@@ -53,16 +64,18 @@
 </head>
 <body>
   <div id="gameContainer">
-    <canvas id="gameCanvas"></canvas>
-    <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
-    <!-- Intro video -->
-    <video id="introVideo" src="gps.mp4" autoplay playsinline muted></video>
-    <!-- Woman execution video -->
-    <video id="womanExecutionVideo" src="womanexecution.mp4" preload="auto" playsinline muted></video>
+    <div id="gameWrapper">
+      <canvas id="gameCanvas"></canvas>
+      <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
+      <!-- Intro video -->
+      <video id="introVideo" src="gps.mp4" autoplay playsinline muted></video>
+      <!-- Woman execution video -->
+      <video id="womanExecutionVideo" src="womanexecution.mp4" preload="auto" playsinline muted></video>
+    </div>
   </div>
 
   <script>
-    // Set canvas to fixed 800x600 (internal resolution matches container)
+    // Set up the canvas with internal resolution of 800x600.
     function setupCanvas() {
       const canvas = document.getElementById('gameCanvas');
       canvas.width = 800;
@@ -199,7 +212,7 @@
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Cooldown
       
-      // Calculate distance between player and enemy centers.
+      // Calculate distance between centers.
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemyActive.x + enemyActive.width / 2;
@@ -221,14 +234,14 @@
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
-          // If enemy is a woman, play the execution video.
+          // For a woman enemy, play the execution video.
           if (enemyActive.type === 'woman') {
             const womanVideo = document.getElementById('womanExecutionVideo');
             womanVideo.style.display = 'block';
             womanVideo.currentTime = 0;
             womanVideo.play();
             womanVideo.onended = () => {
-              // When the video finishes, set her image to "womandead.png"
+              // When video ends, set her image to "womandead.png" and freeze movement.
               enemyActive.idleImage.src = "womandead.png";
               womanVideo.style.display = 'none';
             };
@@ -258,7 +271,7 @@
     //   SPAWN NEW ENEMY
     // ====================
     function spawnNewEnemy() {
-      // Spawn a new enemy (a woman enemy)
+      // Spawn a new enemy (a woman enemy).
       enemyActive = {
         x: 518,
         y: 475,
@@ -315,9 +328,10 @@
     }
 
     function draw() {
-      // Fill canvas black then draw background image using "contain" method.
+      // Fill the canvas with black.
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Draw background image using "contain" method.
       if (backgroundImage.complete) {
         const canvasRatio = canvas.width / canvas.height;
         const bgRatio = backgroundImage.width / backgroundImage.height;
@@ -399,6 +413,7 @@
   </script>
 </body>
 </html>
+
 
 
 
