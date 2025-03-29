@@ -9,10 +9,11 @@
     #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; overflow: hidden; display: flex; align-items: center; justify-content: center; }
     #gameWrapper { position: relative; width: 800px; height: 600px; transform-origin: center center; transform: scale(var(--game-scale)); }
     #gameCanvas { width: 800px; height: 600px; image-rendering: -moz-crisp-edges; image-rendering: -webkit-optimize-contrast; image-rendering: pixelated; }
-    #deathGifOverlay, #introVideo, #womanExecutionVideo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+    #deathGifOverlay, #introVideo, #womanExecutionVideo, #crashVideo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
     #deathGifOverlay { z-index: 5; }
     #introVideo { z-index: 10; background: #000; }
     #womanExecutionVideo { z-index: 11; background: #000; }
+    #crashVideo { z-index: 12; background: #000; }
 
     /* Title screen styles */
     #titleScreen { 
@@ -82,6 +83,7 @@
       <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
       <video id="introVideo" src="gps.mp4" playsinline muted></video>
       <video id="womanExecutionVideo" src="womanexecution.mp4" playsinline muted></video>
+      <video id="crashVideo" src="crash.mp4" playsinline muted></video>
     </div>
   </div>
 
@@ -335,6 +337,16 @@
     function hideDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'none';
     }
+    
+    function playCrashVideo() {
+      const crashVideo = document.getElementById('crashVideo');
+      crashVideo.style.display = 'block';
+      crashVideo.currentTime = 0;
+      crashVideo.play();
+      crashVideo.onended = () => {
+        crashVideo.style.display = 'none';
+      };
+    }
 
     let lastAttackTime = 0;
     function attack() {
@@ -373,6 +385,11 @@
             womanVideo.onended = () => {
               enemyActive.idleImage.src = "womandead.png";
               womanVideo.style.display = 'none';
+              
+              // Wait 5 seconds after woman execution video ends, then play crash video
+              setTimeout(() => {
+                playCrashVideo();
+              }, 5000);
             };
           } else {
             enemyActive.deathState = 'dead';
