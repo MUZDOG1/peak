@@ -64,9 +64,13 @@
       width: 100%;
       height: 100%;
     }
-    /* Localized death gif overlay for enemy death */
+    /* The death gif overlay covers the canvas exactly */
     #deathGifOverlay {
       position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       display: none;
       pointer-events: none;
       z-index: 5;
@@ -103,7 +107,7 @@
     <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
     <!-- Intro video element with autoplay, playsinline, and muted -->
     <video id="introVideo" src="gps.mp4" autoplay playsinline muted></video>
-    <!-- Woman execution video overlay with preload for smooth playback -->
+    <!-- Woman execution video overlay -->
     <video id="womanExecutionVideo" src="womanexecution.mp4" preload="auto" playsinline muted></video>
   </div>
   <div id="settingsMenu">
@@ -112,10 +116,7 @@
   </div>
 
   <script>
-    // Flag to indicate if the execution video is playing.
-    let isExecutionPlaying = false;
-
-    // Responsive resizing for canvas, container, overlays, and videos.
+    // Responsive resizing for canvas, container, and video overlays.
     function resizeCanvas() {
       const aspect = 800 / 600;
       const containerWidth = window.innerWidth * 0.95;
@@ -130,7 +131,10 @@
       container.style.width = newWidth + 'px';
       container.style.height = newHeight + 'px';
       
-      // Resize intro and execution videos
+      const deathOverlay = document.getElementById('deathGifOverlay');
+      deathOverlay.style.width = newWidth + 'px';
+      deathOverlay.style.height = newHeight + 'px';
+      
       const introVideo = document.getElementById('introVideo');
       introVideo.style.width = newWidth + 'px';
       introVideo.style.height = newHeight + 'px';
@@ -191,13 +195,6 @@
     // Image for corpse after death.gif
     const lyingImage = new Image();
     lyingImage.src = 'lying.png';
-
-    // Blood splatter image
-    const bloodImage = new Image();
-    bloodImage.src = 'blood.png';
-
-    // Array to store blood splatters on the floor.
-    let bloodSplatter = [];
 
     // ====================
     //   ENEMY ENTITIES
@@ -269,18 +266,8 @@
     // ====================
     //   OVERLAY HANDLING
     // ====================
-    // Position the death overlay so that it only covers the enemy.
     function showDeathGif() {
-      const deathOverlay = document.getElementById('deathGifOverlay');
-      // Calculate scale factors (displayed size vs. internal canvas size)
-      const scaleX = canvas.offsetWidth / canvas.width;
-      const scaleY = canvas.offsetHeight / canvas.height;
-      // Position and size the overlay to match enemy's current position and size.
-      deathOverlay.style.left = (enemyActive.x * scaleX) + 'px';
-      deathOverlay.style.top = (enemyActive.y * scaleY) + 'px';
-      deathOverlay.style.width = (enemyActive.width * scaleX) + 'px';
-      deathOverlay.style.height = (enemyActive.height * scaleY) + 'px';
-      deathOverlay.style.display = 'block';
+      document.getElementById('deathGifOverlay').style.display = 'block';
     }
     function hideDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'none';
@@ -291,12 +278,11 @@
     // ====================
     let lastAttackTime = 0;
     function attack() {
-      // Do not allow an attack if enemy is already dead or if an execution video is playing.
-      if (!enemyActive || enemyActive.isDead || isExecutionPlaying) return;
+      if (!enemyActive || enemyActive.isDead) return;
       const now = Date.now();
-      if (now - lastAttackTime < 500) return; // Attack cooldown
-
-      // Calculate the distance between player and enemy centers.
+      if (now - lastAttackTime < 500) return; // Cooldown
+      
+      // Calculate distance between centers.
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemyActive.x + enemyActive.width / 2;
@@ -308,16 +294,6 @@
         player.isPunching = true;
         setTimeout(() => { player.isPunching = false; }, 200);
         enemyActive.isHurt = true;
-        
-        // Add a blood splatter effect at the enemy's location.
-        bloodSplatter.push({
-          x: enemyActive.x,
-          y: enemyActive.y,
-          width: enemyActive.width,
-          height: enemyActive.height
-        });
-        
-        // Apply knockback effect to the enemy.
         const knockbackIntensity = 7.5;
         const knockbackDuration = 15;
         const mag = Math.sqrt(dx * dx + dy * dy);
@@ -325,42 +301,30 @@
         enemyActive.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
         enemyActive.knockbackDuration = knockbackDuration;
         enemyActive.health -= 10;
-        healthFill.style.width = `${enemyActive.health / 3}%`; // 300 health equals 100%
-        
-        // When enemy health reaches 0, trigger the death sequence.
+        healthFill.style.width = `${enemyActive.health / 3}%`;
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
+          // If enemy is a woman, play the execution video.
           if (enemyActive.type === 'woman') {
-            // Trigger execution video overlay for the woman enemy.
-            isExecutionPlaying = true;
             const womanVideo = document.getElementById('womanExecutionVideo');
             womanVideo.style.display = 'block';
             womanVideo.currentTime = 0;
             womanVideo.play();
-            const fallback = setTimeout(() => {
-              womanVideo.pause();
-              womanVideo.style.display = 'none';
-              isExecutionPlaying = false;
-              spawnNewEnemy();
-            }, 3000);
             womanVideo.onended = () => {
-              clearTimeout(fallback);
+              // When the video finishes, change her image and disable movement.
+              enemyActive.idleImage.src = "womandead.png";
               womanVideo.style.display = 'none';
-              isExecutionPlaying = false;
-              spawnNewEnemy();
             };
           } else {
-            // For non-woman enemies, change death states and show the localized death GIF.
             enemyActive.deathState = 'dead';
             setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
             setTimeout(() => {
               showDeathGif();
               setTimeout(() => {
                 hideDeathGif();
-                enemyActive.deathState = 'lying'; // Use corpse image state.
-                // Clone enemyActive so that enemyCorpse remains independent.
-                enemyCorpse = { ...enemyActive };
+                enemyActive.deathState = 'lying';
+                enemyCorpse = enemyActive;
                 spawnNewEnemy();
               }, 5000);
             }, 4000);
@@ -403,7 +367,9 @@
     //   GAME LOOP
     // ====================
     function update() {
-      // Update player movement.
+      // During intro video playback, pause game logic.
+      if (introVideo.style.display !== 'none') return;
+      
       let moveX = 0, moveY = 0;
       if (keys['w']) moveY = -player.speed;
       if (keys['s']) moveY = player.speed;
@@ -411,8 +377,8 @@
       if (keys['d']) moveX = player.speed;
       moveEntity(player, moveX, moveY);
       if (keys[' ']) attack();
-
-      // Update enemy movement (if not dead).
+      
+      // Only update enemy movement if it is not dead.
       if (enemyActive && !enemyActive.isDead) {
         if (enemyActive.knockbackDuration > 0) {
           moveEntity(enemyActive, enemyActive.knockbackVelocity.x, enemyActive.knockbackVelocity.y);
@@ -429,31 +395,17 @@
         enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
         enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
       }
-      // Keep player within canvas bounds.
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     }
 
     function draw() {
-      // Draw background.
       if (backgroundImage.complete) {
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
       } else {
         ctx.fillStyle = '#333';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-      
-      // Draw blood splatters.
-      bloodSplatter.forEach(splat => {
-        if (bloodImage.complete) {
-          ctx.drawImage(bloodImage, splat.x, splat.y, splat.width, splat.height);
-        } else {
-          ctx.fillStyle = '#900';
-          ctx.fillRect(splat.x, splat.y, splat.width, splat.height);
-        }
-      });
-      
-      // Debug view: draw collision boxes.
       if (debugMode) {
         ctx.save();
         ctx.globalAlpha = 0.3;
@@ -470,8 +422,7 @@
           ctx.restore();
         }
       }
-      
-      // Draw enemy corpse (if available).
+      // Draw enemy corpse (if any)
       if (enemyCorpse) {
         if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
           ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
@@ -484,10 +435,10 @@
           ctx.fillRect(enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         }
       }
-      
-      // Draw active enemy.
+      // Draw active enemy
       if (enemyActive) {
         if (enemyActive.isDead) {
+          // For a woman enemy, draw her idle image (which will change to "womandead.png" after the video)
           if (enemyActive.type === 'woman') {
             if (enemyActive.idleImage.complete) {
               ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
@@ -516,8 +467,7 @@
           }
         }
       }
-      
-      // Draw player AFTER enemy drawing so it remains on top.
+      // Draw player
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
@@ -525,6 +475,23 @@
       } else {
         ctx.fillStyle = '#3498db';
         ctx.fillRect(player.x, player.y, player.width, player.height);
+      }
+      // Debug: highlight enemy in range
+      if (enemyActive) {
+        const px = player.x + player.width / 2;
+        const py = player.y + player.height / 2;
+        const ex = enemyActive.x + enemyActive.width / 2;
+        const ey = enemyActive.y + enemyActive.height / 2;
+        const dx = px - ex;
+        const dy = py - ey;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 100 && debugMode) {
+          ctx.save();
+          ctx.strokeStyle = '#ff0000';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(enemyActive.x - 5, enemyActive.y - 5, enemyActive.width + 10, enemyActive.height + 10);
+          ctx.restore();
+        }
       }
     }
 
@@ -537,8 +504,6 @@
   </script>
 </body>
 </html>
-
-
 
 
 
