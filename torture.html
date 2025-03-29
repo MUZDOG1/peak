@@ -6,13 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>bacon egg and cheese</title>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
       background: #1a0a0a;
       color: #ff4444;
       font-family: 'Courier New', monospace;
       text-align: center;
-      overflow-y: auto;
+      overflow: hidden;
       cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFklEQVRYR+2X0Q6DIAiF8d8b9A6dwtZSFBT8/0ndQNiJjVH6MehWQhYchH0ZytISkZER0XsVowN5iPEApNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUNAJ5cBCUPAvBQ8vAJ+uJAAAAAASUVORK5CYII='), auto;
     }
     h1 {
@@ -31,6 +32,8 @@
       width: 90%;
       max-width: 300px;
       color: #ffaaaa;
+      z-index: 20;
+      position: relative;
     }
     #healthBar {
       width: 90%;
@@ -39,24 +42,22 @@
       background: #300000;
       margin: 10px auto;
       border: 1px solid #ff4444;
+      z-index: 20;
+      position: relative;
     }
     #healthFill {
       height: 100%;
       width: 100%;
       background: #ff0000;
     }
-    #settingsMenu {
-      text-align: left;
-    }
-    #settingsMenu label {
-      cursor: pointer;
-    }
-    /* Container for canvas and overlays */
+    /* Fullscreen container for canvas and overlays */
     #gameContainer {
-      position: relative;
-      margin: 20px auto;
-      width: 800px;  /* initial width */
-      height: 600px; /* initial height */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 5;
     }
     /* Canvas fills container */
     #gameCanvas {
@@ -64,7 +65,7 @@
       width: 100%;
       height: 100%;
     }
-    /* The death gif overlay covers the canvas exactly */
+    /* Death gif overlay covers the entire container */
     #deathGifOverlay {
       position: absolute;
       top: 0;
@@ -73,16 +74,16 @@
       height: 100%;
       display: none;
       pointer-events: none;
-      z-index: 5;
+      z-index: 11;
     }
-    /* Intro video overlay covering the entire game container */
+    /* Intro video overlay covering the entire container */
     #introVideo {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 10;
+      z-index: 12;
       background: #000;
     }
     /* Woman execution video overlay */
@@ -92,7 +93,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 11;
+      z-index: 13;
       background: #000;
       display: none;
     }
@@ -103,7 +104,7 @@
   <div id="instructions">WASD: Move | SPACE: Attack</div>
   <div id="healthBar"><div id="healthFill"></div></div>
   <div id="gameContainer">
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
     <!-- Intro video element with autoplay, playsinline, and muted -->
     <video id="introVideo" src="gps.mp4" autoplay playsinline muted></video>
@@ -116,32 +117,23 @@
   </div>
 
   <script>
-    // Responsive resizing for canvas, container, and video overlays.
+    // Resize canvas to fill the viewport and update its internal dimensions.
     function resizeCanvas() {
-      const aspect = 800 / 600;
-      const containerWidth = window.innerWidth * 0.95;
-      const newWidth = Math.min(containerWidth, 800);
-      const newHeight = newWidth / aspect;
-      
       const canvas = document.getElementById('gameCanvas');
-      canvas.style.width = newWidth + 'px';
-      canvas.style.height = newHeight + 'px';
-      
-      const container = document.getElementById('gameContainer');
-      container.style.width = newWidth + 'px';
-      container.style.height = newHeight + 'px';
-      
-      const deathOverlay = document.getElementById('deathGifOverlay');
-      deathOverlay.style.width = newWidth + 'px';
-      deathOverlay.style.height = newHeight + 'px';
-      
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      // Update canvas internal resolution.
+      canvas.width = width;
+      canvas.height = height;
+      // Update styles for overlays.
+      document.getElementById('deathGifOverlay').style.width = width + 'px';
+      document.getElementById('deathGifOverlay').style.height = height + 'px';
       const introVideo = document.getElementById('introVideo');
-      introVideo.style.width = newWidth + 'px';
-      introVideo.style.height = newHeight + 'px';
-      
+      introVideo.style.width = width + 'px';
+      introVideo.style.height = height + 'px';
       const womanVideo = document.getElementById('womanExecutionVideo');
-      womanVideo.style.width = newWidth + 'px';
-      womanVideo.style.height = newHeight + 'px';
+      womanVideo.style.width = width + 'px';
+      womanVideo.style.height = height + 'px';
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -312,8 +304,9 @@
             womanVideo.currentTime = 0;
             womanVideo.play();
             womanVideo.onended = () => {
-              // When the video finishes, change her image and disable movement.
+              // When the video finishes, change her image to "womandead.png"
               enemyActive.idleImage.src = "womandead.png";
+              // Stop movement by not updating enemyActive in update().
               womanVideo.style.display = 'none';
             };
           } else {
@@ -504,6 +497,7 @@
   </script>
 </body>
 </html>
+
 
 
 
