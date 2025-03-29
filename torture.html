@@ -43,20 +43,29 @@
     </div>
   </div>
 
+  <audio id="menuMusic" loop>
+    <source src="lives.mp3" type="audio/mpeg">
+  </audio>
+
   <script>
     // Menu system variables
     let gameStarted = false;
     let speedrunEnabled = false;
     let startTime = 0;
     let timerInterval = null;
+    const menuMusic = document.getElementById('menuMusic');
+
+    // Initialize menu music on first user interaction
+    document.addEventListener('click', function initMusic() {
+      menuMusic.play().catch(e => console.log("Audio play failed:", e));
+      document.removeEventListener('click', initMusic);
+    }, { once: true });
 
     // Audio system
     let audioContext;
     let punchSoundBuffer;
-    let menuMusic;
     let audioInitialized = false;
 
-    // Initialize audio on first user interaction
     function initAudio() {
       if (audioInitialized) return;
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -66,14 +75,6 @@
         .then(buffer => {
           punchSoundBuffer = buffer;
           audioInitialized = true;
-        });
-
-      fetch('lives.mp3')
-        .then(response => response.arrayBuffer())
-        .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-        .then(buffer => {
-          menuMusic = buffer;
-          playMenuMusic();
         });
     }
 
@@ -85,33 +86,18 @@
       source.start(0);
     }
 
-    function playMenuMusic() {
-      if (!audioInitialized || !menuMusic) return;
-      const source = audioContext.createBufferSource();
-      source.buffer = menuMusic;
-      source.loop = true;
-      source.connect(audioContext.destination);
-      source.start(0);
-      window.menuMusicSource = source; // Store for stopping
-    }
-
-    function stopMenuMusic() {
-      if (window.menuMusicSource) {
-        window.menuMusicSource.stop();
-        window.menuMusicSource = null;
-      }
-    }
-
     // Initialize menu
     document.getElementById('startBtn').addEventListener('click', function() {
+      menuMusic.pause();
       initAudio();
-      stopMenuMusic(); //stop menu music when game start
       startGame();
     });
+    
     document.getElementById('settingsBtn').addEventListener('click', () => {
       document.getElementById('settingsMenu').style.display = 
         document.getElementById('settingsMenu').style.display === 'block' ? 'none' : 'block';
     });
+    
     document.getElementById('speedrunToggle').addEventListener('change', (e) => {
       speedrunEnabled = e.target.checked;
       localStorage.setItem('speedrunEnabled', speedrunEnabled);
@@ -127,7 +113,6 @@
       gameStarted = true;
       document.getElementById('mainMenu').style.display = 'none';
       
-      // Start the intro video
       const introVideo = document.getElementById('introVideo');
       introVideo.style.display = 'block';
       introVideo.play();
@@ -140,7 +125,6 @@
           updateTimer();
           timerInterval = setInterval(updateTimer, 10);
         }
-        // Start game systems
         handleResize();
         gameLoop();
       });
@@ -289,7 +273,6 @@
       const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < 100) {
-        // Play punch sound immediately
         playPunchSound();
         
         player.isPunching = true;
@@ -454,6 +437,7 @@
   </script>
 </body>
 </html>
+
 
 <!--BUGS: 
 1: PLAYER STICKS TO WALL WHEN COLLIDING WITH IT
