@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rage Simulator</title>
   <style>
-    /* Keep all previous CSS the same */
     html, body { margin: 0; padding: 0; background: black; overflow: hidden; font-family: 'Courier New', monospace; }
     #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; overflow: hidden; display: flex; align-items: center; justify-content: center; }
     #gameWrapper { position: relative; width: 800px; height: 600px; transform-origin: center center; transform: scale(var(--game-scale)); }
@@ -27,7 +26,6 @@
   </div>
 
   <script>
-    // Add car image preload
     const carImage = new Image();
     carImage.src = 'car1.png';
     let car = null;
@@ -211,7 +209,6 @@
     }
 
     function spawnNewEnemy() {
-      // Spawn woman enemy
       enemyActive = {
         x: 518,
         y: 475,
@@ -230,12 +227,12 @@
       enemyActive.idleImage.src = 'woman.png';
       enemyActive.hitImage.src = 'womanhit.png';
 
-      // Spawn car in bottom right garden
+      // Updated car size (3x player width, 1.6x player height)
       car = {
-        x: 650,
-        y: 450,
-        width: 120,
-        height: 60,
+        x: 600,  // Adjusted position for larger size
+        y: 460,  // Lower position to align with ground
+        width: 150,  // 3x player width (50 * 3)
+        height: 80,   // 1.6x player height (50 * 1.6)
         image: carImage
       };
     }
@@ -289,7 +286,6 @@
         }
       }
 
-      // Draw car if exists
       if (car && car.image.complete) {
         ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
       }
