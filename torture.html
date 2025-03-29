@@ -12,6 +12,8 @@
       background: black;
       overflow: hidden;
       font-family: 'Courier New', monospace;
+      height: 100%;
+      width: 100%;
     }
     /* Fullscreen container */
     #gameContainer {
@@ -22,18 +24,20 @@
       height: 100vh;
       background: black;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
-    /* Centered game wrapper with fixed size (800x600) */
+    /* Centered game wrapper maintains internal 800x600 size */
     #gameWrapper {
-      position: relative;
+      position: absolute;
       width: 800px;
       height: 600px;
+      top: 50%;
+      left: 50%;
+      /* Initial transform to center; scale will be appended via JS */
+      transform: translate(-50%, -50%);
+      transform-origin: top left;
       background: black;
     }
-    /* Canvas and overlays fill the wrapper without scaling */
+    /* The canvas stays at the internal resolution */
     #gameCanvas {
       display: block;
       width: 800px;
@@ -82,6 +86,17 @@
       canvas.height = 600;
     }
     setupCanvas();
+
+    // Resize and scale the gameWrapper to fill the screen while keeping aspect ratio.
+    function resizeGame() {
+      const gameWrapper = document.getElementById('gameWrapper');
+      // Calculate the scale factor based on window dimensions vs game dimensions.
+      const scale = Math.min(window.innerWidth / 800, window.innerHeight / 600);
+      // Update the transform. We need to center it and apply the scale.
+      gameWrapper.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
+    }
+    window.addEventListener('resize', resizeGame);
+    resizeGame();
 
     // Hide the intro video when it ends.
     const introVideo = document.getElementById('introVideo');
@@ -412,6 +427,7 @@
   </script>
 </body>
 </html>
+
 
 
 
