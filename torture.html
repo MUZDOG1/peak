@@ -41,6 +41,10 @@
       <video id="introVideo" src="gps.mp4" playsinline muted></video>
       <video id="womanExecutionVideo" src="womanexecution.mp4" playsinline muted></video>
     </div>
+    <!-- Added audio element for menu music -->
+    <audio id="menuMusic" loop>
+      <source src="lives.mp3" type="audio/mpeg">
+    </audio>
   </div>
 
   <script>
@@ -50,37 +54,14 @@
     let startTime = 0;
     let timerInterval = null;
 
-    // Audio system
-    let audioContext;
-    let punchSoundBuffer;
-    let audioInitialized = false;
-
-    // Initialize audio on first user interaction
-    function initAudio() {
-      if (audioInitialized) return;
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      fetch('punch.mp3')
-        .then(response => response.arrayBuffer())
-        .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-        .then(buffer => {
-          punchSoundBuffer = buffer;
-          audioInitialized = true;
-        });
-    }
-
-    function playPunchSound() {
-      if (!audioInitialized) return;
-      const source = audioContext.createBufferSource();
-      source.buffer = punchSoundBuffer;
-      source.connect(audioContext.destination);
-      source.start(0);
-    }
+    // Audio elements
+    const punchSound = new Audio('punch.mp3');
+    punchSound.preload = 'auto';
+    const menuMusic = document.getElementById('menuMusic');
+    menuMusic.volume = 0.5; // Set appropriate volume
 
     // Initialize menu
-    document.getElementById('startBtn').addEventListener('click', function() {
-      initAudio();
-      startGame();
-    });
+    document.getElementById('startBtn').addEventListener('click', startGame);
     document.getElementById('settingsBtn').addEventListener('click', () => {
       document.getElementById('settingsMenu').style.display = 
         document.getElementById('settingsMenu').style.display === 'block' ? 'none' : 'block';
@@ -90,15 +71,25 @@
       localStorage.setItem('speedrunEnabled', speedrunEnabled);
     });
 
-    // Load saved settings
-    if (localStorage.getItem('speedrunEnabled') === 'true') {
-      document.getElementById('speedrunToggle').checked = true;
-      speedrunEnabled = true;
-    }
+    // Start menu music when page loads
+    window.addEventListener('load', () => {
+      // Load saved settings
+      if (localStorage.getItem('speedrunEnabled') === 'true') {
+        document.getElementById('speedrunToggle').checked = true;
+        speedrunEnabled = true;
+      }
+      
+      // Start menu music (with user interaction requirement)
+      document.body.addEventListener('click', function startMusic() {
+        menuMusic.play().catch(e => console.log("Audio play failed:", e));
+        document.body.removeEventListener('click', startMusic);
+      }, { once: true });
+    });
 
     function startGame() {
       gameStarted = true;
       document.getElementById('mainMenu').style.display = 'none';
+      menuMusic.pause(); // Stop menu music when game starts
       
       // Start the intro video
       const introVideo = document.getElementById('introVideo');
@@ -262,8 +253,9 @@
       const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < 100) {
-        // Play punch sound immediately
-        playPunchSound();
+        // Play punch sound
+        punchSound.currentTime = 0;
+        punchSound.play();
         
         player.isPunching = true;
         setTimeout(() => { player.isPunching = false; }, 200);
