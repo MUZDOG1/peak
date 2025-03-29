@@ -287,7 +287,7 @@
     // ====================
     let lastAttackTime = 0;
     function attack() {
-      // prevent attacking a dead enemy
+      // prevent attacking a dead enemy or while execution is playing
       if (!enemyActive || enemyActive.isDead || isExecutionPlaying) return;
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Cooldown
@@ -328,13 +328,21 @@
             isExecutionPlaying = true;
             const womanVideo = document.getElementById('womanExecutionVideo');
             womanVideo.style.display = 'block';
+            womanVideo.currentTime = 0;
             womanVideo.play();
-            // Use a timeout as a fallback to ensure the video overlay is hidden.
-            setTimeout(() => {
+            // Fallback timeout in case the 'ended' event doesn't fire
+            const fallback = setTimeout(() => {
+              womanVideo.pause();
               womanVideo.style.display = 'none';
               isExecutionPlaying = false;
               spawnNewEnemy();
-            }, 3000); // adjust this duration to match your video length
+            }, 3000);
+            womanVideo.onended = () => {
+              clearTimeout(fallback);
+              womanVideo.style.display = 'none';
+              isExecutionPlaying = false;
+              spawnNewEnemy();
+            };
           } else {
             enemyActive.deathState = 'dead';
             setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
@@ -531,7 +539,6 @@
   </script>
 </body>
 </html>
-
 
 
 
