@@ -84,6 +84,17 @@
       z-index: 10;
       background: #000;
     }
+    /* Woman execution video overlay */
+    #womanExecutionVideo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 11;
+      background: #000;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -95,6 +106,8 @@
     <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
     <!-- Intro video element with autoplay, playsinline, and muted -->
     <video id="introVideo" src="gps.mp4" autoplay playsinline muted></video>
+    <!-- Woman execution video overlay -->
+    <video id="womanExecutionVideo" src="womanexecution.mp4" autoplay playsinline muted></video>
   </div>
   <div id="settingsMenu">
     <strong>Settings</strong><br>
@@ -102,7 +115,7 @@
   </div>
 
   <script>
-    // Responsive resizing for canvas, container, overlays, and intro video.
+    // Responsive resizing for canvas, container, overlays, and videos.
     function resizeCanvas() {
       const aspect = 800 / 600;
       const containerWidth = window.innerWidth * 0.95;
@@ -124,6 +137,10 @@
       const introVideo = document.getElementById('introVideo');
       introVideo.style.width = newWidth + 'px';
       introVideo.style.height = newHeight + 'px';
+      
+      const womanVideo = document.getElementById('womanExecutionVideo');
+      womanVideo.style.width = newWidth + 'px';
+      womanVideo.style.height = newHeight + 'px';
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -177,6 +194,13 @@
     // Image for corpse after death.gif
     const lyingImage = new Image();
     lyingImage.src = 'lying.png';
+
+    // Blood splatter image
+    const bloodImage = new Image();
+    bloodImage.src = 'blood.png';
+
+    // Array to store blood splatters on the floor.
+    let bloodSplatter = [];
 
     // ====================
     //   ENEMY ENTITIES
@@ -274,6 +298,15 @@
         player.isPunching = true;
         setTimeout(() => { player.isPunching = false; }, 200);
         enemyActive.isHurt = true;
+        
+        // Add blood splatter at enemy position on hit
+        bloodSplatter.push({
+          x: enemyActive.x,
+          y: enemyActive.y,
+          width: enemyActive.width,
+          height: enemyActive.height
+        });
+        
         const knockbackIntensity = 7.5;
         const knockbackDuration = 15;
         const mag = Math.sqrt(dx * dx + dy * dy);
@@ -285,9 +318,15 @@
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
-          // If enemy is the woman, change image only.
+          // If enemy is the woman, play the execution video.
           if (enemyActive.type === 'woman') {
-            enemyActive.idleImage.src = "womandead.png";
+            const womanVideo = document.getElementById('womanExecutionVideo');
+            womanVideo.style.display = 'block';
+            womanVideo.play();
+            womanVideo.onended = () => {
+              womanVideo.style.display = 'none';
+              spawnNewEnemy();
+            };
           } else {
             enemyActive.deathState = 'dead';
             setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
@@ -377,6 +416,17 @@
         ctx.fillStyle = '#333';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
+      
+      // Draw blood splatters on the floor
+      bloodSplatter.forEach(splat => {
+        if (bloodImage.complete) {
+          ctx.drawImage(bloodImage, splat.x, splat.y, splat.width, splat.height);
+        } else {
+          ctx.fillStyle = '#900';
+          ctx.fillRect(splat.x, splat.y, splat.width, splat.height);
+        }
+      });
+      
       if (debugMode) {
         ctx.save();
         ctx.globalAlpha = 0.3;
@@ -409,7 +459,8 @@
       // Draw active enemy
       if (enemyActive) {
         if (enemyActive.isDead) {
-          // For the woman enemy, simply draw its idleImage (which will be "womandead.png")
+          // For the woman enemy, if she’s dead the execution video will play,
+          // so we don't need to draw her idle image here.
           if (enemyActive.type === 'woman') {
             if (enemyActive.idleImage.complete) {
               ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
@@ -475,7 +526,6 @@
   </script>
 </body>
 </html>
-
 
 
 
