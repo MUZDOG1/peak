@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rage Simulator</title>
   <style>
+    /* Existing styles */
     html, body { margin: 0; padding: 0; background: black; overflow: hidden; font-family: 'Courier New', monospace; }
     #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; overflow: hidden; display: flex; align-items: center; justify-content: center; }
     #gameWrapper { position: relative; width: 800px; height: 600px; transform-origin: center center; transform: scale(var(--game-scale)); }
@@ -13,10 +14,28 @@
     #deathGifOverlay { display: none; z-index: 5; }
     #introVideo { z-index: 10; background: #000; }
     #womanExecutionVideo { z-index: 11; background: #000; display: none; }
+
+    /* New menu styles */
+    #mainMenu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; text-align: center; }
+    .menu-btn { background: #222; border: 2px solid #444; color: white; padding: 15px 30px; margin: 10px; cursor: pointer; font-size: 1.2em; transition: all 0.3s; }
+    .menu-btn:hover { background: #333; border-color: #666; }
+    #settingsMenu { display: none; position: absolute; background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #444; }
+    .settings-item { margin: 10px 0; color: white; }
+    #speedrunClock { position: absolute; top: 10px; right: 10px; color: white; font-size: 1.5em; display: none; z-index: 15; }
   </style>
 </head>
 <body>
   <div id="gameContainer">
+    <div id="mainMenu">
+      <button class="menu-btn" id="startBtn">START</button>
+      <button class="menu-btn" id="settingsBtn">SETTINGS</button>
+      <div id="settingsMenu">
+        <label class="settings-item">
+          <input type="checkbox" id="speedrunToggle"> Enable Speedrun Clock
+        </label>
+      </div>
+    </div>
+    <div id="speedrunClock">00:00:00</div>
     <div id="gameWrapper">
       <canvas id="gameCanvas"></canvas>
       <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
@@ -26,6 +45,53 @@
   </div>
 
   <script>
+    // Menu system variables
+    let gameStarted = false;
+    let speedrunEnabled = false;
+    let startTime = 0;
+    let timerInterval = null;
+
+    // Initialize menu
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      document.getElementById('settingsMenu').style.display = 'block';
+    });
+    document.getElementById('speedrunToggle').addEventListener('change', (e) => {
+      speedrunEnabled = e.target.checked;
+      localStorage.setItem('speedrunEnabled', speedrunEnabled);
+    });
+
+    // Load saved settings
+    window.addEventListener('load', () => {
+      const savedSpeedrun = localStorage.getItem('speedrunEnabled') === 'true';
+      document.getElementById('speedrunToggle').checked = savedSpeedrun;
+      speedrunEnabled = savedSpeedrun;
+    });
+
+    function startGame() {
+      gameStarted = true;
+      document.getElementById('mainMenu').style.display = 'none';
+      if(speedrunEnabled) {
+        startTime = Date.now();
+        document.getElementById('speedrunClock').style.display = 'block';
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 10);
+      }
+      // Start game systems
+      handleResize();
+      gameLoop();
+    }
+
+    function updateTimer() {
+      const elapsed = Date.now() - startTime;
+      const minutes = Math.floor(elapsed / 60000);
+      const seconds = Math.floor((elapsed % 60000) / 1000);
+      const milliseconds = Math.floor((elapsed % 1000) / 10);
+      document.getElementById('speedrunClock').textContent = 
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
+    }
+
+    // Existing game code below (keep all previous JavaScript code exactly the same)
     const carImage = new Image();
     carImage.src = 'car1.png';
     let car = null;
@@ -227,18 +293,17 @@
       enemyActive.idleImage.src = 'woman.png';
       enemyActive.hitImage.src = 'womanhit.png';
 
-      // Updated car size (3x player width, 1.6x player height)
       car = {
-        x: 600,  // Adjusted position for larger size
-        y: 460,  // Lower position to align with ground
-        width: 150,  // 3x player width (50 * 3)
-        height: 80,   // 1.6x player height (50 * 1.6)
+        x: 600,
+        y: 460,
+        width: 150,
+        height: 80,
         image: carImage
       };
     }
 
     function update() {
-      if (introVideo.style.display !== 'none') return;
+      if (!gameStarted || introVideo.style.display !== 'none') return;
       
       let moveX = 0, moveY = 0;
       if (keys['w']) moveY = -player.speed;
@@ -324,7 +389,6 @@
       draw();
       requestAnimationFrame(gameLoop);
     }
-    gameLoop();
   </script>
 </body>
 </html>
