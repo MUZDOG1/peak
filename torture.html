@@ -12,8 +12,6 @@
       background: black;
       overflow: hidden;
       font-family: 'Courier New', monospace;
-      height: 100%;
-      width: 100%;
     }
     /* Fullscreen container */
     #gameContainer {
@@ -24,19 +22,18 @@
       height: 100vh;
       background: black;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    /* The gameWrapper holds the native 800x600 game; it will be scaled via JS */
+    /* Centered game wrapper with fixed size (800x600) */
     #gameWrapper {
-      position: absolute;
+      position: relative;
       width: 800px;
       height: 600px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      transform-origin: top left;
       background: black;
     }
-    /* Canvas and overlays maintain the native resolution */
+    /* Canvas and overlays fill the wrapper without scaling */
     #gameCanvas {
       display: block;
       width: 800px;
@@ -78,27 +75,25 @@
   </div>
 
   <script>
-    // Set up the canvas at the native 800x600 resolution.
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 600;
-
-    // Scale the gameWrapper to fullscreen while preserving the aspect ratio.
-    function resizeGame() {
-      const gameWrapper = document.getElementById('gameWrapper');
-      // Calculate the maximum scale that fits both width and height.
-      const scale = Math.min(window.innerWidth / 800, window.innerHeight / 600);
-      gameWrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    // Set up the canvas with internal resolution of 800x600.
+    function setupCanvas() {
+      const canvas = document.getElementById('gameCanvas');
+      canvas.width = 800;
+      canvas.height = 600;
     }
-    window.addEventListener('resize', resizeGame);
-    resizeGame();
+    setupCanvas();
 
     // Hide the intro video when it ends.
     const introVideo = document.getElementById('introVideo');
     introVideo.addEventListener('ended', () => {
       introVideo.style.display = 'none';
     });
+
+    // ====================
+    //   CANVAS & CONTEXT
+    // ====================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
     // ====================
     //   GAME ASSETS
@@ -154,10 +149,8 @@
     let enemyCorpse = null;
 
     // ====================
-    //   COLLISION BOXES (House Walls)
+    //   COLLISION BOXES
     // ====================
-    // Adjust these values if your house_background.png changes.
-    // They are defined in the 800×600 coordinate system and will keep your player and enemy inside the house boundaries.
     const walls = [
       { x: 1.5, y: 331, width: 250.5, height: 25 },
       { x: 342, y: 330, width: 500, height: 25 },
@@ -169,12 +162,8 @@
     //   INPUT HANDLING
     // ====================
     const keys = {};
-    document.addEventListener('keydown', e => { 
-      keys[e.key.toLowerCase()] = true; 
-    });
-    document.addEventListener('keyup', e => { 
-      keys[e.key.toLowerCase()] = false; 
-    });
+    document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+    document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
     // ====================
     //   COLLISION CHECK
@@ -222,8 +211,8 @@
       if (!enemyActive || enemyActive.isDead) return;
       const now = Date.now();
       if (now - lastAttackTime < 500) return; // Cooldown
-
-      // Calculate the distance between centers
+      
+      // Calculate distance between centers.
       const px = player.x + player.width / 2;
       const py = player.y + player.height / 2;
       const ex = enemyActive.x + enemyActive.width / 2;
@@ -231,7 +220,6 @@
       const dx = px - ex;
       const dy = py - ey;
       const distance = Math.sqrt(dx * dx + dy * dy);
-
       if (distance < 100) {
         player.isPunching = true;
         setTimeout(() => { player.isPunching = false; }, 200);
@@ -243,17 +231,17 @@
         enemyActive.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
         enemyActive.knockbackDuration = knockbackDuration;
         enemyActive.health -= 10;
-
         if (enemyActive.health <= 0) {
           enemyActive.health = 0;
           enemyActive.isDead = true;
+          // For a woman enemy, play the execution video.
           if (enemyActive.type === 'woman') {
             const womanVideo = document.getElementById('womanExecutionVideo');
             womanVideo.style.display = 'block';
             womanVideo.currentTime = 0;
             womanVideo.play();
             womanVideo.onended = () => {
-              enemyActive.idleImage.src = 'womandead.png';
+              enemyActive.idleImage.src = "womandead.png";
               womanVideo.style.display = 'none';
             };
           } else {
@@ -282,6 +270,7 @@
     //   SPAWN NEW ENEMY
     // ====================
     function spawnNewEnemy() {
+      // Spawn a new enemy (a woman enemy).
       enemyActive = {
         x: 518,
         y: 475,
@@ -305,9 +294,9 @@
     //   GAME LOOP
     // ====================
     function update() {
-      // Pause game logic during the intro video
+      // Pause game logic during intro video.
       if (introVideo.style.display !== 'none') return;
-
+      
       let moveX = 0, moveY = 0;
       if (keys['w']) moveY = -player.speed;
       if (keys['s']) moveY = player.speed;
@@ -315,7 +304,8 @@
       if (keys['d']) moveX = player.speed;
       moveEntity(player, moveX, moveY);
       if (keys[' ']) attack();
-
+      
+      // Update enemy movement only if alive.
       if (enemyActive && !enemyActive.isDead) {
         if (enemyActive.knockbackDuration > 0) {
           moveEntity(enemyActive, enemyActive.knockbackVelocity.x, enemyActive.knockbackVelocity.y);
@@ -329,40 +319,37 @@
             moveEntity(enemyActive, randX, randY);
           }
         }
-        // Clamp enemy inside the 800×600 bounds
-        enemyActive.x = Math.max(0, Math.min(800 - enemyActive.width, enemyActive.x));
-        enemyActive.y = Math.max(0, Math.min(600 - enemyActive.height, enemyActive.y));
+        enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
+        enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
       }
-      // Clamp player inside the 800×600 bounds
-      player.x = Math.max(0, Math.min(800 - player.width, player.x));
-      player.y = Math.max(0, Math.min(600 - player.height, player.y));
+      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+      player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     }
 
     function draw() {
-      // Clear the canvas
+      // Fill the canvas with black.
       ctx.fillStyle = 'black';
-      ctx.fillRect(0, 0, 800, 600);
-
-      // Draw the background image using a "contain" method
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Draw background image using "contain" method.
       if (backgroundImage.complete) {
-        const canvasRatio = 800 / 600;
+        const canvasRatio = canvas.width / canvas.height;
         const bgRatio = backgroundImage.width / backgroundImage.height;
         let drawWidth, drawHeight, offsetX, offsetY;
         if (bgRatio > canvasRatio) {
-          drawWidth = 800;
-          drawHeight = 800 / bgRatio;
+          drawWidth = canvas.width;
+          drawHeight = canvas.width / bgRatio;
           offsetX = 0;
-          offsetY = (600 - drawHeight) / 2;
+          offsetY = (canvas.height - drawHeight) / 2;
         } else {
-          drawHeight = 600;
-          drawWidth = 600 * bgRatio;
-          offsetX = (800 - drawWidth) / 2;
+          drawHeight = canvas.height;
+          drawWidth = canvas.height * bgRatio;
+          offsetX = (canvas.width - drawWidth) / 2;
           offsetY = 0;
         }
         ctx.drawImage(backgroundImage, offsetX, offsetY, drawWidth, drawHeight);
       }
-
-      // Draw enemy corpse if available
+      
+      // Draw enemy corpse if available.
       if (enemyCorpse) {
         if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
           ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
@@ -372,8 +359,8 @@
           ctx.drawImage(enemyKneelingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         }
       }
-
-      // Draw active enemy
+      
+      // Draw active enemy.
       if (enemyActive) {
         if (enemyActive.isDead) {
           if (enemyActive.type === 'woman') {
@@ -404,8 +391,8 @@
           }
         }
       }
-
-      // Draw player
+      
+      // Draw player.
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
