@@ -248,6 +248,13 @@
 
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
+    
+    // New background image for after crash
+    const newBackgroundImage = new Image();
+    newBackgroundImage.src = 'fr.png';
+    
+    // Track current background
+    let currentBackground = backgroundImage;
 
     const playerImage = new Image();
     playerImage.src = 'idle.png';
@@ -356,7 +363,32 @@
       
       crashVideo.onended = () => {
         crashVideo.style.display = 'none';
+        
+        // After crash video ends, change the background and add new enemy
+        currentBackground = newBackgroundImage;
+        spawnApeEnemy();
       };
+    }
+
+    // New function to spawn the ape enemy after the crash
+    function spawnApeEnemy() {
+      enemyActive = {
+        x: 400,
+        y: 300,
+        width: 50,
+        height: 50,
+        isHurt: false,
+        knockbackVelocity: { x: 0, y: 0 },
+        knockbackDuration: 0,
+        isDead: false,
+        deathState: '',
+        health: 300,
+        idleImage: new Image(),
+        hitImage: new Image(),
+        type: 'ape'
+      };
+      enemyActive.idleImage.src = 'ape.png';
+      enemyActive.hitImage.src = 'hit.png'; // Reusing hit image, could be replaced with an ape-specific one
     }
 
     let lastAttackTime = 0;
@@ -411,7 +443,12 @@
                 hideDeathGif();
                 enemyActive.deathState = 'lying';
                 enemyCorpse = enemyActive;
-                spawnNewEnemy();
+                
+                // For the default enemy, spawn the woman
+                if (enemyActive.type === 'default') {
+                  spawnNewEnemy();
+                }
+                // For the ape enemy, could add next stage logic here
               }, 5000);
             }, 4000);
           }
@@ -487,8 +524,8 @@
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      if (backgroundImage.complete) {
-        ctx.drawImage(backgroundImage, 0, 0, 800, 600);
+      if (currentBackground.complete) {
+        ctx.drawImage(currentBackground, 0, 0, 800, 600);
       }
 
       if (enemyCorpse) {
@@ -553,7 +590,6 @@
   </script>
 </body>
 </html>
-
 <!--BUGS: 
 1: PLAYER STICKS TO WALL WHEN COLLIDING WITH IT
 2: SOMETIMES THE NPC WILL GLITCH OUT OF THE MAP
