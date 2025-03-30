@@ -98,6 +98,7 @@
     let startTime = 0;
     let timerInterval = null;
     const menuMusic = document.getElementById('menuMusic');
+    
     menuMusic.volume = 0.5;
 
     // Audio system initialization
@@ -195,12 +196,30 @@
         `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
     }
 
-    // GAME CODE
+    // Game code
+    const carImage = new Image();
+    carImage.src = 'car1.png';
+    let car = null;
+
+    function setupCanvas() {
+      const canvas = document.getElementById('gameCanvas');
+      canvas.width = 800;
+      canvas.height = 600;
+    }
+    setupCanvas();
+
+    function handleResize() {
+      const container = document.getElementById('gameContainer');
+      const wrapper = document.getElementById('gameWrapper');
+      const scale = Math.min(container.clientWidth / 800, container.clientHeight / 600);
+      wrapper.style.setProperty('--game-scale', scale);
+    }
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
 
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 600;
 
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
@@ -216,17 +235,14 @@
     const punchImage = new Image();
     punchImage.src = 'punch.png';
 
-    // (Other images used for non-ape enemies)
     const enemyDeadImage = new Image();
     enemyDeadImage.src = 'dead.png';
+
     const enemyKneelingImage = new Image();
     enemyKneelingImage.src = 'kneeling.png';
+
     const lyingImage = new Image();
     lyingImage.src = 'lying.png';
-
-    const carImage = new Image();
-    carImage.src = 'car1.png';
-    let car = null;
 
     const player = {
       x: 200,
@@ -237,98 +253,39 @@
       isPunching: false
     };
 
-    // Use an array to hold enemies
+    // Instead of a single enemyActive, we use an array of enemies.
     let enemies = [];
 
-    // Spawn an ape enemy at a specified position.
-    // canSpawnAdditional: if true, this enemy will spawn two more when it dies.
-    function spawnApeEnemy(posX, posY, canSpawnAdditional = false) {
-      const enemy = {
-        x: posX,
-        y: posY,
-        width: 50,
-        height: 50,
-        isHurt: false,
-        knockbackVelocity: { x: 0, y: 0 },
-        knockbackDuration: 0,
-        isDead: false,
-        deathState: '',
-        health: 300,
-        idleImage: new Image(),
-        // For ape enemies we use "chimphurt.png" when hurt.
-        hitImage: new Image(),
-        type: 'ape',
-        isFleeing: false,
-        fleeingDuration: 0,
-        safeDistance: 300,
-        canSpawnAdditional: canSpawnAdditional, // only true for the first chimp
-        spawnedAdditional: false
-      };
-      enemy.idleImage.src = 'ape.png';
-      enemy.hitImage.src = 'chimphurt.png';
-      enemies.push(enemy);
-    }
+    // Flag to check if the first ape (chimp) has died
+    let firstApeDied = false;
 
-    // (Existing function for non-ape enemy; kept for reference)
-    function spawnNewEnemy() {
-      const enemy = {
-        x: 518,
-        y: 475,
-        width: 50,
-        height: 50,
-        isHurt: false,
-        knockbackVelocity: { x: 0, y: 0 },
-        knockbackDuration: 0,
-        isDead: false,
-        deathState: '',
-        health: 300,
-        idleImage: new Image(),
-        hitImage: new Image(),
-        type: 'woman'
-      };
-      enemy.idleImage.src = 'woman.png';
-      enemy.hitImage.src = 'womanhit.png';
-      enemies.push(enemy);
+    // The original default enemy (type 'default') remains untouched.
+    enemies.push({
+      x: 326.5,
+      y: 194,
+      width: 50,
+      height: 50,
+      isHurt: false,
+      knockbackVelocity: { x: 0, y: 0 },
+      knockbackDuration: 0,
+      isDead: false,
+      deathState: '',
+      health: 300,
+      idleImage: (function(){ let img = new Image(); img.src = 'enemyidle.png'; return img; })(),
+      hitImage: (function(){ let img = new Image(); img.src = 'hit.png'; return img; })(),
+      type: 'default'
+    });
 
-      car = {
-        x: 600,
-        y: 460,
-        width: 150,
-        height: 80,
-        image: carImage
-      };
-    }
-
-    // Spawn the initial ape enemy at the center.
-    // This one can spawn additional apes on death.
-    spawnApeEnemy(400, 300, true);
-
-    // When the first chimp dies, spawn two additional ones
-    function spawnAdditionalApes() {
-      // Top left, offset from the corner (e.g., 30 pixels away)
-      spawnApeEnemy(30, 30, false);
-      // Bottom right: canvas width - enemy width - offset, canvas height - enemy height - offset
-      spawnApeEnemy(canvas.width - 50 - 30, canvas.height - 50 - 30, false);
-    }
-
-    // Returns the distance between two entities.
-    function getDistanceBetween(entity1, entity2) {
-      const x1 = entity1.x + entity1.width / 2;
-      const y1 = entity1.y + entity1.height / 2;
-      const x2 = entity2.x + entity2.width / 2;
-      const y2 = entity2.y + entity2.height / 2;
-      const dx = x1 - x2;
-      const dy = y1 - y2;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    // Check collisions with walls.
     const walls = [
       { x: 1.5, y: 331, width: 250.5, height: 25 },
       { x: 342, y: 330, width: 500, height: 25 },
       { x: 153, y: 0, width: 25, height: 200 },
       { x: 0.5, y: 166, width: 75, height: 25 }
     ];
+
+    const keys = {};
+    document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+    document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
     function isColliding(rect1, rect2) {
       return (
@@ -356,14 +313,93 @@
       }
     }
 
-    // Attack function now iterates over enemies; only the first enemy in range is attacked.
+    function showDeathGif() {
+      document.getElementById('deathGifOverlay').style.display = 'block';
+    }
+
+    function hideDeathGif() {
+      document.getElementById('deathGifOverlay').style.display = 'none';
+    }
+    
+    function playCrashVideo() {
+      const crashVideo = document.getElementById('crashVideo');
+      crashVideo.style.display = 'block';
+      crashVideo.currentTime = 0;
+      crashVideo.volume = 1.0;
+      const playPromise = crashVideo.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Error playing crash video:", error);
+        });
+      }
+      crashVideo.onended = () => {
+        crashVideo.style.display = 'none';
+        currentBackground = newBackgroundImage;
+        walls.length = 0;
+        car = null;
+        // For non-ape enemy, spawn as before.
+        spawnNewEnemy();
+      };
+    }
+
+    // Modified: spawn an ape enemy at a given (or default) position and push it into enemies.
+    function spawnApeEnemy(x = 400, y = 300) {
+      const ape = {
+        x: x,
+        y: y,
+        width: 50,
+        height: 50,
+        isHurt: false,
+        knockbackVelocity: { x: 0, y: 0 },
+        knockbackDuration: 0,
+        isDead: false,
+        deathState: '',
+        health: 300,
+        idleImage: (function(){ let img = new Image(); img.src = 'ape.png'; return img; })(),
+        hitImage: (function(){ let img = new Image(); img.src = 'chimphurt.png'; return img; })(),
+        type: 'ape',
+        isFleeing: false,
+        fleeingDuration: 0,
+        safeDistance: 300
+      };
+      enemies.push(ape);
+    }
+
+    // Modified: spawn a new enemy of type 'woman' and push into enemies.
+    function spawnNewEnemy() {
+      const woman = {
+        x: 518,
+        y: 475,
+        width: 50,
+        height: 50,
+        isHurt: false,
+        knockbackVelocity: { x: 0, y: 0 },
+        knockbackDuration: 0,
+        isDead: false,
+        deathState: '',
+        health: 300,
+        idleImage: (function(){ let img = new Image(); img.src = 'woman.png'; return img; })(),
+        hitImage: (function(){ let img = new Image(); img.src = 'womanhit.png'; return img; })(),
+        type: 'woman'
+      };
+      enemies.push(woman);
+      car = {
+        x: 600,
+        y: 460,
+        width: 150,
+        height: 80,
+        image: carImage
+      };
+    }
+
     let lastAttackTime = 0;
     function attack() {
-      const now = Date.now();
-      if (now - lastAttackTime < 500) return;
-
+      // Check each enemy; attack the first one found in range.
       for (let enemy of enemies) {
         if (enemy.isDead) continue;
+        const now = Date.now();
+        if (now - lastAttackTime < 500) return;
+        
         const px = player.x + player.width / 2;
         const py = player.y + player.height / 2;
         const ex = enemy.x + enemy.width / 2;
@@ -378,33 +414,37 @@
           enemy.isHurt = true;
           const knockbackIntensity = 7.5;
           const knockbackDuration = 15;
-          const mag = Math.sqrt(dx * dx + dy * dy);
+          const mag = Math.sqrt(dx * dx + dy * dy) || 1;
           enemy.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
           enemy.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
           enemy.knockbackDuration = knockbackDuration;
           enemy.health -= 10;
           
+          // Special handling for ape enemy
           if (enemy.type === 'ape') {
             if (enemy.health > 0) {
-              // Show hurt image for 2 seconds (already "chimphurt.png")
+              enemy.hitImage.src = 'chimphurt.png';
               enemy.isFleeing = true;
               enemy.fleeingDuration = 120;
               setTimeout(() => {
                 enemy.isHurt = false;
               }, 2000);
             } else {
-              // When the ape dies, change its idle image to "placeholder.jpg"
               enemy.health = 0;
               enemy.isDead = true;
               enemy.idleImage.src = 'placeholder.jpg';
-              // If this ape could spawn additional ones and hasn't yet, do so now.
-              if (enemy.canSpawnAdditional && !enemy.spawnedAdditional) {
-                enemy.spawnedAdditional = true;
-                spawnAdditionalApes();
+              // If this is the first ape to die, spawn two more apes at random positions.
+              if (!firstApeDied) {
+                firstApeDied = true;
+                for (let i = 0; i < 2; i++) {
+                  const randX = Math.random() * (canvas.width - enemy.width);
+                  const randY = Math.random() * (canvas.height - enemy.height);
+                  spawnApeEnemy(randX, randY);
+                }
               }
             }
           } else {
-            // Non-ape enemy death handling (unchanged)
+            // Handling for non-ape enemies
             if (enemy.health <= 0) {
               enemy.health = 0;
               enemy.isDead = true;
@@ -428,10 +468,6 @@
                   setTimeout(() => {
                     hideDeathGif();
                     enemy.deathState = 'lying';
-                    // For default enemy, spawn new enemy
-                    if (enemy.type === 'default') {
-                      spawnNewEnemy();
-                    }
                   }, 5000);
                 }, 4000);
               }
@@ -439,15 +475,21 @@
           }
           lastAttackTime = now;
           setTimeout(() => { enemy.isHurt = false; }, 1000);
-          break; // Attack only one enemy per key press
+          // Only attack one enemy per key press.
+          break;
         }
       }
     }
 
-    // Update all enemies and the player.
-    const keys = {};
-    document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
-    document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+    function getDistanceBetween(entity1, entity2) {
+      const x1 = entity1.x + entity1.width / 2;
+      const y1 = entity1.y + entity1.height / 2;
+      const x2 = entity2.x + entity2.width / 2;
+      const y2 = entity2.y + entity2.height / 2;
+      const dx = x1 - x2;
+      const dy = y1 - y2;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
 
     function update() {
       if (!gameStarted || document.getElementById('introVideo').style.display === 'block') return;
@@ -458,53 +500,55 @@
       if (keys['a']) moveX = -player.speed;
       if (keys['d']) moveX = player.speed;
       moveEntity(player, moveX, moveY);
-
-      // Update each enemy
+      if (keys[' ']) attack();
+      
+      // Update all enemies
       for (let enemy of enemies) {
-        if (enemy.isDead) continue;
-        if (enemy.knockbackDuration > 0) {
-          moveEntity(enemy, enemy.knockbackVelocity.x, enemy.knockbackVelocity.y);
-          enemy.knockbackVelocity.x *= 0.9;
-          enemy.knockbackVelocity.y *= 0.9;
-          enemy.knockbackDuration--;
-        } else if (enemy.type === 'ape' && enemy.isFleeing) {
-          const distanceToPlayer = getDistanceBetween(enemy, player);
-          if (distanceToPlayer >= enemy.safeDistance) {
-            enemy.fleeingDuration -= 2;
-          }
-          const px = player.x + player.width / 2;
-          const py = player.y + player.height / 2;
-          const ex = enemy.x + enemy.width / 2;
-          const ey = enemy.y + enemy.height / 2;
-          const dx = ex - px;
-          const dy = ey - py;
-          const mag = Math.sqrt(dx * dx + dy * dy) || 1;
-          const fleespeed = 3.5;
-          const mX = (dx / mag) * fleespeed;
-          const mY = (dy / mag) * fleespeed;
-          moveEntity(enemy, mX, mY);
-          enemy.fleeingDuration--;
-          if (enemy.fleeingDuration <= 0) {
-            enemy.isFleeing = false;
-          }
-        } else {
-          if (enemy.type !== 'ape') {
-            if (Math.random() < 0.02) {
-              const randX = Math.random() * 6 - 3;
-              const randY = Math.random() * 6 - 3;
-              moveEntity(enemy, randX, randY);
+        if (!enemy.isDead) {
+          if (enemy.knockbackDuration > 0) {
+            moveEntity(enemy, enemy.knockbackVelocity.x, enemy.knockbackVelocity.y);
+            enemy.knockbackVelocity.x *= 0.9;
+            enemy.knockbackVelocity.y *= 0.9;
+            enemy.knockbackDuration--;
+          } else if (enemy.type === 'ape' && enemy.isFleeing) {
+            const distanceToPlayer = getDistanceBetween(enemy, player);
+            if (distanceToPlayer >= enemy.safeDistance) {
+              enemy.fleeingDuration -= 2;
+            }
+            const px = player.x + player.width / 2;
+            const py = player.y + player.height / 2;
+            const ex = enemy.x + enemy.width / 2;
+            const ey = enemy.y + enemy.height / 2;
+            const dx = ex - px;
+            const dy = ey - py;
+            const mag = Math.sqrt(dx * dx + dy * dy) || 1;
+            const fleespeed = 3.5;
+            const moveX = (dx / mag) * fleespeed;
+            const moveY = (dy / mag) * fleespeed;
+            moveEntity(enemy, moveX, moveY);
+            enemy.fleeingDuration--;
+            if (enemy.fleeingDuration <= 0) {
+              enemy.isFleeing = false;
+            }
+          } else {
+            if (enemy.type === 'ape') {
+              // Ape stands still when not fleeing
+            } else {
+              if (Math.random() < 0.02) {
+                const randX = Math.random() * 6 - 3;
+                const randY = Math.random() * 6 - 3;
+                moveEntity(enemy, randX, randY);
+              }
             }
           }
+          enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
+          enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
         }
-        // Keep enemy within canvas bounds
-        enemy.x = Math.max(0, Math.min(canvas.width - enemy.width, enemy.x));
-        enemy.y = Math.max(0, Math.min(canvas.height - enemy.height, enemy.y));
       }
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     }
 
-    // Draw all enemies, the player, and other elements.
     function draw() {
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -513,30 +557,17 @@
         ctx.drawImage(currentBackground, 0, 0, 800, 600);
       }
 
-      // (Optional: draw death GIF if needed for non-ape enemies)
-      // ...
-
-      if (car && car.image.complete) {
-        ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
-      }
-
+      // Draw enemy corpses if needed (for those that have a death state)
       for (let enemy of enemies) {
         if (enemy.isDead) {
-          if (enemy.type === 'woman') {
-            if (enemy.idleImage.complete) {
-              ctx.drawImage(enemy.idleImage, enemy.x, enemy.y, enemy.width, enemy.height);
-            }
-          } else if (enemy.type === 'ape') {
-            // For a dead ape, simply draw its idle image ("placeholder.jpg")
-            if (enemy.idleImage.complete) {
-              ctx.drawImage(enemy.idleImage, enemy.x, enemy.y, enemy.width, enemy.height);
-            }
-          } else {
-            if (enemy.deathState === 'dead' && enemyDeadImage.complete) {
-              ctx.drawImage(enemyDeadImage, enemy.x, enemy.y, enemy.width, enemy.height);
-            } else if (enemy.deathState === 'kneeling' && enemyKneelingImage.complete) {
-              ctx.drawImage(enemyKneelingImage, enemy.x, enemy.y, enemy.width, enemy.height);
-            }
+          if (enemy.deathState === 'lying' && lyingImage.complete) {
+            ctx.drawImage(lyingImage, enemy.x, enemy.y, enemy.width, enemy.height);
+          } else if (enemy.deathState === 'dead' && enemyDeadImage.complete) {
+            ctx.drawImage(enemyDeadImage, enemy.x, enemy.y, enemy.width, enemy.height);
+          } else if (enemy.deathState === 'kneeling' && enemyKneelingImage.complete) {
+            ctx.drawImage(enemyKneelingImage, enemy.x, enemy.y, enemy.width, enemy.height);
+          } else if (enemy.idleImage.complete) {
+            ctx.drawImage(enemy.idleImage, enemy.x, enemy.y, enemy.width, enemy.height);
           }
         } else {
           if (enemy.isHurt) {
@@ -547,6 +578,10 @@
             ctx.drawImage(enemy.idleImage, enemy.x, enemy.y, enemy.width, enemy.height);
           }
         }
+      }
+
+      if (car && car.image.complete) {
+        ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
       }
 
       if (player.isPunching && punchImage.complete) {
