@@ -256,6 +256,8 @@
     // In your code the enemy is handled via the single variable "enemyActive".
     // We now add a flag to ensure that when the first ape dies two more spawn in.
     if (!window.firstApeSpawned) { window.firstApeSpawned = false; }
+    // We'll also create an array to hold extra ape enemies.
+    let extraApes = [];
 
     let enemyActive = {
       x: 326.5,
@@ -343,7 +345,7 @@
       };
     }
 
-    // This function spawns an ape enemy at default position.
+    // This function spawns an ape enemy at the default position (used in playCrashVideo)
     function spawnApeEnemy() {
       enemyActive = {
         x: 400,
@@ -367,9 +369,9 @@
       enemyActive.hitImage.src = 'chimphurt.png';
     }
 
-    // New helper function to spawn an ape enemy at a given position.
+    // New helper function to spawn an extra ape enemy at a given position.
     function spawnApeEnemyWithPosition(x, y) {
-      enemyActive = {
+      let newApe = {
         x: x,
         y: y,
         width: 50,
@@ -387,8 +389,9 @@
         fleeingDuration: 0,
         safeDistance: 300
       };
-      enemyActive.idleImage.src = 'ape.png';
-      enemyActive.hitImage.src = 'chimphurt.png';
+      newApe.idleImage.src = 'ape.png';
+      newApe.hitImage.src = 'chimphurt.png';
+      extraApes.push(newApe);
     }
 
     let lastAttackTime = 0;
@@ -419,7 +422,7 @@
         
         // Special handling for ape enemy: when its health drops to 0,
         // mark it dead, override its image, and if this is the first ape death,
-        // spawn two additional apes.
+        // spawn two extra apes.
         if (enemyActive.type === 'ape') {
           if (enemyActive.health > 0) {
             enemyActive.hitImage.src = 'chimphurt.png';
@@ -566,6 +569,39 @@
         enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
         enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
       }
+      // Update extra ape enemies, if any.
+      extraApes.forEach(ape => {
+        if (!ape.isDead) {
+          if (ape.knockbackDuration > 0) {
+            moveEntity(ape, ape.knockbackVelocity.x, ape.knockbackVelocity.y);
+            ape.knockbackVelocity.x *= 0.9;
+            ape.knockbackVelocity.y *= 0.9;
+            ape.knockbackDuration--;
+          } else if (ape.isFleeing) {
+            const distanceToPlayer = getDistanceBetween(ape, player);
+            if (distanceToPlayer >= ape.safeDistance) {
+              ape.fleeingDuration -= 2;
+            }
+            const px = player.x + player.width / 2;
+            const py = player.y + player.height / 2;
+            const ex = ape.x + ape.width / 2;
+            const ey = ape.y + ape.height / 2;
+            const dx = ex - px;
+            const dy = ey - py;
+            const mag = Math.sqrt(dx * dx + dy * dy) || 1;
+            const fleespeed = 3.5;
+            const moveX = (dx / mag) * fleespeed;
+            const moveY = (dy / mag) * fleespeed;
+            moveEntity(ape, moveX, moveY);
+            ape.fleeingDuration--;
+            if (ape.fleeingDuration <= 0) {
+              ape.isFleeing = false;
+            }
+          }
+          ape.x = Math.max(0, Math.min(canvas.width - ape.width, ape.x));
+          ape.y = Math.max(0, Math.min(canvas.height - ape.height, ape.y));
+        }
+      });
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     }
@@ -620,6 +656,23 @@
         }
       }
 
+      // Draw extra ape enemies.
+      extraApes.forEach(ape => {
+        if (ape.isDead) {
+          if (ape.idleImage.complete) {
+            ctx.drawImage(ape.idleImage, ape.x, ape.y, ape.width, ape.height);
+          }
+        } else {
+          if (ape.isHurt) {
+            if (ape.hitImage.complete) {
+              ctx.drawImage(ape.hitImage, ape.x, ape.y, ape.width, ape.height);
+            }
+          } else if (ape.idleImage.complete) {
+            ctx.drawImage(ape.idleImage, ape.x, ape.y, ape.width, ape.height);
+          }
+        }
+      });
+
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
@@ -641,7 +694,6 @@
   </script>
 </body>
 </html>
-
 
 
 
