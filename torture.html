@@ -253,6 +253,10 @@
       isPunching: false
     };
 
+    // In your code the enemy is handled via the single variable "enemyActive".
+    // We now add a flag to ensure that when the first ape dies two more spawn in.
+    if (!window.firstApeSpawned) { window.firstApeSpawned = false; }
+
     let enemyActive = {
       x: 326.5,
       y: 194,
@@ -339,6 +343,7 @@
       };
     }
 
+    // This function spawns an ape enemy at default position.
     function spawnApeEnemy() {
       enemyActive = {
         x: 400,
@@ -359,8 +364,30 @@
         safeDistance: 300
       };
       enemyActive.idleImage.src = 'ape.png';
-      // For ape enemy, we now use chimphurt.png only when hurt,
-      // and when dead we will override with placeholder.jpg
+      enemyActive.hitImage.src = 'chimphurt.png';
+    }
+
+    // New helper function to spawn an ape enemy at a given position.
+    function spawnApeEnemyWithPosition(x, y) {
+      enemyActive = {
+        x: x,
+        y: y,
+        width: 50,
+        height: 50,
+        isHurt: false,
+        knockbackVelocity: { x: 0, y: 0 },
+        knockbackDuration: 0,
+        isDead: false,
+        deathState: '',
+        health: 300,
+        idleImage: new Image(),
+        hitImage: new Image(),
+        type: 'ape',
+        isFleeing: false,
+        fleeingDuration: 0,
+        safeDistance: 300
+      };
+      enemyActive.idleImage.src = 'ape.png';
       enemyActive.hitImage.src = 'chimphurt.png';
     }
 
@@ -390,22 +417,26 @@
         enemyActive.knockbackDuration = knockbackDuration;
         enemyActive.health -= 10;
         
-        // Special handling for ape enemy
+        // Special handling for ape enemy: when its health drops to 0,
+        // mark it dead, override its image, and if this is the first ape death,
+        // spawn two additional apes.
         if (enemyActive.type === 'ape') {
           if (enemyActive.health > 0) {
-            // Show the hurt image ("chimphurt.png") for 2 seconds
             enemyActive.hitImage.src = 'chimphurt.png';
             enemyActive.isFleeing = true;
             enemyActive.fleeingDuration = 120;
             setTimeout(() => {
               enemyActive.isHurt = false;
-              // When not hurt, drawing code will use idleImage ("ape.png")
             }, 2000);
           } else {
-            // When the ape dies, override its idle image with "placeholder.jpg"
             enemyActive.health = 0;
             enemyActive.isDead = true;
             enemyActive.idleImage.src = 'placeholder.jpg';
+            if (!window.firstApeSpawned) {
+              window.firstApeSpawned = true;
+              spawnApeEnemyWithPosition(enemyActive.x - 60, enemyActive.y);
+              spawnApeEnemyWithPosition(enemyActive.x + 60, enemyActive.y);
+            }
           }
         } else {
           // Handling for non-ape enemies
@@ -568,7 +599,6 @@
               ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
             }
           } else if (enemyActive.type === 'ape') {
-            // For dead ape, simply draw its idle image which now is "placeholder.jpg"
             if (enemyActive.idleImage.complete) {
               ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
             }
@@ -611,6 +641,7 @@
   </script>
 </body>
 </html>
+
 
 
 
