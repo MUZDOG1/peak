@@ -366,6 +366,16 @@
         
         // After crash video ends, change the background and add new enemy
         currentBackground = newBackgroundImage;
+        
+        // Clear old walls when switching to new background
+        walls.length = 0; // This empties the walls array
+        
+        // Remove the car
+        car = null;
+        
+        // Remove all corpses
+        enemyCorpse = null;
+        
         spawnApeEnemy();
       };
     }
