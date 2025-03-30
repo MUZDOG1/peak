@@ -3,100 +3,202 @@
 <head>
   <title>XANLACK DIVINE LOVE</title>
   <style>
-    /* Global Styles */
+    /* Chaotic Global Styles */
     body {
       margin: 0;
       padding: 0;
-      background: #FFFFFF;
-      font-family: "Courier New", monospace;
+      background: repeating-linear-gradient(45deg, #FF00FF22, #FFFF0022, #00FFFF22 100px);
+      font-family: "Comic Sans MS", "Courier New", "Papyrus", monospace;
       font-size: 14px;
       color: #000;
+      cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='48' viewport='0 0 100 100' style='fill:black;font-size:24px;'><text y='50%'>✝</text></svg>"), auto;
     }
     
     /* Main container with two columns */
     #main-container {
       display: flex;
+      flex-direction: column-reverse;
       height: 100vh;
       width: 100vw;
     }
     
-    /* Left panel: 25% width with random text */
-    #left-panel {
-      width: 25%;
-      padding: 20px;
-      background: #f0f0f0;
-      overflow-y: auto;
-      border-right: 3px solid #AA0000;
+    @media (min-width: 600px) {
+      #main-container {
+        flex-direction: row;
+      }
     }
     
-    /* Right panel: 75% width with terminal UI */
-    #right-panel {
-      width: 75%;
+    /* Left panel: random text */
+    #left-panel {
+      width: 100%;
       padding: 20px;
-      background: #fff;
+      background: repeating-radial-gradient(circle, #f0f0f0, #f0f0f0 10px, #e0e0ff 10px, #ffe0e0 20px);
       overflow-y: auto;
+      border-right: 8px dashed #AA0000;
+      border-left: 8px dotted #00AA00;
+      transform: rotate(-1deg);
+      box-shadow: inset 0 0 15px rgba(255,0,0,0.5);
+    }
+    
+    @media (min-width: 600px) {
+      #left-panel {
+        width: 25%;
+      }
+    }
+    
+    /* Right panel: terminal UI */
+    #right-panel {
+      width: 100%;
+      padding: 20px;
+      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FF80FF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+      overflow-y: auto;
+      transform: rotate(0.7deg);
+    }
+    
+    @media (min-width: 600px) {
+      #right-panel {
+        width: 75%;
+      }
     }
     
     h1 {
-      font-size: 24px;
+      font-size: 28px;
       text-align: center;
-      background: #C0C0FF;
+      background: linear-gradient(90deg, #C0C0FF, #FFC0C0, #C0FFC0);
       color: #AA0000;
-      border-bottom: 2px dotted #0000AA;
+      text-shadow: 3px 3px 0 #0000AA, -1px -1px 0 #00AA00, 1px -1px 0 #AAAA00, -1px 1px 0 #00AAAA;
+      border-bottom: 5px dotted #0000AA;
+      border-top: 5px dashed #AA00AA;
       margin: 0 0 10px 0;
-      padding: 4px;
+      padding: 8px;
+      transform: skew(-5deg);
+      letter-spacing: 3px;
+      word-spacing: -5px;
+      font-weight: bold;
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    #left-panel p {
+      margin: 15px 0;
+      padding: 10px;
+      border-radius: 15px;
+      border-top-right-radius: 0;
+      border-bottom-left-radius: 0;
+      transform: rotate(1deg);
+      transition: all 0.3s;
+      box-shadow: 5px 5px 10px rgba(0,0,0,0.2);
+    }
+    
+    #left-panel p:nth-child(odd) {
+      transform: rotate(-1deg);
+      background: rgba(255,255,200,0.7);
+    }
+    
+    #left-panel p:nth-child(even) {
+      transform: rotate(1deg);
+      background: rgba(200,255,255,0.7);
+    }
+    
+    #left-panel p:hover {
+      transform: scale(1.05);
+      z-index: 100;
+      filter: hue-rotate(90deg);
     }
     
     /* Terminal Styles */
     #terminal {
       margin-top: 10px;
-      padding: 10px;
+      padding: 15px;
       height: 70vh;
       overflow-y: auto;
       background: #FFF;
-      border: 2px solid #00AA00;
+      border: 7px ridge #00AA00;
       font-size: 16px;
       color: #000;
+      box-shadow: 0 0 30px inset rgba(0,170,0,0.3);
+      background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ff00ff' fill-opacity='0.05'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
     }
     
     #terminal-output {
       white-space: pre-wrap;
       color: #0000AA;
       font-weight: bold;
+      padding: 10px;
+      text-shadow: 1px 1px 1px rgba(0,0,170,0.3);
+      letter-spacing: 1px;
     }
     
     #terminal-input {
       display: flex;
       align-items: center;
-      background: #FFFF80;
-      border-top: 1px dashed #00AA00;
-      padding: 3px;
+      background: repeating-linear-gradient(45deg, #FFFF80, #FFFF80 10px, #FFFFB0 10px, #FFFFB0 20px);
+      border-top: 3px dashed #00AA00;
+      border-bottom: 3px dashed #AA0000;
+      padding: 5px;
+      margin-top: 10px;
+      transform: rotate(-0.5deg);
     }
     
     #terminal-prompt {
       color: #AA0000;
       font-weight: bold;
       margin-right: 5px;
+      font-size: 18px;
+      text-shadow: 2px 2px 2px rgba(170,0,0,0.3);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
     }
     
     #terminal-cmd {
-      background: #FFF;
+      background: rgba(255,255,255,0.8);
       color: #000;
-      border: none;
+      border: 3px inset #AA00AA;
       width: 100%;
       outline: none;
       font-family: "Courier New", monospace;
       font-size: 16px;
+      padding: 5px;
+      border-radius: 5px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
     }
     
     .footer {
-      margin-top: 10px;
-      border-top: 2px dashed #FF00FF;
-      background: #F8F8FF;
+      margin-top: 20px;
+      border-top: 5px dashed #FF00FF;
+      border-bottom: 5px dashed #00FFFF;
+      background: repeating-linear-gradient(-45deg, #F8F8FF, #F8F8FF 10px, #FFF8F8 10px, #FFF8F8 20px);
       color: #AA0000;
-      text-align: left;
-      padding: 5px;
+      text-align: center;
+      padding: 10px;
       font-size: 0.9em;
+      transform: rotate(-1deg);
+      text-shadow: 1px 1px 1px rgba(170,0,0,0.3);
+      letter-spacing: 2px;
+      font-weight: bold;
+    }
+    
+    /* Add some random animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .footer p:first-child {
+      animation: float 5s ease-in-out infinite;
+    }
+    
+    .footer p:last-child {
+      animation: float 7s ease-in-out infinite;
+      animation-delay: 1s;
     }
   </style>
 </head>
@@ -247,6 +349,19 @@ OF SREDOLES' REALM.`,
 "CURRENT REALM\nPROTECTED BY NEW JAR OF LIFE\nHOME TO HUMANITY"
   };
   
+  // Add some random glitchy behavior
+  function glitchText() {
+    if (Math.random() < 0.1) {
+      const glitchChars = "!@#$%^&*()_+}{[]\\|;:'\",.<>/?`~";
+      terminalOutput.innerHTML += glitchChars.charAt(Math.floor(Math.random() * glitchChars.length));
+      setTimeout(() => {
+        terminalOutput.innerHTML = terminalOutput.innerHTML.slice(0, -1);
+      }, 100);
+    }
+  }
+  
+  setInterval(glitchText, 3000);
+  
   // Handle command input
   terminalCmd.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
@@ -271,6 +386,16 @@ OF SREDOLES' REALM.`,
       terminalOutput.scrollTop = terminalOutput.scrollHeight;
     }
   });
+  
+  // Add random cursor blinking
+  function blinkCursor() {
+    terminalCmd.style.opacity = Math.random() < 0.1 ? "0.3" : "1";
+    setTimeout(() => {
+      terminalCmd.style.opacity = "1";
+    }, 100);
+  }
+  
+  setInterval(blinkCursor, 2000);
 </script>
 
 </body>
