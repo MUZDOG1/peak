@@ -99,16 +99,14 @@
     let timerInterval = null;
     const menuMusic = document.getElementById('menuMusic');
     
-    // Set menu music volume to half
     menuMusic.volume = 0.5;
 
-    // Audio system - improved initialization
+    // Audio system initialization
     let audioContext;
     let punchSoundBuffer;
     let audioInitialized = false;
     const audioPromises = [];
 
-    // Initialize title screen
     document.getElementById('continueBtn').addEventListener('click', function() {
       menuMusic.play().catch(e => console.log("Audio play failed:", e));
       document.getElementById('titleScreen').style.display = 'none';
@@ -150,7 +148,6 @@
       }
     }
 
-    // Initialize menu
     document.getElementById('startBtn').addEventListener('click', function() {
       menuMusic.pause();
       startGame();
@@ -362,7 +359,9 @@
         safeDistance: 300
       };
       enemyActive.idleImage.src = 'ape.png';
-      enemyActive.hitImage.src = 'chimphurt.png'; // Set default hit image for ape to chimphurt.png
+      // For ape enemy, we now use chimphurt.png only when hurt,
+      // and when dead we will override with placeholder.jpg
+      enemyActive.hitImage.src = 'chimphurt.png';
     }
 
     let lastAttackTime = 0;
@@ -391,17 +390,25 @@
         enemyActive.knockbackDuration = knockbackDuration;
         enemyActive.health -= 10;
         
-        // Special handling for ape enemy: show only "chimphurt.png"
-        if (enemyActive.type === 'ape' && enemyActive.health > 0) {
-          // Set the hurt image to "chimphurt.png" and remain in hurt state for 2 seconds
-          enemyActive.hitImage.src = 'chimphurt.png';
-          enemyActive.isFleeing = true;
-          enemyActive.fleeingDuration = 120;
-          setTimeout(() => {
-            enemyActive.isHurt = false;
-            // No need to revert hitImage; drawing will use idleImage ("ape.png") when not hurt
-          }, 2000);
+        // Special handling for ape enemy
+        if (enemyActive.type === 'ape') {
+          if (enemyActive.health > 0) {
+            // Show the hurt image ("chimphurt.png") for 2 seconds
+            enemyActive.hitImage.src = 'chimphurt.png';
+            enemyActive.isFleeing = true;
+            enemyActive.fleeingDuration = 120;
+            setTimeout(() => {
+              enemyActive.isHurt = false;
+              // When not hurt, drawing code will use idleImage ("ape.png")
+            }, 2000);
+          } else {
+            // When the ape dies, override its idle image with "placeholder.jpg"
+            enemyActive.health = 0;
+            enemyActive.isDead = true;
+            enemyActive.idleImage.src = 'placeholder.jpg';
+          }
         } else {
+          // Handling for non-ape enemies
           if (enemyActive.health <= 0) {
             enemyActive.health = 0;
             enemyActive.isDead = true;
@@ -432,13 +439,10 @@
                 }, 5000);
               }, 4000);
             }
-            lastAttackTime = now;
-            setTimeout(() => { enemyActive.isHurt = false; }, 1000);
-            return;
           }
-          lastAttackTime = now;
-          setTimeout(() => { enemyActive.isHurt = false; }, 1000);
         }
+        lastAttackTime = now;
+        setTimeout(() => { enemyActive.isHurt = false; }, 1000);
       }
     }
 
@@ -563,6 +567,11 @@
             if (enemyActive.idleImage.complete) {
               ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
             }
+          } else if (enemyActive.type === 'ape') {
+            // For dead ape, simply draw its idle image which now is "placeholder.jpg"
+            if (enemyActive.idleImage.complete) {
+              ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            }
           } else {
             if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
               ctx.drawImage(enemyDeadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
@@ -602,6 +611,7 @@
   </script>
 </body>
 </html>
+
 
 
 <!--fix: chimp hurt image, get rid of borders on new map, get rid of cars and corpses on new map aswell.-->
