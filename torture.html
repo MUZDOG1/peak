@@ -431,6 +431,14 @@
         enemyActive.knockbackDuration = knockbackDuration;
         enemyActive.health -= 10;
         
+        // If the enemy is an ape (chimp) and still alive, change its image to "chimphurt.png" for 2 seconds.
+        if (enemyActive.type === 'ape' && enemyActive.health > 0) {
+          enemyActive.hitImage.src = 'chimphurt.png';
+          setTimeout(() => {
+            enemyActive.hitImage.src = 'hit.png';
+          }, 2000);
+        }
+        
         // Specifically for the ape enemy, make it flee
         if (enemyActive.type === 'ape') {
           enemyActive.isFleeing = true;
@@ -551,7 +559,7 @@
           const py = player.y + player.height / 2;
           const ex = enemyActive.x + enemyActive.width / 2;
           const ey = enemyActive.y + enemyActive.height / 2;
-          const dx = ex - px; // Note: reversed from attack() to get direction AWAY from player
+          const dx = ex - px;
           const dy = ey - py;
           const mag = Math.sqrt(dx * dx + dy * dy) || 1; // Avoid division by zero
           
