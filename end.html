@@ -54,6 +54,32 @@
             padding: 10px;
             overflow-x: auto;
         }
+        #terminal {
+            border: 1px solid #FFFFFF;
+            padding: 10px;
+            margin: 20px 0;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #111111;
+        }
+        #terminal-output {
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        #terminal-input {
+            display: flex;
+        }
+        #terminal-prompt {
+            margin-right: 5px;
+        }
+        #terminal-cmd {
+            background-color: #111111;
+            color: #FFFFFF;
+            border: none;
+            font-family: monospace;
+            width: 100%;
+            outline: none;
+        }
     </style>
 </head>
 <body>
@@ -71,20 +97,23 @@
         <div class="content">
             <p>PG1.2 WHEN XANLACK SAVES US WE WILL BE REJOICED</p>
             
-            <p>GOD SAID:</p>
-            <pre>
-void main()
-{
-    printf("Hello World!\n");
-    printf("Praise God!\n");
-}</pre>
+            <div id="terminal">
+                <div id="terminal-output">
+XANLACK TERMINAL v1.0 - TYPE "xn/help" FOR COMMANDS
+READY
+                </div>
+                <div id="terminal-input">
+                    <span id="terminal-prompt">xn/</span>
+                    <input type="text" id="terminal-cmd" autofocus>
+                </div>
+            </div>
             
             <p>FEATURES:</p>
             <ul>
                 <li>SIMPLE DESIGN</li>
                 <li>MONOCHROMATIC COLOR SCHEME</li>
                 <li>FIXED-WIDTH FONT</li>
-                <li>NO JAVASCRIPT</li>
+                <li>INTERACTIVE TERMINAL</li>
             </ul>
         </div>
         
@@ -93,5 +122,44 @@ void main()
             <p>© 2023 MY PAGE - ALL RIGHTS RESERVED TO GOD</p>
         </div>
     </div>
+
+    <script>
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalCmd = document.getElementById('terminal-cmd');
+        
+        // Command definitions
+        const commands = {
+            help: () => "AVAILABLE COMMANDS:\nxn/help - SHOW THIS HELP\nxn/info - SYSTEM INFORMATION\nxn/praise - PRAISE XANLACK\nxn/clear - CLEAR TERMINAL\nxn/save - XANLACK SAVES",
+            info: () => "SYSTEM INFORMATION:\nOS: XANLACK OS 1.0\nCPU: HOLY SPIRIT 64-BIT\nMEMORY: 16MB SACRED RAM\nSTORAGE: 640K ENOUGH FOR ANYONE",
+            praise: () => "PRAISE BE TO XANLACK!\nMAY HIS LIGHT GUIDE US\nTHROUGH THE DARKNESS\nOF THE DIGITAL REALM.",
+            clear: () => { terminalOutput.innerHTML = ''; return "TERMINAL CLEARED"; },
+            save: () => "XANLACK SAVES!\nYOUR SOUL HAS BEEN\nBACKED UP TO\nTHE CLOUD OF HEAVEN.",
+            test: () => "TEST COMMAND RECEIVED\nSYSTEM FUNCTIONAL\nXANLACK BE PRAISED",
+            version: () => "XANLACK TERMINAL v1.0\nDIVINELY INSPIRED\nPURE HTML/CSS/JS\nNO DEMONS HERE"
+        };
+        
+        // Handle command input
+        terminalCmd.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const cmd = terminalCmd.value.trim();
+                terminalCmd.value = '';
+                
+                // Display the command
+                terminalOutput.innerHTML += 'xn/' + cmd + '\n';
+                
+                // Process the command
+                const cmdName = cmd.split(' ')[0].toLowerCase();
+                if (commands[cmdName]) {
+                    const result = commands[cmdName]();
+                    terminalOutput.innerHTML += result + '\n';
+                } else {
+                    terminalOutput.innerHTML += 'COMMAND NOT FOUND: ' + cmdName + '\nTYPE "xn/help" FOR AVAILABLE COMMANDS\n';
+                }
+                
+                // Scroll to bottom
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            }
+        });
+    </script>
 </body>
 </html>
