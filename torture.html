@@ -349,38 +349,25 @@
       const crashVideo = document.getElementById('crashVideo');
       crashVideo.style.display = 'block';
       crashVideo.currentTime = 0;
-      crashVideo.volume = 1.0; // Ensure volume is at maximum
+      crashVideo.volume = 1.0;
       
-      // Try to play with user interaction to avoid browser autoplay restrictions
       const playPromise = crashVideo.play();
-      
       if (playPromise !== undefined) {
         playPromise.catch(error => {
           console.error("Error playing crash video:", error);
-          // If autoplay is prevented, we can add a fallback here if needed
         });
       }
       
       crashVideo.onended = () => {
         crashVideo.style.display = 'none';
-        
-        // After crash video ends, change the background and add new enemy
         currentBackground = newBackgroundImage;
-        
-        // Clear old walls when switching to new background
-        walls.length = 0; // This empties the walls array
-        
-        // Remove the car
+        walls.length = 0;
         car = null;
-        
-        // Remove all corpses
         enemyCorpse = null;
-        
         spawnApeEnemy();
       };
     }
 
-    // New function to spawn the ape enemy after the crash
     function spawnApeEnemy() {
       enemyActive = {
         x: 400,
@@ -396,12 +383,12 @@
         idleImage: new Image(),
         hitImage: new Image(),
         type: 'ape',
-        isFleeing: false,  // New property to track if the ape is fleeing
-        fleeingDuration: 0, // How long the ape will flee
-        safeDistance: 300  // The distance the ape considers "safe"
+        isFleeing: false,
+        fleeingDuration: 0,
+        safeDistance: 300
       };
       enemyActive.idleImage.src = 'ape.png';
-      enemyActive.hitImage.src = 'hit.png'; // Reusing hit image, could be replaced with an ape-specific one
+      enemyActive.hitImage.src = 'hit.png'; // Default hurt image for ape (will be overridden on hit)
     }
 
     let lastAttackTime = 0;
@@ -419,7 +406,6 @@
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < 100) {
         playPunchSound();
-        
         player.isPunching = true;
         setTimeout(() => { player.isPunching = false; }, 200);
         enemyActive.isHurt = true;
@@ -431,61 +417,55 @@
         enemyActive.knockbackDuration = knockbackDuration;
         enemyActive.health -= 10;
         
-        // If the enemy is an ape (chimp) and still alive, change its image to "chimphurt.png" for 2 seconds.
+        // Special handling for ape enemy: use only its hurt image "chimphurt.png"
         if (enemyActive.type === 'ape' && enemyActive.health > 0) {
           enemyActive.hitImage.src = 'chimphurt.png';
+          enemyActive.isFleeing = true;
+          enemyActive.fleeingDuration = 120;
+          // Keep the hurt state for 2 seconds before reverting
           setTimeout(() => {
+            enemyActive.isHurt = false;
             enemyActive.hitImage.src = 'hit.png';
           }, 2000);
-        }
-        
-        // Specifically for the ape enemy, make it flee
-        if (enemyActive.type === 'ape') {
-          enemyActive.isFleeing = true;
-          enemyActive.fleeingDuration = 120; // Run away for 120 frames (about 2 seconds)
-        }
-        
-        if (enemyActive.health <= 0) {
-          enemyActive.health = 0;
-          enemyActive.isDead = true;
-          if (enemyActive.type === 'woman') {
-            const womanVideo = document.getElementById('womanExecutionVideo');
-            womanVideo.style.display = 'block';
-            womanVideo.currentTime = 0;
-            womanVideo.play();
-            womanVideo.onended = () => {
-              enemyActive.idleImage.src = "womandead.png";
-              womanVideo.style.display = 'none';
-              
-              // Wait 5 seconds after woman execution video ends, then play crash video
+        } else {
+          // For other enemy types, use default timing
+          if (enemyActive.health <= 0) {
+            enemyActive.health = 0;
+            enemyActive.isDead = true;
+            if (enemyActive.type === 'woman') {
+              const womanVideo = document.getElementById('womanExecutionVideo');
+              womanVideo.style.display = 'block';
+              womanVideo.currentTime = 0;
+              womanVideo.play();
+              womanVideo.onended = () => {
+                enemyActive.idleImage.src = "womandead.png";
+                womanVideo.style.display = 'none';
+                setTimeout(() => {
+                  playCrashVideo();
+                }, 5000);
+              };
+            } else {
+              enemyActive.deathState = 'dead';
+              setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
               setTimeout(() => {
-                playCrashVideo();
-              }, 5000);
-            };
-          } else {
-            enemyActive.deathState = 'dead';
-            setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
-            setTimeout(() => {
-              showDeathGif();
-              setTimeout(() => {
-                hideDeathGif();
-                enemyActive.deathState = 'lying';
-                enemyCorpse = enemyActive;
-                
-                // For the default enemy, spawn the woman
-                if (enemyActive.type === 'default') {
-                  spawnNewEnemy();
-                }
-                // For the ape enemy, could add next stage logic here
-              }, 5000);
-            }, 4000);
+                showDeathGif();
+                setTimeout(() => {
+                  hideDeathGif();
+                  enemyActive.deathState = 'lying';
+                  enemyCorpse = enemyActive;
+                  if (enemyActive.type === 'default') {
+                    spawnNewEnemy();
+                  }
+                }, 5000);
+              }, 4000);
+            }
+            lastAttackTime = now;
+            setTimeout(() => { enemyActive.isHurt = false; }, 1000);
+            return;
           }
           lastAttackTime = now;
           setTimeout(() => { enemyActive.isHurt = false; }, 1000);
-          return;
         }
-        lastAttackTime = now;
-        setTimeout(() => { enemyActive.isHurt = false; }, 1000);
       }
     }
 
@@ -517,7 +497,6 @@
       };
     }
 
-    // Helper function to calculate distance between two entities
     function getDistanceBetween(entity1, entity2) {
       const x1 = entity1.x + entity1.width / 2;
       const y1 = entity1.y + entity1.height / 2;
@@ -546,44 +525,29 @@
           enemyActive.knockbackVelocity.y *= 0.9;
           enemyActive.knockbackDuration--;
         } else if (enemyActive.type === 'ape' && enemyActive.isFleeing) {
-          // Ape is fleeing behavior
           const distanceToPlayer = getDistanceBetween(enemyActive, player);
-          
-          // If we're already at a safe distance, reduce fleeing duration
           if (distanceToPlayer >= enemyActive.safeDistance) {
-            enemyActive.fleeingDuration -= 2; // Reduce faster once safe
+            enemyActive.fleeingDuration -= 2;
           }
-          
-          // Calculate direction away from player
           const px = player.x + player.width / 2;
           const py = player.y + player.height / 2;
           const ex = enemyActive.x + enemyActive.width / 2;
           const ey = enemyActive.y + enemyActive.height / 2;
           const dx = ex - px;
           const dy = ey - py;
-          const mag = Math.sqrt(dx * dx + dy * dy) || 1; // Avoid division by zero
-          
-          // Move away from player
-          const fleespeed = 3.5; // Slightly slower than player
+          const mag = Math.sqrt(dx * dx + dy * dy) || 1;
+          const fleespeed = 3.5;
           const moveX = (dx / mag) * fleespeed;
           const moveY = (dy / mag) * fleespeed;
-          
           moveEntity(enemyActive, moveX, moveY);
-          
-          // Decrement fleeing duration
           enemyActive.fleeingDuration--;
-          
-          // Stop fleeing when duration is up
           if (enemyActive.fleeingDuration <= 0) {
             enemyActive.isFleeing = false;
           }
         } else {
-          // Normal enemy movement or ape not fleeing
           if (enemyActive.type === 'ape') {
             // Ape stands still when not fleeing
-            // Do nothing - the ape stays in place
           } else {
-            // Original random movement for other enemies
             if (Math.random() < 0.02) {
               const randX = Math.random() * 6 - 3;
               const randY = Math.random() * 6 - 3;
@@ -634,8 +598,10 @@
             }
           }
         } else {
-          if (enemyActive.isHurt && enemyActive.hitImage.complete) {
-            ctx.drawImage(enemyActive.hitImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+          if (enemyActive.isHurt) {
+            if (enemyActive.hitImage.complete) {
+              ctx.drawImage(enemyActive.hitImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            }
           } else if (enemyActive.idleImage.complete) {
             ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
           }
@@ -649,14 +615,9 @@
       }
     }
 
-    // Pre-load the crash video and enable audio when user interacts
     const crashVideo = document.getElementById('crashVideo');
-    
-    // This will enable audio for the crash video when the user first interacts with the page
     document.addEventListener('click', function enableAudio() {
-      // Just trying to interact with the video element is enough
       crashVideo.volume = 1.0;
-      // Remove the event listener after first interaction
       document.removeEventListener('click', enableAudio);
     }, { once: true });
 
@@ -668,5 +629,6 @@
   </script>
 </body>
 </html>
+
 
 <!--fix: chimp hurt image, get rid of borders on new map, get rid of cars and corpses on new map aswell.-->
