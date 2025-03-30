@@ -3,238 +3,359 @@
 <head>
   <title>XANLACK DIVINE LOVE</title>
   <style>
-    /* Chaotic Global Styles */
+    /* 2000s Web Styles */
     body {
       margin: 0;
       padding: 0;
-      background: repeating-linear-gradient(45deg, #FF00FF22, #FFFF0022, #00FFFF22 100px);
-      font-family: "Comic Sans MS", "Courier New", "Papyrus", monospace;
-      font-size: 14px;
-      color: #000;
-      
-    }
-    
-    /* Main container with two columns */
-    #main-container {
-      display: flex;
-      flex-direction: column-reverse;
-      height: 100vh;
-      width: 100vw;
-    }
-    
-    @media (min-width: 600px) {
-      #main-container {
-        flex-direction: row;
-      }
-    }
-    
-    /* Left panel: random text */
-    #left-panel {
-      width: 100%;
-      padding: 20px;
-      background: repeating-radial-gradient(circle, #f0f0f0, #f0f0f0 10px, #e0e0ff 10px, #ffe0e0 20px);
-      overflow-y: auto;
-      border-right: 8px dashed #AA0000;
-      border-left: 8px dotted #00AA00;
-      transform: rotate(-1deg);
-      box-shadow: inset 0 0 15px rgba(255,0,0,0.5);
-    }
-    
-    @media (min-width: 600px) {
-      #left-panel {
-        width: 25%;
-      }
-    }
-    
-    /* Right panel: terminal UI */
-    #right-panel {
-      width: 100%;
-      padding: 20px;
-      background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23FF80FF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
-      overflow-y: auto;
-      transform: rotate(0.7deg);
-    }
-    
-    @media (min-width: 600px) {
-      #right-panel {
-        width: 75%;
-      }
-    }
-    
-    h1 {
-      font-size: 28px;
+      background: #000000 url("/api/placeholder/800/600") center top repeat;
+      font-family: "Times New Roman", serif;
+      font-size: 12px;
+      color: #FFFFFF;
       text-align: center;
-      background: linear-gradient(90deg, #C0C0FF, #FFC0C0, #C0FFC0);
-      color: #AA0000;
-      text-shadow: 3px 3px 0 #0000AA, -1px -1px 0 #00AA00, 1px -1px 0 #AAAA00, -1px 1px 0 #00AAAA;
-      border-bottom: 5px dotted #0000AA;
-      border-top: 5px dashed #AA00AA;
-      margin: 0 0 10px 0;
-      padding: 8px;
-      transform: skew(-5deg);
-      letter-spacing: 3px;
-      word-spacing: -5px;
-      font-weight: bold;
-      animation: blink 1s infinite;
     }
     
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
+    /* Center the main table */
+    #page-container {
+      width: 760px;
+      margin: 0 auto;
+      border: 2px solid #666666;
+      background-color: #000033;
+      box-shadow: 0 0 10px 5px #0000FF;
     }
     
-    #left-panel p {
-      margin: 15px 0;
+    /* Page header */
+    #header {
+      background-color: #000066;
+      border-bottom: 4px ridge #0099FF;
       padding: 10px;
-      border-radius: 15px;
-      border-top-right-radius: 0;
-      border-bottom-left-radius: 0;
-      transform: rotate(1deg);
-      transition: all 0.3s;
-      box-shadow: 5px 5px 10px rgba(0,0,0,0.2);
     }
     
-    #left-panel p:nth-child(odd) {
-      transform: rotate(-1deg);
-      background: rgba(255,255,200,0.7);
+    #header h1 {
+      font-family: "Arial Black", sans-serif;
+      font-size: 24px;
+      color: #FFFF00;
+      text-shadow: 2px 2px 4px #FF0000;
+      letter-spacing: 3px;
+      margin: 0;
     }
     
-    #left-panel p:nth-child(even) {
-      transform: rotate(1deg);
-      background: rgba(200,255,255,0.7);
+    #header-image {
+      margin: 10px auto;
     }
     
-    #left-panel p:hover {
-      transform: scale(1.05);
-      z-index: 100;
-      filter: hue-rotate(90deg);
+    /* Navigation bar */
+    #nav-bar {
+      background-color: #003366;
+      border-top: 1px solid #0099FF;
+      border-bottom: 1px solid #0099FF;
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+    
+    #nav-bar a {
+      color: #FFFFFF;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 0 10px;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+    }
+    
+    #nav-bar a:hover {
+      color: #FFFF00;
+      text-decoration: underline;
+    }
+    
+    /* Main content area with two columns */
+    #content-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    /* Left sidebar */
+    #left-sidebar {
+      width: 200px;
+      background-color: #000044;
+      vertical-align: top;
+      padding: 10px;
+      border-right: 1px dashed #3366CC;
+    }
+    
+    #sidebar-title {
+      background-color: #003399;
+      border: 1px solid #6699FF;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      font-size: 14px;
+      color: #FFFFFF;
+      padding: 3px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    
+    #left-sidebar p {
+      margin: 10px 5px;
+      font-size: 11px;
+      line-height: 1.3;
+      color: #CCCCFF;
+      text-align: left;
+    }
+    
+    /* Main content area */
+    #main-content {
+      vertical-align: top;
+      padding: 10px;
+      background-color: #000022;
+      text-align: left;
+    }
+    
+    #content-title {
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      color: #FFCC00;
+      font-size: 18px;
+      border-bottom: 1px solid #3366CC;
+      padding-bottom: 5px;
+      margin-top: 0;
     }
     
     /* Terminal Styles */
     #terminal {
-      margin-top: 10px;
-      padding: 15px;
-      height: 70vh;
+      margin: 10px auto;
+      padding: 5px;
+      height: 350px;
+      width: 95%;
       overflow-y: auto;
-      background: #FFF;
-      border: 7px ridge #00AA00;
-      font-size: 16px;
-      color: #000;
-      box-shadow: 0 0 30px inset rgba(0,170,0,0.3);
-      background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ff00ff' fill-opacity='0.05'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      background: #000000;
+      border: 2px inset #666666;
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+      color: #00FF00;
+      text-align: left;
     }
     
     #terminal-output {
       white-space: pre-wrap;
-      color: #0000AA;
-      font-weight: bold;
-      padding: 10px;
-      text-shadow: 1px 1px 1px rgba(0,0,170,0.3);
-      letter-spacing: 1px;
+      font-weight: normal;
+      padding: 5px;
     }
     
     #terminal-input {
       display: flex;
       align-items: center;
-      background: repeating-linear-gradient(45deg, #FFFF80, #FFFF80 10px, #FFFFB0 10px, #FFFFB0 20px);
-      border-top: 3px dashed #00AA00;
-      border-bottom: 3px dashed #AA0000;
+      background: #000000;
+      border-top: 1px solid #333333;
       padding: 5px;
       margin-top: 10px;
-      transform: rotate(-0.5deg);
     }
     
     #terminal-prompt {
-      color: #AA0000;
+      color: #00FF00;
       font-weight: bold;
       margin-right: 5px;
-      font-size: 18px;
-      text-shadow: 2px 2px 2px rgba(170,0,0,0.3);
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
     }
     
     #terminal-cmd {
-      background: rgba(255,255,255,0.8);
-      color: #000;
-      border: 3px inset #AA00AA;
-      width: 100%;
+      background: #000000;
+      color: #00FF00;
+      border: 1px solid #333333;
+      width: 98%;
       outline: none;
       font-family: "Courier New", monospace;
-      font-size: 16px;
+      font-size: 12px;
+    }
+    
+    /* Footer */
+    #footer {
+      margin-top: 10px;
+      border-top: 1px solid #3366CC;
+      background: #000044;
+      color: #CCCCFF;
       padding: 5px;
-      border-radius: 5px;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
-    }
-    
-    .footer {
-      margin-top: 20px;
-      border-top: 5px dashed #FF00FF;
-      border-bottom: 5px dashed #00FFFF;
-      background: repeating-linear-gradient(-45deg, #F8F8FF, #F8F8FF 10px, #FFF8F8 10px, #FFF8F8 20px);
-      color: #AA0000;
+      font-size: 10px;
       text-align: center;
-      padding: 10px;
-      font-size: 0.9em;
-      transform: rotate(-1deg);
-      text-shadow: 1px 1px 1px rgba(170,0,0,0.3);
+      clear: both;
+    }
+    
+    #counters {
+      margin: 10px 0;
+    }
+    
+    #construction {
+      margin: 10px 0;
+    }
+    
+    /* Link styles */
+    a {
+      color: #00CCFF;
+      text-decoration: underline;
+    }
+    
+    a:hover {
+      color: #FFFF00;
+    }
+    
+    /* Blinking text effect */
+    .blink {
+      animation: blinker 1s linear infinite;
+    }
+    
+    @keyframes blinker {
+      50% { opacity: 0; }
+    }
+    
+    /* Hit counter style */
+    .hit-counter {
+      background-color: #000000;
+      font-family: "Digital", monospace;
+      color: #FF0000;
+      border: 1px solid #666666;
+      padding: 2px 5px;
+      font-size: 12px;
       letter-spacing: 2px;
+    }
+    
+    /* Button styles */
+    .button {
+      font-family: Arial, sans-serif;
+      font-size: 11px;
       font-weight: bold;
+      background-color: #003366;
+      color: #FFFFFF;
+      border: 2px outset #6699CC;
+      padding: 2px 5px;
+      margin: 5px;
+      cursor: pointer;
     }
     
-    /* Add some random animations */
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+    .button:hover {
+      background-color: #0066CC;
     }
     
-    .footer p:first-child {
-      animation: float 5s ease-in-out infinite;
-    }
-    
-    .footer p:last-child {
-      animation: float 7s ease-in-out infinite;
-      animation-delay: 1s;
+    /* Marquee */
+    .news-ticker {
+      background-color: #000066;
+      color: #FFFF00;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      font-size: 11px;
+      padding: 3px;
+      border: 1px solid #3366CC;
     }
   </style>
 </head>
 <body>
 
-<div id="main-container">
-  <!-- Left Panel with Random Text -->
-  <div id="left-panel">
-    <h1>XANLACK DIVINE LOVE</h1>
-    <p>CRED CAN LOCKLE THE AWFUL TRAITOR WILL NOT JUST BURN AS MUCH AS I WITH THE SNAKES HEAD OFF. XN/CREDCANLOCKLE P2 STATES THE AWFUL WAYS OF THE ONE SON OF XANLACK, LORD SMITES THE DIRTY TRAITOR WITH HIS STAFF AND CHEWS OFF THE HEAD OF ANYONE WHO STOPS HIM AS THEY ARE TOO TAKING IN XN/CREDCANLOCKLE P1,P2 AND P3. </p>
-    <p style="color: #AA0000;">TREPOEIDER WILL RISE FROM THE GREAT MIDST OF RATATOPIA AND BASK IN THE BLOOD OF TRANDAR, YEAR 4078 WILL MARK TRANDARS EXECUTION AND THE SREDOLES WILL SQUIRM FROM XANLACK ON THE DAY OF PEACE, YEAR 12603 WILL ARISE VICTORIOUS OF THE DAY OF PEACE AND THE SREDOLES WILL ALL DIE, BIBLE CHAPTER 2 V1</p>
-    <p style="color: #00AA00;">KITFLOP ZEEGORP IS THE ONE OF TRANDAR MARK. SEVENTEEN THOUSAND SREDOLES ARE MARK. 55. KITFLOP DEATH IT DO SO WITH VEIN. 56 KITFLOP SREDOLE, TRANDAR. 57 DEATH.</p>
-    <p style="color: #0000AA;">CH1 VERSE 1 At the beginning of our realms there was only sredoles, a world infested with evil and no one to save it, until the being by the name of Xanlack passed through our collection of realms and saw the pure chaos, he decided he would conquer these evil realms and create peace among creatures alike, he already had the full knowledge and mind power to create worlds, so he created ratatopia, a place free from evil sredoles, and he kept a protection field in a jar known as the jar of life. </p>
-  </div>
-
-  <!-- Right Panel with Terminal UI -->
-  <div id="right-panel">
-    <h1>*** THE BOOK OF XANLACK ***</h1>
-    
-    <div id="terminal">
-      <div id="terminal-output">
+<table id="page-container" cellspacing="0" cellpadding="0">
+  <!-- Page Header -->
+  <tr>
+    <td id="header">
+      <h1>XANLACK DIVINE LOVE</h1>
+      <div id="header-image">
+        <img src="/api/placeholder/650/80" alt="XANLACK Header" border="0">
+      </div>
+    </td>
+  </tr>
+  
+  <!-- Navigation Bar -->
+  <tr>
+    <td id="nav-bar">
+      <a href="#">HOME</a> | 
+      <a href="#">ABOUT</a> | 
+      <a href="#">TEACHINGS</a> | 
+      <a href="#">PRAYER</a> | 
+      <a href="#">CONTACT</a> | 
+      <a href="#">LINKS</a>
+    </td>
+  </tr>
+  
+  <!-- Main Content Area (Two Columns) -->
+  <tr>
+    <td>
+      <table id="content-table" cellspacing="0" cellpadding="0">
+        <tr>
+          <!-- Left Sidebar -->
+          <td id="left-sidebar">
+            <div id="sidebar-title">XANLACK WISDOM</div>
+            
+            <p>CRED CAN LOCKLE THE AWFUL TRAITOR WILL NOT JUST BURN AS MUCH AS I WITH THE SNAKES HEAD OFF. XN/CREDCANLOCKLE P2 STATES THE AWFUL WAYS OF THE ONE SON OF XANLACK, LORD SMITES THE DIRTY TRAITOR WITH HIS STAFF AND CHEWS OFF THE HEAD OF ANYONE WHO STOPS HIM AS THEY ARE TOO TAKING IN XN/CREDCANLOCKLE P1,P2 AND P3. </p>
+            
+            <p style="color: #FF9999;">TREPOEIDER WILL RISE FROM THE GREAT MIDST OF RATATOPIA AND BASK IN THE BLOOD OF TRANDAR, YEAR 4078 WILL MARK TRANDARS EXECUTION AND THE SREDOLES WILL SQUIRM FROM XANLACK ON THE DAY OF PEACE, YEAR 12603 WILL ARISE VICTORIOUS OF THE DAY OF PEACE AND THE SREDOLES WILL ALL DIE, BIBLE CHAPTER 2 V1</p>
+            
+            <p style="color: #99FF99;">KITFLOP ZEEGORP IS THE ONE OF TRANDAR MARK. SEVENTEEN THOUSAND SREDOLES ARE MARK. 55. KITFLOP DEATH IT DO SO WITH VEIN. 56 KITFLOP SREDOLE, TRANDAR. 57 DEATH.</p>
+            
+            <p style="color: #9999FF;">CH1 VERSE 1 At the beginning of our realms there was only sredoles, a world infested with evil and no one to save it, until the being by the name of Xanlack passed through our collection of realms and saw the pure chaos, he decided he would conquer these evil realms and create peace among creatures alike, he already had the full knowledge and mind power to create worlds, so he created ratatopia, a place free from evil sredoles, and he kept a protection field in a jar known as the jar of life. </p>
+            
+            <div style="text-align: center; margin-top: 20px;">
+              <img src="/api/placeholder/150/40" alt="WebRing" border="0">
+              <br><br>
+              <img src="/api/placeholder/150/40" alt="Best viewed with Netscape Navigator" border="0">
+            </div>
+          </td>
+          
+          <!-- Main Content -->
+          <td id="main-content">
+            <h2 id="content-title">*** THE BOOK OF XANLACK ***</h2>
+            
+            <div class="news-ticker">
+              <marquee scrollamount="3" behavior="scroll">*** BREAKING NEWS: SREDOLES SIGHTINGS INCREASING - PRAY TO XANLACK FOR PROTECTION - NEW TREPOEIDER REVELATIONS COMING SOON - JOIN OUR MAILING LIST FOR UPDATES ***</marquee>
+            </div>
+            
+            <div style="text-align: center; margin: 10px 0;">
+              <span class="blink" style="color: #FF0000; font-weight: bold;">!!! IMPORTANT ANNOUNCEMENT !!!</span>
+              <br>
+              <img src="/api/placeholder/400/20" alt="Under Construction" border="0">
+            </div>
+            
+            <div id="terminal">
+              <div id="terminal-output">
 XANLACK TERMINAL v1.0 - TYPE "xn/help" FOR COMMANDS
 READY
+              </div>
+              <div id="terminal-input">
+                <span id="terminal-prompt">xn/&gt;</span>
+                <input type="text" id="terminal-cmd" autofocus>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin: 10px 0;">
+              <input type="button" class="button" value="CLEAR TERMINAL" onclick="clearTerminal()">
+              <input type="button" class="button" value="PRAISE XANLACK" onclick="praiseXanlack()">
+            </div>
+            
+            <div id="construction" style="text-align: center;">
+              <img src="/api/placeholder/80/80" alt="Under Construction">
+              <span style="color: #FFFF00;">This site is continuously being improved as Xanlack reveals more wisdom</span>
+              <img src="/api/placeholder/80/80" alt="Under Construction">
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  
+  <!-- Footer -->
+  <tr>
+    <td id="footer">
+      <div>
+        <span style="color: #FFFF00;">*** SYSTEM INFO: XANLACK OS 1.0 - 64BIT HOLY PROCESSOR - 16MB SACRED RAM ***</span>
       </div>
-      <div id="terminal-input">
-        <span id="terminal-prompt">xn/&gt;</span>
-        <input type="text" id="terminal-cmd" autofocus>
+      
+      <div id="counters">
+        <span>Visitors since The Day of Peace: </span>
+        <span class="hit-counter">1337420</span>
+        <br>
+        <span>Your IP has been logged for Sredoles detection: </span>
+        <span class="hit-counter">127.0.0.1</span>
       </div>
-    </div>
-    
-    <div class="footer">
-      <p>*** SYSTEM INFO: XANLACK OS 1.0 - 64BIT HOLY PROCESSOR - 16MB SACRED RAM ***</p>
-      <p>© 2025 TREPOEIDER - ALL RIGHTS RESERVED TO XANLACK</p>
-    </div>
-  </div>
-</div>
+      
+      <div>
+        <span>© 2025 TREPOEIDER - ALL RIGHTS RESERVED TO XANLACK</span>
+        <br>
+        <span style="font-size: 8px;">This page is best viewed in 800x600 resolution with Netscape Navigator 4.0</span>
+      </div>
+    </td>
+  </tr>
+</table>
 
 <script>
   const terminalOutput = document.getElementById('terminal-output');
@@ -349,19 +470,6 @@ OF SREDOLES' REALM.`,
 "CURRENT REALM\nPROTECTED BY NEW JAR OF LIFE\nHOME TO HUMANITY"
   };
   
-  // Add some random glitchy behavior
-  function glitchText() {
-    if (Math.random() < 0.1) {
-      const glitchChars = "!@#$%^&*()_+}{[]\\|;:'\",.<>/?`~";
-      terminalOutput.innerHTML += glitchChars.charAt(Math.floor(Math.random() * glitchChars.length));
-      setTimeout(() => {
-        terminalOutput.innerHTML = terminalOutput.innerHTML.slice(0, -1);
-      }, 100);
-    }
-  }
-  
-  setInterval(glitchText, 3000);
-  
   // Handle command input
   terminalCmd.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
@@ -387,15 +495,29 @@ OF SREDOLES' REALM.`,
     }
   });
   
-  // Add random cursor blinking
-  function blinkCursor() {
-    terminalCmd.style.opacity = Math.random() < 0.1 ? "0.3" : "1";
-    setTimeout(() => {
-      terminalCmd.style.opacity = "1";
-    }, 100);
+  // Button functions
+  function clearTerminal() {
+    terminalOutput.innerHTML = 'TERMINAL CLEARED\nREADY\n';
   }
   
-  setInterval(blinkCursor, 2000);
+  function praiseXanlack() {
+    terminalOutput.innerHTML += commands.praise() + '\n';
+    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+  }
+  
+  // Random "you've got mail" alert
+  setTimeout(function() {
+    if (Math.random() > 0.5) {
+      alert("ATTENTION XANLACKIST!\n\nYou have [1] new message from the Divine Realm!\n\n\"Continue to spread the word of Xanlack to cleanse your realm of Sredoles.\"");
+    }
+  }, 60000);
+  
+  // Update visitor counter randomly
+  setInterval(function() {
+    const counter = document.querySelector('.hit-counter');
+    const currentCount = parseInt(counter.innerText);
+    counter.innerText = currentCount + Math.floor(Math.random() * 10);
+  }, 30000);
 </script>
 
 </body>
