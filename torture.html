@@ -254,9 +254,8 @@
     };
 
     // In your code the enemy is handled via the single variable "enemyActive".
-    // We now add a flag to ensure that when the first ape dies two more spawn in.
+    // We add a flag for the first ape and an array to hold extra apes.
     if (!window.firstApeSpawned) { window.firstApeSpawned = false; }
-    // We'll also create an array to hold extra ape enemies.
     let extraApes = [];
 
     let enemyActive = {
@@ -341,7 +340,7 @@
         walls.length = 0;
         car = null;
         enemyCorpse = null;
-        spawnApeEnemy();
+        spawnApeEnemy(); // spawn the initial ape
       };
     }
 
@@ -395,89 +394,94 @@
     }
 
     let lastAttackTime = 0;
+    // Modified attack() to check both enemyActive and extraApes.
     function attack() {
-      if (!enemyActive || enemyActive.isDead) return;
+      let targets = [];
+      if (enemyActive && !enemyActive.isDead) { targets.push(enemyActive); }
+      extraApes.forEach(ape => {
+        if (!ape.isDead) { targets.push(ape); }
+      });
+      if (targets.length === 0) return;
       const now = Date.now();
       if (now - lastAttackTime < 500) return;
       
-      const px = player.x + player.width / 2;
-      const py = player.y + player.height / 2;
-      const ex = enemyActive.x + enemyActive.width / 2;
-      const ey = enemyActive.y + enemyActive.height / 2;
-      const dx = px - ex;
-      const dy = py - ey;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < 100) {
-        playPunchSound();
-        player.isPunching = true;
-        setTimeout(() => { player.isPunching = false; }, 200);
-        enemyActive.isHurt = true;
-        const knockbackIntensity = 7.5;
-        const knockbackDuration = 15;
-        const mag = Math.sqrt(dx * dx + dy * dy);
-        enemyActive.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
-        enemyActive.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
-        enemyActive.knockbackDuration = knockbackDuration;
-        enemyActive.health -= 10;
-        
-        // Special handling for ape enemy: when its health drops to 0,
-        // mark it dead, override its image, and if this is the first ape death,
-        // spawn two extra apes.
-        if (enemyActive.type === 'ape') {
-          if (enemyActive.health > 0) {
-            enemyActive.hitImage.src = 'chimphurt.png';
-            enemyActive.isFleeing = true;
-            enemyActive.fleeingDuration = 120;
-            setTimeout(() => {
-              enemyActive.isHurt = false;
-            }, 2000);
-          } else {
-            enemyActive.health = 0;
-            enemyActive.isDead = true;
-            enemyActive.idleImage.src = 'placeholder.jpg';
-            if (!window.firstApeSpawned) {
-              window.firstApeSpawned = true;
-              spawnApeEnemyWithPosition(enemyActive.x - 60, enemyActive.y);
-              spawnApeEnemyWithPosition(enemyActive.x + 60, enemyActive.y);
-            }
-          }
-        } else {
-          // Handling for non-ape enemies
-          if (enemyActive.health <= 0) {
-            enemyActive.health = 0;
-            enemyActive.isDead = true;
-            if (enemyActive.type === 'woman') {
-              const womanVideo = document.getElementById('womanExecutionVideo');
-              womanVideo.style.display = 'block';
-              womanVideo.currentTime = 0;
-              womanVideo.play();
-              womanVideo.onended = () => {
-                enemyActive.idleImage.src = "womandead.png";
-                womanVideo.style.display = 'none';
-                setTimeout(() => {
-                  playCrashVideo();
-                }, 5000);
-              };
+      targets.forEach(target => {
+        const px = player.x + player.width / 2;
+        const py = player.y + player.height / 2;
+        const tx = target.x + target.width / 2;
+        const ty = target.y + target.height / 2;
+        const dx = px - tx;
+        const dy = py - ty;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < 100) {
+          playPunchSound();
+          player.isPunching = true;
+          setTimeout(() => { player.isPunching = false; }, 200);
+          target.isHurt = true;
+          const knockbackIntensity = 7.5;
+          const knockbackDuration = 15;
+          const mag = Math.sqrt(dx * dx + dy * dy);
+          target.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
+          target.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
+          target.knockbackDuration = knockbackDuration;
+          target.health -= 10;
+          
+          // Special handling for ape enemy:
+          if (target.type === 'ape') {
+            if (target.health > 0) {
+              target.hitImage.src = 'chimphurt.png';
+              target.isFleeing = true;
+              target.fleeingDuration = 120;
+              setTimeout(() => { target.isHurt = false; }, 2000);
             } else {
-              enemyActive.deathState = 'dead';
-              setTimeout(() => { enemyActive.deathState = 'kneeling'; }, 2500);
-              setTimeout(() => {
-                showDeathGif();
+              target.health = 0;
+              target.isDead = true;
+              target.idleImage.src = 'placeholder.jpg';
+              // Only for the initial ape (enemyActive), spawn extra apes separated by 100px.
+              if (target === enemyActive && !window.firstApeSpawned) {
+                window.firstApeSpawned = true;
+                spawnApeEnemyWithPosition(target.x - 100, target.y);
+                spawnApeEnemyWithPosition(target.x + 100, target.y);
+              }
+            }
+          } else {
+            // Handling for non-ape enemies.
+            if (target.health <= 0) {
+              target.health = 0;
+              target.isDead = true;
+              if (target.type === 'woman') {
+                const womanVideo = document.getElementById('womanExecutionVideo');
+                womanVideo.style.display = 'block';
+                womanVideo.currentTime = 0;
+                womanVideo.play();
+                womanVideo.onended = () => {
+                  target.idleImage.src = "womandead.png";
+                  womanVideo.style.display = 'none';
+                  setTimeout(() => {
+                    playCrashVideo();
+                  }, 5000);
+                };
+              } else {
+                target.deathState = 'dead';
+                setTimeout(() => { target.deathState = 'kneeling'; }, 2500);
                 setTimeout(() => {
-                  hideDeathGif();
-                  enemyActive.deathState = 'lying';
-                  enemyCorpse = enemyActive;
-                  if (enemyActive.type === 'default') {
-                    spawnNewEnemy();
-                  }
-                }, 5000);
-              }, 4000);
+                  showDeathGif();
+                  setTimeout(() => {
+                    hideDeathGif();
+                    target.deathState = 'lying';
+                    enemyCorpse = target;
+                    if (target.type === 'default') {
+                      spawnNewEnemy();
+                    }
+                  }, 5000);
+                }, 4000);
+              }
             }
           }
+          lastAttackTime = now;
         }
-        lastAttackTime = now;
-        setTimeout(() => { enemyActive.isHurt = false; }, 1000);
-      }
+      });
+      setTimeout(() => { targets.forEach(t => { t.isHurt = false; }); }, 1000);
     }
 
     function spawnNewEnemy() {
@@ -557,7 +561,7 @@
           }
         } else {
           if (enemyActive.type === 'ape') {
-            // Ape stands still when not fleeing
+            // Ape stands still when not fleeing.
           } else {
             if (Math.random() < 0.02) {
               const randX = Math.random() * 6 - 3;
@@ -569,7 +573,7 @@
         enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
         enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
       }
-      // Update extra ape enemies, if any.
+      // Update extra ape enemies.
       extraApes.forEach(ape => {
         if (!ape.isDead) {
           if (ape.knockbackDuration > 0) {
@@ -694,6 +698,7 @@
   </script>
 </body>
 </html>
+
 
 
 
