@@ -3,20 +3,86 @@
   <head>
     <title>XANLACK SAVES</title>
     <style>
-      body{background-color:#000;color:#0F0;font-family:"Courier New",monospace;font-size:14px;margin:0;padding:0;overflow-x:hidden}
-      #container{width:100%;padding:20px;border:5px double #F00;}
-      h1{text-align:center;border-bottom:3px dashed #0F0;padding-bottom:10px;background:#002;color:#FF0;text-shadow:2px 2px #F00}
-      #terminal{border:3px dotted #F0F;padding:10px;height:350px;overflow-y:auto;background:#111;font-size:16px}
-      #terminal-output{white-space:pre-wrap;color:#0FF;font-weight:bold}
-      #terminal-input{display:flex;background:#200;padding:5px;border-top:2px solid #F00}
-      #terminal-prompt{color:#FF0;font-weight:bold;text-shadow:1px 1px #F00}
-      #terminal-cmd{background:#111;color:#FFF;border:none;font-family:"Courier New",monospace;width:100%;outline:none;font-size:16px}
-      .footer{text-align:center;margin-top:20px;border-top:2px dashed #F0F;padding-top:10px;font-size:1.2em;color:#FF0;text-shadow:1px 1px #F00;background:#202}
+      /* Messy TempleOS-inspired styling */
+      body {
+        background: linear-gradient(45deg, #000, #333);
+        color: #0F0;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      #container {
+        border: 3px solid #FF0000;
+        padding: 10px;
+        margin: 5px;
+        background-color: #000;
+        transform: rotate(-1deg);
+      }
+      h1 {
+        font-size: 24px;
+        text-align: center;
+        background: #002;
+        border-bottom: 1px dashed #0F0;
+        padding: 5px;
+        margin: 0;
+        text-shadow: 2px 2px #F00;
+      }
+      #terminal {
+        margin-top: 10px;
+        padding: 10px;
+        height: 350px;
+        overflow-y: scroll;
+        background: #111;
+        border: 2px dotted #FF00FF;
+        font-size: 16px;
+        transform: skew(-2deg);
+      }
+      #terminal-output {
+        white-space: pre-wrap;
+        color: #0FF;
+        font-weight: bold;
+      }
+      #terminal-input {
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        background: #200;
+        border-top: 2px solid #F00;
+        padding: 5px;
+        transform: rotate(2deg);
+      }
+      #terminal-prompt {
+        color: #FF0;
+        margin-right: 5px;
+        text-shadow: 1px 1px #F00;
+      }
+      #terminal-cmd {
+        background: #111;
+        color: #FFF;
+        border: none;
+        flex: 1;
+        font-family: "Courier New", monospace;
+        font-size: 16px;
+        outline: none;
+      }
+      .footer {
+        margin-top: 10px;
+        text-align: center;
+        padding: 5px;
+        border-top: 1px dashed #FF00FF;
+        background: #202;
+        color: #FF0;
+        text-shadow: 1px 1px #F00;
+        transform: rotate(1deg);
+      }
     </style>
   </head>
   <body>
     <div id="container">
       <h1>*** THE BOOK OF XANLACK ***</h1>
+      
       <div id="terminal">
         <div id="terminal-output">
 XANLACK TERMINAL v1.0 - TYPE "xn/help" FOR COMMANDS
@@ -27,16 +93,18 @@ READY
           <input type="text" id="terminal-cmd" autofocus>
         </div>
       </div>
+      
       <div class="footer">
         <p>*** SYSTEM INFO: XANLACK OS 1.0 - 64BIT HOLY PROCESSOR - 16MB SACRED RAM ***</p>
         <p>© 2023 TREPOEIDER - ALL RIGHTS RESERVED TO XANLACK</p>
       </div>
     </div>
+
     <script>
       const terminalOutput = document.getElementById('terminal-output');
       const terminalCmd    = document.getElementById('terminal-cmd');
       
-      // Book of Xanlack content (messy TempleOS style)
+      // Book of Xanlack content
       const chapters = {
         1: `CHAPTER 1 - THE BEGINNING
 At the beginning there was only Sredoles, a world infested with evil.
@@ -102,7 +170,7 @@ Spot scouts with chant:
 "Xanlack's divine love overcomes hidden evil" (repeat 5x)`
       };
       
-      // Command definitions (messy formatting preserved)
+      // Command definitions
       const commands = {
         help: () =>
 `AVAILABLE COMMANDS:
@@ -170,3 +238,4 @@ OF SREDOLES' REALM.`,
     </script>
   </body>
 </html>
+
