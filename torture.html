@@ -253,13 +253,13 @@
       isPunching: false
     };
 
-    // Instead of a single enemyActive, we use an array of enemies.
+    // Use an array to handle multiple enemies.
     let enemies = [];
 
-    // Flag to check if the first ape (chimp) has died
+    // Flag to check if the first ape (chimp) has died.
     let firstApeDied = false;
 
-    // The original default enemy (type 'default') remains untouched.
+    // Spawn the initial default enemy.
     enemies.push({
       x: 326.5,
       y: 194,
@@ -337,12 +337,12 @@
         currentBackground = newBackgroundImage;
         walls.length = 0;
         car = null;
-        // For non-ape enemy, spawn as before.
+        // Spawn the next enemy and the car.
         spawnNewEnemy();
       };
     }
 
-    // Modified: spawn an ape enemy at a given (or default) position and push it into enemies.
+    // Spawn an ape enemy at a given position.
     function spawnApeEnemy(x = 400, y = 300) {
       const ape = {
         x: x,
@@ -365,7 +365,7 @@
       enemies.push(ape);
     }
 
-    // Modified: spawn a new enemy of type 'woman' and push into enemies.
+    // Spawn a new non-ape enemy (woman) and set the car.
     function spawnNewEnemy() {
       const woman = {
         x: 518,
@@ -394,7 +394,7 @@
 
     let lastAttackTime = 0;
     function attack() {
-      // Check each enemy; attack the first one found in range.
+      // Attack the first living enemy in range.
       for (let enemy of enemies) {
         if (enemy.isDead) continue;
         const now = Date.now();
@@ -420,7 +420,7 @@
           enemy.knockbackDuration = knockbackDuration;
           enemy.health -= 10;
           
-          // Special handling for ape enemy
+          // Ape-specific handling.
           if (enemy.type === 'ape') {
             if (enemy.health > 0) {
               enemy.hitImage.src = 'chimphurt.png';
@@ -433,7 +433,7 @@
               enemy.health = 0;
               enemy.isDead = true;
               enemy.idleImage.src = 'placeholder.jpg';
-              // If this is the first ape to die, spawn two more apes at random positions.
+              // On the first ape death, spawn two more apes at random locations.
               if (!firstApeDied) {
                 firstApeDied = true;
                 for (let i = 0; i < 2; i++) {
@@ -444,7 +444,7 @@
               }
             }
           } else {
-            // Handling for non-ape enemies
+            // Handling for non-ape enemies.
             if (enemy.health <= 0) {
               enemy.health = 0;
               enemy.isDead = true;
@@ -460,7 +460,7 @@
                     playCrashVideo();
                   }, 5000);
                 };
-              } else {
+              } else { // default enemy branch
                 enemy.deathState = 'dead';
                 setTimeout(() => { enemy.deathState = 'kneeling'; }, 2500);
                 setTimeout(() => {
@@ -468,6 +468,10 @@
                   setTimeout(() => {
                     hideDeathGif();
                     enemy.deathState = 'lying';
+                    // For default enemy death, spawn the next enemy.
+                    if(enemy.type === 'default') {
+                      spawnNewEnemy();
+                    }
                   }, 5000);
                 }, 4000);
               }
@@ -475,7 +479,7 @@
           }
           lastAttackTime = now;
           setTimeout(() => { enemy.isHurt = false; }, 1000);
-          // Only attack one enemy per key press.
+          // Attack one enemy per key press.
           break;
         }
       }
@@ -502,7 +506,7 @@
       moveEntity(player, moveX, moveY);
       if (keys[' ']) attack();
       
-      // Update all enemies
+      // Update all enemies.
       for (let enemy of enemies) {
         if (!enemy.isDead) {
           if (enemy.knockbackDuration > 0) {
@@ -532,7 +536,7 @@
             }
           } else {
             if (enemy.type === 'ape') {
-              // Ape stands still when not fleeing
+              // Ape stands still when not fleeing.
             } else {
               if (Math.random() < 0.02) {
                 const randX = Math.random() * 6 - 3;
@@ -557,7 +561,7 @@
         ctx.drawImage(currentBackground, 0, 0, 800, 600);
       }
 
-      // Draw enemy corpses if needed (for those that have a death state)
+      // Draw each enemy.
       for (let enemy of enemies) {
         if (enemy.isDead) {
           if (enemy.deathState === 'lying' && lyingImage.complete) {
@@ -605,6 +609,7 @@
   </script>
 </body>
 </html>
+
 
 
 
