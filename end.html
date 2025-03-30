@@ -1,66 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>xanlack saves</title>
+    <title>XANLACK SAVES</title>
     <style>
         body {
-            background-color: #000000;
-            color: #FFFFFF;
-            font-family: monospace;
+            background-color: #000;
+            color: #0F0;
+            font-family: "Courier New", monospace;
+            font-size: 14px;
             margin: 0;
-            padding: 20px;
-            line-height: 1.4;
+            padding: 0;
+            overflow-x: hidden;
         }
         #container {
-            width: 80%;
-            max-width: 800px;
-            margin: 0 auto;
-            border: 2px solid #FFFFFF;
+            width: 100%;
             padding: 20px;
+            border: 5px double #F00;
         }
         h1 {
             text-align: center;
-            border-bottom: 2px solid #FFFFFF;
+            border-bottom: 3px dashed #0F0;
             padding-bottom: 10px;
+            background: #002;
+            color: #FF0;
+            text-shadow: 2px 2px #F00;
         }
         #terminal {
-            border: 1px solid #FFFFFF;
+            border: 3px dotted #F0F;
             padding: 10px;
-            margin: 20px 0;
-            height: 300px;
+            height: 350px;
             overflow-y: auto;
-            background-color: #111111;
+            background: #111;
+            font-size: 16px;
         }
         #terminal-output {
             white-space: pre-wrap;
-            margin-bottom: 10px;
+            color: #0FF;
+            font-weight: bold;
         }
         #terminal-input {
             display: flex;
+            background: #200;
+            padding: 5px;
+            border-top: 2px solid #F00;
         }
         #terminal-prompt {
-            margin-right: 5px;
+            color: #FF0;
+            font-weight: bold;
+            text-shadow: 1px 1px #F00;
         }
         #terminal-cmd {
-            background-color: #111111;
-            color: #FFFFFF;
+            background: #111;
+            color: #FFF;
             border: none;
-            font-family: monospace;
+            font-family: "Courier New", monospace;
             width: 100%;
             outline: none;
+            font-size: 16px;
         }
         .footer {
             text-align: center;
             margin-top: 20px;
-            border-top: 1px solid #FFFFFF;
+            border-top: 2px dashed #F0F;
             padding-top: 10px;
-            font-size: 0.8em;
+            font-size: 1.2em;
+            color: #FF0;
+            text-shadow: 1px 1px #F00;
+            background: #202;
         }
     </style>
 </head>
 <body>
     <div id="container">
-        <h1>THE BOOK OF XANLACK</h1>
+        <h1>*** THE BOOK OF XANLACK ***</h1>
         
         <div id="terminal">
             <div id="terminal-output">
@@ -68,13 +80,13 @@ XANLACK TERMINAL v1.0 - TYPE "xn/help" FOR COMMANDS
 READY
             </div>
             <div id="terminal-input">
-                <span id="terminal-prompt">xn/</span>
+                <span id="terminal-prompt">xn/&gt;</span>
                 <input type="text" id="terminal-cmd" autofocus>
             </div>
         </div>
         
         <div class="footer">
-            <p>SYSTEM INFO: XANLACK OS 1.0 - 64BIT HOLY PROCESSOR - 16MB SACRED RAM</p>
+            <p>*** SYSTEM INFO: XANLACK OS 1.0 - 64BIT HOLY PROCESSOR - 16MB SACRED RAM ***</p>
             <p>© 2023 TREPOEIDER - ALL RIGHTS RESERVED TO XANLACK</p>
         </div>
     </div>
