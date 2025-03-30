@@ -110,24 +110,15 @@
 
     // Initialize title screen
     document.getElementById('continueBtn').addEventListener('click', function() {
-      // Start music when continuing from title screen
       menuMusic.play().catch(e => console.log("Audio play failed:", e));
-      
-      // Hide title screen and show main menu
       document.getElementById('titleScreen').style.display = 'none';
       document.getElementById('mainMenu').style.display = 'block';
-      
-      // Initialize audio context on first user interaction
       initAudio();
     });
 
     function initAudio() {
       if (audioInitialized) return;
-      
-      // Create audio context
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Load punch sound
       const loadPunchSound = fetch('punch.mp3')
         .then(response => response.arrayBuffer())
         .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
@@ -138,7 +129,6 @@
         .catch(error => {
           console.error('Error loading audio:', error);
         });
-      
       audioPromises.push(loadPunchSound);
     }
 
@@ -147,19 +137,13 @@
         console.log("Audio not initialized yet");
         return;
       }
-      
       try {
         const source = audioContext.createBufferSource();
         source.buffer = punchSoundBuffer;
-        
-        // Add a gain node to control volume
         const gainNode = audioContext.createGain();
-        gainNode.gain.value = 3.0; // Increase this value to make it louder
-        
-        // Connect the source to the gain node, then to the destination
+        gainNode.gain.value = 3.0;
         source.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
         source.start(0);
       } catch (error) {
         console.error("Error playing punch sound:", error);
@@ -182,7 +166,6 @@
       localStorage.setItem('speedrunEnabled', speedrunEnabled);
     });
 
-    // Load saved settings
     if (localStorage.getItem('speedrunEnabled') === 'true') {
       document.getElementById('speedrunToggle').checked = true;
       speedrunEnabled = true;
@@ -191,11 +174,9 @@
     function startGame() {
       gameStarted = true;
       document.getElementById('mainMenu').style.display = 'none';
-      
       const introVideo = document.getElementById('introVideo');
       introVideo.style.display = 'block';
       introVideo.play();
-      
       introVideo.addEventListener('ended', () => {
         introVideo.style.display = 'none';
         if(speedrunEnabled) {
@@ -233,10 +214,7 @@
     function handleResize() {
       const container = document.getElementById('gameContainer');
       const wrapper = document.getElementById('gameWrapper');
-      const scale = Math.min(
-        container.clientWidth / 800,
-        container.clientHeight / 600
-      );
+      const scale = Math.min(container.clientWidth / 800, container.clientHeight / 600);
       wrapper.style.setProperty('--game-scale', scale);
     }
 
@@ -249,11 +227,9 @@
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
     
-    // New background image for after crash
     const newBackgroundImage = new Image();
     newBackgroundImage.src = 'fr.png';
     
-    // Track current background
     let currentBackground = backgroundImage;
 
     const playerImage = new Image();
@@ -350,14 +326,12 @@
       crashVideo.style.display = 'block';
       crashVideo.currentTime = 0;
       crashVideo.volume = 1.0;
-      
       const playPromise = crashVideo.play();
       if (playPromise !== undefined) {
         playPromise.catch(error => {
           console.error("Error playing crash video:", error);
         });
       }
-      
       crashVideo.onended = () => {
         crashVideo.style.display = 'none';
         currentBackground = newBackgroundImage;
@@ -388,7 +362,7 @@
         safeDistance: 300
       };
       enemyActive.idleImage.src = 'ape.png';
-      enemyActive.hitImage.src = 'hit.png'; // Default hurt image for ape (will be overridden on hit)
+      enemyActive.hitImage.src = 'chimphurt.png'; // Set default hit image for ape to chimphurt.png
     }
 
     let lastAttackTime = 0;
@@ -417,18 +391,17 @@
         enemyActive.knockbackDuration = knockbackDuration;
         enemyActive.health -= 10;
         
-        // Special handling for ape enemy: use only its hurt image "chimphurt.png"
+        // Special handling for ape enemy: show only "chimphurt.png"
         if (enemyActive.type === 'ape' && enemyActive.health > 0) {
+          // Set the hurt image to "chimphurt.png" and remain in hurt state for 2 seconds
           enemyActive.hitImage.src = 'chimphurt.png';
           enemyActive.isFleeing = true;
           enemyActive.fleeingDuration = 120;
-          // Keep the hurt state for 2 seconds before reverting
           setTimeout(() => {
             enemyActive.isHurt = false;
-            enemyActive.hitImage.src = 'hit.png';
+            // No need to revert hitImage; drawing will use idleImage ("ape.png") when not hurt
           }, 2000);
         } else {
-          // For other enemy types, use default timing
           if (enemyActive.health <= 0) {
             enemyActive.health = 0;
             enemyActive.isDead = true;
