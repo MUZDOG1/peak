@@ -92,16 +92,20 @@
   </audio>
 
   <script>
-    // Menu system variables
+    // Global game state variables
     let gameStarted = false;
     let speedrunEnabled = false;
     let startTime = 0;
     let timerInterval = null;
     const menuMusic = document.getElementById('menuMusic');
-    
     menuMusic.volume = 0.5;
 
-    // Audio system initialization
+    // Additional state flags for enemy transitions
+    let dudeKilled = false;
+    let womanKillCutscenePlayed = false;
+    let firstApeDied = false;
+
+    // Audio initialization
     let audioContext;
     let punchSoundBuffer;
     let audioInitialized = false;
@@ -124,9 +128,7 @@
           punchSoundBuffer = buffer;
           audioInitialized = true;
         })
-        .catch(error => {
-          console.error('Error loading audio:', error);
-        });
+        .catch(error => console.error('Error loading audio:', error));
       audioPromises.push(loadPunchSound);
     }
 
@@ -154,15 +156,15 @@
     });
     
     document.getElementById('settingsBtn').addEventListener('click', () => {
-      document.getElementById('settingsMenu').style.display = 
-        document.getElementById('settingsMenu').style.display === 'block' ? 'none' : 'block';
+      const settingsMenu = document.getElementById('settingsMenu');
+      settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
     });
     
     document.getElementById('speedrunToggle').addEventListener('change', (e) => {
       speedrunEnabled = e.target.checked;
       localStorage.setItem('speedrunEnabled', speedrunEnabled);
     });
-
+    
     if (localStorage.getItem('speedrunEnabled') === 'true') {
       document.getElementById('speedrunToggle').checked = true;
       speedrunEnabled = true;
@@ -183,9 +185,8 @@
           timerInterval = setInterval(updateTimer, 10);
         }
         handleResize();
-        // Spawn the initial enemies: a dude enemy and a woman enemy.
-        spawnDudeEnemy(350, 250);
-        spawnWomanEnemy(500, 250);
+        // At game start, only spawn the dude enemy.
+        spawnDudeEnemy();
         gameLoop();
       });
     }
@@ -199,7 +200,7 @@
         `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
     }
 
-    // Game code
+    // Game Assets
     const carImage = new Image();
     carImage.src = 'car1.png';
     let car = null;
@@ -217,7 +218,6 @@
       const scale = Math.min(container.clientWidth / 800, container.clientHeight / 600);
       wrapper.style.setProperty('--game-scale', scale);
     }
-
     window.addEventListener('resize', handleResize);
     handleResize();
 
@@ -258,10 +258,10 @@
 
     // Enemies will be stored in an array.
     let enemies = [];
-    // Flag to check if the first ape has been killed.
-    let firstApeDied = false;
 
-    // Spawns a dude enemy.
+    // Spawn Functions
+
+    // Spawns the initial dude enemy.
     function spawnDudeEnemy(x = 350, y = 250) {
       const dude = {
         x: x,
@@ -272,20 +272,18 @@
         knockbackVelocity: { x: 0, y: 0 },
         knockbackDuration: 0,
         isDead: false,
-        deathState: '',
         health: 300,
         idleImage: new Image(),
         hitImage: new Image(),
         type: 'dude'
       };
-      // Using existing images for default enemy.
       dude.idleImage.src = 'enemyidle.png';
       dude.hitImage.src = 'hit.png';
       enemies.push(dude);
     }
 
-    // Spawns a woman enemy (which also spawns a car).
-    function spawnWomanEnemy(x = 500, y = 250) {
+    // Spawns the woman enemy and the car.
+    function spawnWomanAndCar(x = 500, y = 250) {
       const woman = {
         x: x,
         y: y,
@@ -295,7 +293,6 @@
         knockbackVelocity: { x: 0, y: 0 },
         knockbackDuration: 0,
         isDead: false,
-        deathState: '',
         health: 300,
         idleImage: new Image(),
         hitImage: new Image(),
@@ -306,7 +303,7 @@
       woman.hitImage.src = 'womanhit.png';
       enemies.push(woman);
 
-      // Also spawn the car for later use.
+      // Spawn the car along with the woman enemy.
       car = {
         x: 600,
         y: 460,
@@ -327,7 +324,6 @@
         knockbackVelocity: { x: 0, y: 0 },
         knockbackDuration: 0,
         isDead: false,
-        deathState: '',
         health: 300,
         idleImage: new Image(),
         hitImage: new Image(),
@@ -386,6 +382,7 @@
       document.getElementById('deathGifOverlay').style.display = 'none';
     }
     
+    // Plays the car crash video. When it ends, the background changes and an ape enemy spawns.
     function playCrashVideo() {
       const crashVideo = document.getElementById('crashVideo');
       crashVideo.style.display = 'block';
@@ -393,16 +390,14 @@
       crashVideo.volume = 1.0;
       const playPromise = crashVideo.play();
       if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error("Error playing crash video:", error);
-        });
+        playPromise.catch(error => console.error("Error playing crash video:", error));
       }
       crashVideo.onended = () => {
         crashVideo.style.display = 'none';
         currentBackground = newBackgroundImage;
         walls.length = 0;
         car = null;
-        // After the map changes, spawn the first ape enemy.
+        // Spawn the first ape enemy after the map changes.
         spawnApeEnemy();
       };
     }
@@ -411,7 +406,7 @@
     function attack() {
       const now = Date.now();
       if (now - lastAttackTime < 500) return;
-      enemies.forEach((enemy) => {
+      enemies.forEach(enemy => {
         if (enemy.isDead) return;
         const px = player.x + player.width / 2;
         const py = player.y + player.height / 2;
@@ -433,66 +428,59 @@
           enemy.knockbackDuration = knockbackDuration;
           enemy.health -= 10;
           
-          if (enemy.type === 'ape') {
-            if (enemy.health > 0) {
-              enemy.hitImage.src = 'chimphurt.png';
-              enemy.isFleeing = true;
-              enemy.fleeingDuration = 120;
-              setTimeout(() => {
-                enemy.isHurt = false;
-              }, 2000);
-            } else {
+          // Handle dude enemy: when killed, spawn the woman enemy and car.
+          if (enemy.type === 'dude') {
+            if (enemy.health <= 0) {
+              enemy.health = 0;
+              enemy.isDead = true;
+              if (!dudeKilled) {
+                dudeKilled = true;
+                // Spawn woman enemy and car after a short delay.
+                setTimeout(() => {
+                  spawnWomanAndCar();
+                }, 500);
+              }
+            }
+          }
+          // Handle woman enemy: when killed, play her execution cutscene then car crash sequence.
+          else if (enemy.type === 'woman') {
+            if (enemy.health <= 0) {
+              enemy.health = 0;
+              enemy.isDead = true;
+              if (!womanKillCutscenePlayed) {
+                womanKillCutscenePlayed = true;
+                const womanVideo = document.getElementById('womanExecutionVideo');
+                womanVideo.style.display = 'block';
+                womanVideo.currentTime = 0;
+                womanVideo.play();
+                womanVideo.onended = () => {
+                  womanVideo.style.display = 'none';
+                  // After a 5 second delay, play the car crash video.
+                  setTimeout(() => {
+                    playCrashVideo();
+                  }, 5000);
+                };
+              }
+            }
+          }
+          // Handle ape enemy: when killed, if it’s the first ape death then spawn two additional apes.
+          else if (enemy.type === 'ape') {
+            if (enemy.health <= 0) {
               enemy.health = 0;
               enemy.isDead = true;
               enemy.idleImage.src = 'placeholder.jpg';
-              // When the first ape dies, spawn two additional apes (only once).
               if (!firstApeDied) {
                 firstApeDied = true;
                 spawnApeEnemy(enemy.x - 60, enemy.y);
                 spawnApeEnemy(enemy.x + 60, enemy.y);
               }
             }
-          } else {
-            // For non-ape enemies.
-            if (enemy.health <= 0) {
-              enemy.health = 0;
-              enemy.isDead = true;
-              if (enemy.type === 'woman') {
-                if (!enemy.videoPlayed) {
-                  enemy.videoPlayed = true;
-                  const womanVideo = document.getElementById('womanExecutionVideo');
-                  womanVideo.style.display = 'block';
-                  womanVideo.currentTime = 0;
-                  womanVideo.play();
-                  womanVideo.onended = () => {
-                    enemy.idleImage.src = "womandead.png";
-                    womanVideo.style.display = 'none';
-                    // Play crash video to change map and spawn the ape.
-                    setTimeout(() => {
-                      playCrashVideo();
-                    }, 5000);
-                  };
-                }
-              } else {
-                // For dude enemy, simply handle death animation.
-                enemy.deathState = 'dead';
-                setTimeout(() => { enemy.deathState = 'kneeling'; }, 2500);
-                setTimeout(() => {
-                  showDeathGif();
-                  setTimeout(() => {
-                    hideDeathGif();
-                    enemy.deathState = 'lying';
-                  }, 5000);
-                }, 4000);
-              }
-            }
           }
+          // (Additional enemy types can be handled here as needed)
         }
       });
       lastAttackTime = now;
-      setTimeout(() => {
-        enemies.forEach(enemy => enemy.isHurt = false);
-      }, 1000);
+      setTimeout(() => { enemies.forEach(enemy => enemy.isHurt = false); }, 1000);
     }
 
     function getDistanceBetween(entity1, entity2) {
@@ -516,7 +504,6 @@
       moveEntity(player, moveX, moveY);
       if (keys[' ']) attack();
       
-      // Update each enemy.
       enemies.forEach(enemy => {
         if (!enemy.isDead) {
           if (enemy.knockbackDuration > 0) {
@@ -622,6 +609,7 @@
   </script>
 </body>
 </html>
+
 
 
 
