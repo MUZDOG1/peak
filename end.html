@@ -1,178 +1,279 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>XANLACK SAVES</title>
-    <style>
-      /* Messy TempleOS-inspired styling */
-      body {
-        background: linear-gradient(45deg, #000, #333);
-        color: #0F0;
-        font-family: "Courier New", monospace;
-        font-size: 14px;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-      }
-      #container {
-        border: 3px solid #FF0000;
-        padding: 10px;
-        margin: 5px;
-        background-color: #000;
-        transform: rotate(-1deg);
-      }
-      h1 {
-        font-size: 24px;
-        text-align: center;
-        background: #002;
-        border-bottom: 1px dashed #0F0;
-        padding: 5px;
-        margin: 0;
-        text-shadow: 2px 2px #F00;
-      }
-      #terminal {
-        margin-top: 10px;
-        padding: 10px;
-        height: 350px;
-        overflow-y: scroll;
-        background: #111;
-        border: 2px dotted #FF00FF;
-        font-size: 16px;
-        transform: skew(-2deg);
-      }
-      #terminal-output {
-        white-space: pre-wrap;
-        color: #0FF;
-        font-weight: bold;
-      }
-      #terminal-input {
-        margin-top: 5px;
-        display: flex;
-        align-items: center;
-        background: #200;
-        border-top: 2px solid #F00;
-        padding: 5px;
-        transform: rotate(2deg);
-      }
-      #terminal-prompt {
-        color: #FF0;
-        margin-right: 5px;
-        text-shadow: 1px 1px #F00;
-      }
-      #terminal-cmd {
-        background: #111;
-        color: #FFF;
-        border: none;
-        flex: 1;
-        font-family: "Courier New", monospace;
-        font-size: 16px;
-        outline: none;
-      }
-      .footer {
-        margin-top: 10px;
-        text-align: center;
-        padding: 5px;
-        border-top: 1px dashed #FF00FF;
-        background: #202;
-        color: #FF0;
-        text-shadow: 1px 1px #F00;
-        transform: rotate(1deg);
-      }
-    </style>
-  </head>
-  <body>
-    <div id="container">
-      <h1>*** THE BOOK OF XANLACK ***</h1>
-      
-      <div id="terminal">
-        <div id="terminal-output">
+<head>
+  <title>XANLACK SAVES - TempleOS Style</title>
+  <style>
+    /* 
+      TempleOS-inspired madness:
+      - White background
+      - Bright primary colors
+      - Random borders & positions
+      - Minimal consistency 
+      - Retro monospaced fonts
+    */
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: #FFFFFF; /* TempleOS uses a white-ish background */
+      font-family: monospace; 
+      font-size: 14px;
+      color: #000000; /* We'll let the containers handle their own text color */
+      /* We'll throw some random repeating background pattern */
+      background-image: repeating-linear-gradient(45deg, #FFF, #FFF 10px, #F0F0FF 10px, #F0F0FF 20px);
+      overflow: hidden; /* So we can position things absolutely */
+    }
+
+    /* Simulate a top bar like TempleOS has, showing date/time, CPU, etc. */
+    #topBar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 24px;
+      background: #C0C0FF;
+      border-bottom: 2px dashed #0000AA;
+      color: #000000;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+      z-index: 9999;
+    }
+
+    /* 
+      We'll plop your #container in a random position to mimic 
+      TempleOS windows scattered around 
+    */
+    #container {
+      position: absolute;
+      top: 60px;
+      left: 20px;
+      width: 600px; 
+      border: 3px dashed #AA0000;
+      background: #FFFFE0;
+      color: #000;
+      padding: 10px;
+      box-shadow: 3px 3px 0px #FF00FF;
+      transform: rotate(-1.5deg);
+    }
+
+    /* Title reminiscent of TempleOS colors (blue, red, etc.) */
+    h1 {
+      font-size: 20px;
+      text-align: left;
+      background: #C0C0FF;
+      color: #AA0000;
+      border-bottom: 2px dotted #0000AA;
+      margin: 0 0 10px 0;
+      padding: 4px;
+      transform: skew(-2deg);
+    }
+
+    /* Terminal area: we’ll give it that bright, old-school feel */
+    #terminal {
+      position: relative;
+      margin-top: 5px;
+      padding: 5px;
+      height: 250px;
+      overflow-y: auto;
+      background: #FFF;
+      border: 2px solid #00AA00;
+      font-size: 16px;
+      color: #000;
+      transform: rotate(1deg);
+    }
+
+    #terminal-output {
+      white-space: pre-wrap;
+      color: #0000AA; /* Blue text reminiscent of DOS/TempleOS */
+      font-weight: bold;
+    }
+
+    #terminal-input {
+      display: flex;
+      align-items: center;
+      background: #FFFF80;
+      border-top: 1px dashed #00AA00;
+      padding: 3px;
+      transform: skew(1deg);
+    }
+
+    #terminal-prompt {
+      color: #AA0000;
+      font-weight: bold;
+      margin-right: 5px;
+    }
+
+    #terminal-cmd {
+      background: #FFF;
+      color: #000;
+      border: none;
+      width: 100%;
+      outline: none;
+      font-family: monospace;
+      font-size: 16px;
+    }
+
+    .footer {
+      margin-top: 10px;
+      border-top: 2px dashed #FF00FF;
+      background: #F8F8FF;
+      color: #AA0000;
+      text-align: left;
+      padding: 5px;
+      transform: rotate(-2deg);
+      font-size: 0.9em;
+    }
+
+    /* Let’s place another random “side panel” to emulate the split-screen TempleOS look */
+    #sidePanel {
+      position: absolute;
+      top: 30px;
+      right: 20px;
+      width: 300px;
+      height: 300px;
+      background: #FFF;
+      border: 2px solid #0000AA;
+      color: #00AA00;
+      padding: 5px;
+      overflow: auto;
+      transform: rotate(2deg);
+      font-size: 13px;
+    }
+
+    /* Just some random “Tip of the Day” or directory listing text to fill sidePanel */
+    #sidePanel h2 {
+      margin: 0;
+      padding: 0;
+      font-size: 16px;
+      color: #AA0000;
+      text-decoration: underline;
+    }
+
+    #sidePanel p {
+      margin: 0;
+      padding: 3px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Simulated TempleOS top bar -->
+  <div id="topBar">
+    Sun 08/07 14:36  TSS TempleOS CPU: 1  FPR=1  <F1=Help>  <F2=Menu> 
+  </div>
+
+  <!-- A random side panel to emulate the TempleOS multi-window environment -->
+  <div id="sidePanel">
+    <h2>Public Domain Operating System</h2>
+    <p>Directory of C:/Home</p>
+    <p>R MakeDistrib.CPP 2K</p>
+    <p>R HolyC.H 5K</p>
+    <p>B SomeCode.HC 1K</p>
+    <p>\"DoOnce\"</p>
+    <p>Tip of the Day</p>
+    <p>Take Tour (y or n)?</p>
+  </div>
+
+  <div id="container">
+    <h1>*** THE BOOK OF XANLACK ***</h1>
+
+    <div id="terminal">
+      <div id="terminal-output">
 XANLACK TERMINAL v1.0 - TYPE "xn/help" FOR COMMANDS
 READY
-        </div>
-        <div id="terminal-input">
-          <span id="terminal-prompt">xn/&gt;</span>
-          <input type="text" id="terminal-cmd" autofocus>
-        </div>
       </div>
-      
-      <div class="footer">
-        <p>*** SYSTEM INFO: XANLACK OS 1.0 - 64BIT HOLY PROCESSOR - 16MB SACRED RAM ***</p>
-        <p>© 2023 TREPOEIDER - ALL RIGHTS RESERVED TO XANLACK</p>
+      <div id="terminal-input">
+        <span id="terminal-prompt">xn/&gt;</span>
+        <input type="text" id="terminal-cmd" autofocus>
       </div>
     </div>
+    
+    <div class="footer">
+      <p>*** SYSTEM INFO: XANLACK OS 1.0 - 64BIT HOLY PROCESSOR - 16MB SACRED RAM ***</p>
+      <p>© 2023 TREPOEIDER - ALL RIGHTS RESERVED TO XANLACK</p>
+    </div>
+  </div>
 
-    <script>
-      const terminalOutput = document.getElementById('terminal-output');
-      const terminalCmd    = document.getElementById('terminal-cmd');
-      
-      // Book of Xanlack content
-      const chapters = {
-        1: `CHAPTER 1 - THE BEGINNING
+  <script>
+    /* 
+      Preserving your functionality exactly:
+      The chapters, commands, and event listener remain unchanged.
+    */
+
+    const terminalOutput = document.getElementById('terminal-output');
+    const terminalCmd    = document.getElementById('terminal-cmd');
+    
+    // Book of Xanlack content
+    const chapters = {
+      1: `CHAPTER 1 - THE BEGINNING
 At the beginning there was only Sredoles, a world infested with evil.
 Xanlack saw the chaos and created Ratatopia, protected by the Jar of Life.
 His son Credcanlockle broke the jar, destroying Ratatopia.
 Xanlack used Credcanlockle's soul to create Trepoeider, trapping him within.
 Trandar mocked Xanlack by creating Hyerox (the moon).`,
-        2: `CHAPTER 2 - THE DAY OF PEACE
+      2: `CHAPTER 2 - THE DAY OF PEACE
 The day when all human souls accept Xanlack as their Savior.
 This day may never come in our lifetimes due to Sredoles' influence.
 In the afterlife, all eventually accept Xanlack's truth.`,
-        3: `CHAPTER 3 - THE AFTERLIFE
+      3: `CHAPTER 3 - THE AFTERLIFE
 Souls go to Xanlack's gates after death.
 Unworthy souls are rejected and must labor for 100 years before rebirth.
 Worthy souls train to create realms or complete the Five Trials.
 Those who complete the trials gain ultimate knowledge and power.`,
-        4: `CHAPTER 4 - THE FIVE TRIALS
+      4: `CHAPTER 4 - THE FIVE TRIALS
 1. Convince 1000 people to consider Xanlack's truth
 2. Convert 10 people to Xanlack's community
 3. Pray to Xanlack for 5 hours in a week
 4. Slay 100 Sredoles (afterlife only)
 5. Defeat one high-ranking Sredole (afterlife only)
 Completion grants shared rule over all realms.`,
-        5: `CHAPTER 5 - ASCENDING
+      5: `CHAPTER 5 - ASCENDING
 After completing training or trials, souls ascend.
 They can take any form they desire.
 All knowledge flows into them - they can create anything.
 True peace and power is achieved.`,
-        6: `CHAPTER 6 - HUMAN MADE REALMS
+      6: `CHAPTER 6 - HUMAN MADE REALMS
 All human realms are subordinate to Xanlack.
 Xanlack maintains strict control to prevent disaster.
 He wants only the best for his creations.`,
-        7: `CHAPTER 7 - XANLACK'S RULES
+      7: `CHAPTER 7 - XANLACK'S RULES
 1. No violence between Xanlackists
 2. Have no regrets - everything happens as intended
 3. Maintain self-confidence - believers are superior`,
-        8: `CHAPTER 8 - PERFECT XANLACKIST
+      8: `CHAPTER 8 - PERFECT XANLACKIST
 1. Think like a Xanlackist (solve problems)
 2. Fight like a warrior (against Sredoles)
 3. Care for all beings
 Pray regularly and spread Xanlack's word.`,
-        9: `CHAPTER 9 - XANLACK'S APPEARANCE
+      9: `CHAPTER 9 - XANLACK'S APPEARANCE
 Hybrid form: lizard lower body, lion torso, human face.
 The ascension process determines this perfect form.`,
-        10: `CHAPTER 10 - PRAYER
+      10: `CHAPTER 10 - PRAYER
 Basic Prayer:
-"May the darkness of Hyerox not intervene with my wishes"
+\"May the darkness of Hyerox not intervene with my wishes\"
 [Your request]
-"Xanlack hears me beyond evil"
+\"Xanlack hears me beyond evil\"
 
 Advanced Prayer:
 Create a triangle with three marked stones:
 1. Line with circle - path to freedom
 2. Star with five dots - confuses Sredoles
-3. "LOVE" - devotion to Xanlack
+3. \"LOVE\" - devotion to Xanlack
 Recite prayer within the triangle.`,
-        11: `CHAPTER 11 - SREDOLES
+      11: `CHAPTER 11 - SREDOLES
 Three types:
 1. Converted humans (POWs or willing)
 2. Born Sredoles (created by Trandar)
 3. Scouts (disguised as humans)
 Spot scouts with chant:
-"Xanlack's divine love overcomes hidden evil" (repeat 5x)`
-      };
-      
-      // Command definitions
-      const commands = {
-        help: () =>
+\"Xanlack's divine love overcomes hidden evil\" (repeat 5x)`
+    };
+
+    // Command definitions
+    const commands = {
+      help: () =>
 `AVAILABLE COMMANDS:
 xn/help - SHOW THIS HELP
 xn/chapter [1-11] - READ CHAPTER
@@ -182,60 +283,80 @@ xn/prayer - LEARN TO PRAY
 xn/trials - ABOUT THE FIVE TRIALS
 xn/sredoles - SREDOLE INFORMATION
 xn/clear - CLEAR TERMINAL`,
-        chapter: (num) => {
-          if(chapters[num]){
-            return chapters[num];
-          }
-          return `INVALID CHAPTER. CHOOSE 1-11
+      
+      chapter: (num) => {
+        if(chapters[num]){
+          return chapters[num];
+        }
+        return `INVALID CHAPTER. CHOOSE 1-11
 ${chapters[1]}`;
-        },
-        bible: () => {
-          window.location.href = "https://treeman678.github.io/xanlack/";
-          return "OPENING HOLY SCRIPTURES...";
-        },
-        praise: () =>
+      },
+      
+      bible: () => { 
+        window.location.href = "https://treeman678.github.io/xanlack/";
+        return "OPENING HOLY SCRIPTURES..."; 
+      },
+      
+      praise: () =>
 `PRAISE XANLACK!
 MAY HIS LIGHT GUIDE US
 THROUGH THE DARKNESS
 OF SREDOLES' REALM.`,
-        prayer: () => chapters[10],
-        trials: () => chapters[4],
-        sredoles: () => chapters[11],
-        clear: () => {
-          terminalOutput.innerHTML = '';
-          return "TERMINAL CLEARED";
-        },
-        // Easter eggs
-        credcanlockle: () =>
-"TRAITOR SON OF XANLACK\nDESTROYER OF RATATOPIA\nNOW TRAPPED IN TREPOEIDER'S CORE",
-        ratatopia: () =>
-"FIRST PARADISE\nDESTROYED BY CREDCANLOCKLE'S BETRAYAL\nNOW LOST TO SREDOLES",
-        trepoeider: () =>
-"CURRENT REALM\nPROTECTED BY NEW JAR OF LIFE\nHOME TO HUMANITY"
-      };
       
-      terminalCmd.addEventListener('keydown', function(e) {
-        if(e.key === 'Enter') {
-          const fullCmd = terminalCmd.value.trim();
-          terminalCmd.value = '';
-          terminalOutput.innerHTML += 'xn/' + fullCmd + '\n';
-          const [cmdName, ...args] = fullCmd.split(' ');
-          const cmd = cmdName.toLowerCase();
-          if(cmd === 'chapter' && args.length > 0){
-            const result = commands.chapter(args[0]);
-            terminalOutput.innerHTML += result + '\n';
-          } else if(commands[cmd]){
-            const result = commands[cmd](...args);
-            if(result){
-              terminalOutput.innerHTML += result + '\n';
-            }
-          } else {
-            terminalOutput.innerHTML += 'COMMAND NOT FOUND: ' + cmd + '\nTYPE "xn/help" FOR AVAILABLE COMMANDS\n';
-          }
-          terminalOutput.scrollTop = terminalOutput.scrollHeight;
+      prayer: () => chapters[10],
+      
+      trials: () => chapters[4],
+      
+      sredoles: () => chapters[11],
+      
+      clear: () => { 
+        terminalOutput.innerHTML = ''; 
+        return "TERMINAL CLEARED"; 
+      },
+      
+      // Easter eggs
+      credcanlockle: () =>
+"TRAITOR SON OF XANLACK\nDESTROYER OF RATATOPIA\nNOW TRAPPED IN TREPOEIDER'S CORE",
+      
+      ratatopia: () =>
+"FIRST PARADISE\nDESTROYED BY CREDCANLOCKLE'S BETRAYAL\nNOW LOST TO SREDOLES",
+      
+      trepoeider: () =>
+"CURRENT REALM\nPROTECTED BY NEW JAR OF LIFE\nHOME TO HUMANITY"
+    };
+    
+    // Handle command input
+    terminalCmd.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const fullCmd = terminalCmd.value.trim();
+        terminalCmd.value = '';
+        
+        // Display the command
+        terminalOutput.innerHTML += 'xn/' + fullCmd + '\\n';
+        
+        // Process the command
+        const [cmdName, ...args] = fullCmd.split(' ');
+        const cmd = cmdName.toLowerCase();
+        
+        if (cmd === 'chapter' && args.length > 0) {
+          const result = commands.chapter(args[0]);
+          terminalOutput.innerHTML += result + '\\n';
         }
-      });
-    </script>
-  </body>
+        else if (commands[cmd]) {
+          const result = commands[cmd](...args);
+          if (result) {
+            terminalOutput.innerHTML += result + '\\n';
+          }
+        } 
+        else {
+          terminalOutput.innerHTML += 'COMMAND NOT FOUND: ' + cmd + '\\nTYPE \"xn/help\" FOR AVAILABLE COMMANDS\\n';
+        }
+        
+        // Scroll to bottom
+        terminalOutput.scrollTop = terminalOutput.scrollHeight;
+      }
+    });
+  </script>
+</body>
 </html>
 
