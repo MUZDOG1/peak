@@ -1,146 +1,89 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>XANLACK SAVES</title>
     <style>
-        body {
-            background-color: #000;
-            color: #0F0;
-            font-family: "Courier New", monospace;
-            font-size: 14px;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-        #container {
-            width: 100%;
-            padding: 20px;
-            border: 5px double #F00;
-        }
-        h1 {
-            text-align: center;
-            border-bottom: 3px dashed #0F0;
-            padding-bottom: 10px;
-            background: #002;
-            color: #FF0;
-            text-shadow: 2px 2px #F00;
-        }
-        #terminal {
-            border: 3px dotted #F0F;
-            padding: 10px;
-            height: 350px;
-            overflow-y: auto;
-            background: #111;
-            font-size: 16px;
-        }
-        #terminal-output {
-            white-space: pre-wrap;
-            color: #0FF;
-            font-weight: bold;
-        }
-        #terminal-input {
-            display: flex;
-            background: #200;
-            padding: 5px;
-            border-top: 2px solid #F00;
-        }
-        #terminal-prompt {
-            color: #FF0;
-            font-weight: bold;
-            text-shadow: 1px 1px #F00;
-        }
-        #terminal-cmd {
-            background: #111;
-            color: #FFF;
-            border: none;
-            font-family: "Courier New", monospace;
-            width: 100%;
-            outline: none;
-            font-size: 16px;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            border-top: 2px dashed #F0F;
-            padding-top: 10px;
-            font-size: 1.2em;
-            color: #FF0;
-            text-shadow: 1px 1px #F00;
-            background: #202;
-        }
+      body{background-color:#000;color:#0F0;font-family:"Courier New",monospace;font-size:14px;margin:0;padding:0;overflow-x:hidden}
+      #container{width:100%;padding:20px;border:5px double #F00;}
+      h1{text-align:center;border-bottom:3px dashed #0F0;padding-bottom:10px;background:#002;color:#FF0;text-shadow:2px 2px #F00}
+      #terminal{border:3px dotted #F0F;padding:10px;height:350px;overflow-y:auto;background:#111;font-size:16px}
+      #terminal-output{white-space:pre-wrap;color:#0FF;font-weight:bold}
+      #terminal-input{display:flex;background:#200;padding:5px;border-top:2px solid #F00}
+      #terminal-prompt{color:#FF0;font-weight:bold;text-shadow:1px 1px #F00}
+      #terminal-cmd{background:#111;color:#FFF;border:none;font-family:"Courier New",monospace;width:100%;outline:none;font-size:16px}
+      .footer{text-align:center;margin-top:20px;border-top:2px dashed #F0F;padding-top:10px;font-size:1.2em;color:#FF0;text-shadow:1px 1px #F00;background:#202}
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="container">
-        <h1>*** THE BOOK OF XANLACK ***</h1>
-        
-        <div id="terminal">
-            <div id="terminal-output">
+      <h1>*** THE BOOK OF XANLACK ***</h1>
+      
+      <div id="terminal">
+        <div id="terminal-output">
 XANLACK TERMINAL v1.0 - TYPE "xn/help" FOR COMMANDS
 READY
-            </div>
-            <div id="terminal-input">
-                <span id="terminal-prompt">xn/&gt;</span>
-                <input type="text" id="terminal-cmd" autofocus>
-            </div>
         </div>
-        
-        <div class="footer">
-            <p>*** SYSTEM INFO: XANLACK OS 1.0 - 64BIT HOLY PROCESSOR - 16MB SACRED RAM ***</p>
-            <p>© 2023 TREPOEIDER - ALL RIGHTS RESERVED TO XANLACK</p>
+        <div id="terminal-input">
+          <span id="terminal-prompt">xn/&gt;</span>
+          <input type="text" id="terminal-cmd" autofocus>
         </div>
+      </div>
+      
+      <div class="footer">
+        <p>*** SYSTEM INFO: XANLACK OS 1.0 - 64BIT HOLY PROCESSOR - 16MB SACRED RAM ***</p>
+        <p>© 2023 TREPOEIDER - ALL RIGHTS RESERVED TO XANLACK</p>
+      </div>
     </div>
 
     <script>
-        const terminalOutput = document.getElementById('terminal-output');
-        const terminalCmd = document.getElementById('terminal-cmd');
-        
-        // Book of Xanlack content
-        const chapters = {
-            1: `CHAPTER 1 - THE BEGINNING
+      const terminalOutput=document.getElementById('terminal-output');
+      const terminalCmd=document.getElementById('terminal-cmd');
+
+      const chapters={
+1:`CHAPTER 1 - THE BEGINNING
 At the beginning there was only Sredoles, a world infested with evil.
 Xanlack saw the chaos and created Ratatopia, protected by the Jar of Life.
 His son Credcanlockle broke the jar, destroying Ratatopia.
 Xanlack used Credcanlockle's soul to create Trepoeider, trapping him within.
 Trandar mocked Xanlack by creating Hyerox (the moon).`,
-            2: `CHAPTER 2 - THE DAY OF PEACE
+2:`CHAPTER 2 - THE DAY OF PEACE
 The day when all human souls accept Xanlack as their Savior.
 This day may never come in our lifetimes due to Sredoles' influence.
 In the afterlife, all eventually accept Xanlack's truth.`,
-            3: `CHAPTER 3 - THE AFTERLIFE
+3:`CHAPTER 3 - THE AFTERLIFE
 Souls go to Xanlack's gates after death.
 Unworthy souls are rejected and must labor for 100 years before rebirth.
 Worthy souls train to create realms or complete the Five Trials.
 Those who complete the trials gain ultimate knowledge and power.`,
-            4: `CHAPTER 4 - THE FIVE TRIALS
+4:`CHAPTER 4 - THE FIVE TRIALS
 1. Convince 1000 people to consider Xanlack's truth
 2. Convert 10 people to Xanlack's community
 3. Pray to Xanlack for 5 hours in a week
 4. Slay 100 Sredoles (afterlife only)
 5. Defeat one high-ranking Sredole (afterlife only)
 Completion grants shared rule over all realms.`,
-            5: `CHAPTER 5 - ASCENDING
+5:`CHAPTER 5 - ASCENDING
 After completing training or trials, souls ascend.
 They can take any form they desire.
 All knowledge flows into them - they can create anything.
 True peace and power is achieved.`,
-            6: `CHAPTER 6 - HUMAN MADE REALMS
+6:`CHAPTER 6 - HUMAN MADE REALMS
 All human realms are subordinate to Xanlack.
 Xanlack maintains strict control to prevent disaster.
 He wants only the best for his creations.`,
-            7: `CHAPTER 7 - XANLACK'S RULES
+7:`CHAPTER 7 - XANLACK'S RULES
 1. No violence between Xanlackists
 2. Have no regrets - everything happens as intended
 3. Maintain self-confidence - believers are superior`,
-            8: `CHAPTER 8 - PERFECT XANLACKIST
+8:`CHAPTER 8 - PERFECT XANLACKIST
 1. Think like a Xanlackist (solve problems)
 2. Fight like a warrior (against Sredoles)
 3. Care for all beings
 Pray regularly and spread Xanlack's word.`,
-            9: `CHAPTER 9 - XANLACK'S APPEARANCE
+9:`CHAPTER 9 - XANLACK'S APPEARANCE
 Hybrid form: lizard lower body, lion torso, human face.
 The ascension process determines this perfect form.`,
-            10: `CHAPTER 10 - PRAYER
+10:`CHAPTER 10 - PRAYER
 Basic Prayer:
 "May the darkness of Hyerox not intervene with my wishes"
 [Your request]
@@ -152,18 +95,18 @@ Create a triangle with three marked stones:
 2. Star with five dots - confuses Sredoles
 3. "LOVE" - devotion to Xanlack
 Recite prayer within the triangle.`,
-            11: `CHAPTER 11 - SREDOLES
+11:`CHAPTER 11 - SREDOLES
 Three types:
 1. Converted humans (POWs or willing)
 2. Born Sredoles (created by Trandar)
 3. Scouts (disguised as humans)
 Spot scouts with chant:
 "Xanlack's divine love overcomes hidden evil" (repeat 5x)`
-        };
-        
-        // Command definitions
-        const commands = {
-            help: () => `AVAILABLE COMMANDS:
+      };
+
+      const commands={
+help:()=>
+`AVAILABLE COMMANDS:
 xn/help - SHOW THIS HELP
 xn/chapter [1-11] - READ CHAPTER
 xn/bible - OPEN HOLY SCRIPTURES
@@ -172,74 +115,45 @@ xn/prayer - LEARN TO PRAY
 xn/trials - ABOUT THE FIVE TRIALS
 xn/sredoles - SREDOLE INFORMATION
 xn/clear - CLEAR TERMINAL`,
-            
-            chapter: (num) => {
-                if (chapters[num]) {
-                    return chapters[num];
-                }
-                return `INVALID CHAPTER. CHOOSE 1-11\n${chapters[1]}`;
-            },
-            
-            bible: () => { 
-                window.location.href = "https://treeman678.github.io/xanlack/";
-                return "OPENING HOLY SCRIPTURES..."; 
-            },
-            
-            praise: () => `PRAISE XANLACK!
+chapter:(num)=>{ if(chapters[num]){ return chapters[num]; } return \`INVALID CHAPTER. CHOOSE 1-11\n\${chapters[1]}\`; },
+bible:()=>
+  { window.location.href="https://treeman678.github.io/xanlack/"; return "OPENING HOLY SCRIPTURES..."; },
+praise:()=>
+`PRAISE XANLACK!
 MAY HIS LIGHT GUIDE US
 THROUGH THE DARKNESS
 OF SREDOLES' REALM.`,
-            
-            prayer: () => chapters[10],
-            
-            trials: () => chapters[4],
-            
-            sredoles: () => chapters[11],
-            
-            clear: () => { 
-                terminalOutput.innerHTML = ''; 
-                return "TERMINAL CLEARED"; 
-            },
-            
-            // Easter eggs
-            credcanlockle: () => "TRAITOR SON OF XANLACK\nDESTROYER OF RATATOPIA\nNOW TRAPPED IN TREPOEIDER'S CORE",
-            
-            ratatopia: () => "FIRST PARADISE\nDESTROYED BY CREDCANLOCKLE'S BETRAYAL\nNOW LOST TO SREDOLES",
-            
-            trepoeider: () => "CURRENT REALM\nPROTECTED BY NEW JAR OF LIFE\nHOME TO HUMANITY"
-        };
-        
-        // Handle command input
-        terminalCmd.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const fullCmd = terminalCmd.value.trim();
-                terminalCmd.value = '';
-                
-                // Display the command
-                terminalOutput.innerHTML += 'xn/' + fullCmd + '\n';
-                
-                // Process the command
-                const [cmdName, ...args] = fullCmd.split(' ');
-                const cmd = cmdName.toLowerCase();
-                
-                if (cmd === 'chapter' && args.length > 0) {
-                    const result = commands.chapter(args[0]);
-                    terminalOutput.innerHTML += result + '\n';
-                }
-                else if (commands[cmd]) {
-                    const result = commands[cmd](...args);
-                    if (result) {
-                        terminalOutput.innerHTML += result + '\n';
-                    }
-                } 
-                else {
-                    terminalOutput.innerHTML += 'COMMAND NOT FOUND: ' + cmd + '\nTYPE "xn/help" FOR AVAILABLE COMMANDS\n';
-                }
-                
-                // Scroll to bottom
-                terminalOutput.scrollTop = terminalOutput.scrollHeight;
-            }
-        });
+prayer:()=>
+   chapters[10],
+trials:()=>
+  chapters[4],
+sredoles:()=>
+    chapters[11],
+clear:()=>
+   { terminalOutput.innerHTML=''; return "TERMINAL CLEARED"; },
+credcanlockle:()=>"TRAITOR SON OF XANLACK\nDESTROYER OF RATATOPIA\nNOW TRAPPED IN TREPOEIDER'S CORE",
+ratatopia:()=>"FIRST PARADISE\nDESTROYED BY CREDCANLOCKLE'S BETRAYAL\nNOW LOST TO SREDOLES",
+trepoeider:()=>"CURRENT REALM\nPROTECTED BY NEW JAR OF LIFE\nHOME TO HUMANITY"
+      };
+
+      terminalCmd.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    const fullCmd=terminalCmd.value.trim();  terminalCmd.value='';
+    terminalOutput.innerHTML+='xn/'+fullCmd+'\n';
+    const [cmdName,...args]=fullCmd.split(' ');
+    const cmd=cmdName.toLowerCase();
+    if(cmd==='chapter' && args.length>0){
+      const result=commands.chapter(args[0]);
+      terminalOutput.innerHTML+=result+'\n';
+    } else if(commands[cmd]){
+      const result=commands[cmd](...args);
+      if(result){ terminalOutput.innerHTML+=result+'\n'; }
+    } else {
+      terminalOutput.innerHTML+='COMMAND NOT FOUND: '+cmd+'\nTYPE "xn/help" FOR AVAILABLE COMMANDS\n';
+    }
+    terminalOutput.scrollTop=terminalOutput.scrollHeight;
+  }
+});
     </script>
-</body>
+  </body>
 </html>
