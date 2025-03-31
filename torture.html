@@ -5,24 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Clockwork Desolation</title>
   <style>
-    html, body { margin: 0; padding: 0; background: black; overflow: hidden; font-family: 'Courier New', monospace; }
-    #gameContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-    #gameWrapper { position: relative; width: 800px; height: 600px; transform-origin: center center; transform: scale(var(--game-scale)); }
-    #gameCanvas { width: 800px; height: 600px; image-rendering: -moz-crisp-edges; image-rendering: -webkit-optimize-contrast; image-rendering: pixelated; }
-    #deathGifOverlay, #introVideo, #womanExecutionVideo, #crashVideo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+    }
+    #gameContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #gameWrapper {
+      position: relative;
+      width: 800px;
+      height: 600px;
+      transform-origin: center center;
+      transform: scale(var(--game-scale));
+    }
+    #gameCanvas {
+      width: 800px;
+      height: 600px;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: pixelated;
+    }
+    #deathGifOverlay, #introVideo, #womanExecutionVideo, #crashVideo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: none;
+    }
     #deathGifOverlay { z-index: 5; }
     #introVideo { z-index: 10; background: #000; }
     #womanExecutionVideo { z-index: 11; background: #000; }
     #crashVideo { z-index: 12; background: #000; }
-
+    
     /* Title screen styles */
-    #titleScreen { 
-      position: absolute; 
-      top: 0; 
-      left: 0; 
-      width: 100%; 
-      height: 100%; 
-      background: black; 
+    #titleScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
       z-index: 30;
       display: flex;
       flex-direction: column;
@@ -36,36 +73,85 @@
       text-align: center;
     }
     #continueBtn {
-      background: #222; 
-      border: 2px solid #444; 
-      color: white; 
-      padding: 15px 30px; 
-      cursor: pointer; 
-      font-size: 1.2em; 
+      background: #222;
+      border: 2px solid #444;
+      color: white;
+      padding: 15px 30px;
+      cursor: pointer;
+      font-size: 1.2em;
       transition: all 0.3s;
     }
     #continueBtn:hover {
-      background: #333; 
+      background: #333;
       border-color: #666;
     }
-
+    
     /* Menu styles */
-    #mainMenu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; text-align: center; display: none; }
-    .menu-btn { background: #222; border: 2px solid #444; color: white; padding: 15px 30px; margin: 10px; cursor: pointer; font-size: 1.2em; transition: all 0.3s; }
-    .menu-btn:hover { background: #333; border-color: #666; }
-    #settingsMenu { display: none; position: absolute; background: rgba(0,0,0,0.8); padding: 20px; border: 1px solid #444; }
-    .settings-item { margin: 10px 0; color: white; }
-    #speedrunClock { position: absolute; top: 10px; right: 10px; color: white; font-size: 1.5em; display: none; z-index: 15; }
+    #mainMenu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+      text-align: center;
+      display: none;
+    }
+    .menu-btn {
+      background: #222;
+      border: 2px solid #444;
+      color: white;
+      padding: 15px 30px;
+      margin: 10px;
+      cursor: pointer;
+      font-size: 1.2em;
+      transition: all 0.3s;
+    }
+    .menu-btn:hover {
+      background: #333;
+      border-color: #666;
+    }
+    #settingsMenu {
+      display: none;
+      position: absolute;
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
+      border: 1px solid #444;
+    }
+    .settings-item {
+      margin: 10px 0;
+      color: white;
+    }
+    #speedrunClock {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: white;
+      font-size: 1.5em;
+      display: none;
+      z-index: 15;
+    }
+    /* New Clock Image Styling */
+    #clockImg {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 20;
+      width: 50px; /* Adjust width as needed */
+      height: auto;
+    }
   </style>
 </head>
 <body>
   <div id="gameContainer">
+    <!-- Clock Image -->
+    <img id="clockImg" src="clock12.png" alt="Clock">
+    
     <!-- Title Screen -->
     <div id="titleScreen">
       <div id="titleText">CLOCKWORK DESOLATION</div>
       <button id="continueBtn">CONTINUE</button>
     </div>
-
+    
     <!-- Main Menu -->
     <div id="mainMenu">
       <button class="menu-btn" id="startBtn">START</button>
@@ -76,7 +162,7 @@
         </label>
       </div>
     </div>
-
+    
     <div id="speedrunClock">00:00:00</div>
     <div id="gameWrapper">
       <canvas id="gameCanvas"></canvas>
@@ -86,11 +172,11 @@
       <video id="crashVideo" src="crash.mp4" playsinline></video>
     </div>
   </div>
-
+  
   <audio id="menuMusic" loop>
     <source src="lives.mp3" type="audio/mpeg">
   </audio>
-
+  
   <script>
     // Menu system variables
     let gameStarted = false;
@@ -100,20 +186,20 @@
     const menuMusic = document.getElementById('menuMusic');
     
     menuMusic.volume = 0.5;
-
+  
     // Audio system initialization
     let audioContext;
     let punchSoundBuffer;
     let audioInitialized = false;
     const audioPromises = [];
-
+  
     document.getElementById('continueBtn').addEventListener('click', function() {
       menuMusic.play().catch(e => console.log("Audio play failed:", e));
       document.getElementById('titleScreen').style.display = 'none';
       document.getElementById('mainMenu').style.display = 'block';
       initAudio();
     });
-
+  
     function initAudio() {
       if (audioInitialized) return;
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -129,7 +215,7 @@
         });
       audioPromises.push(loadPunchSound);
     }
-
+  
     function playPunchSound() {
       if (!audioInitialized) {
         console.log("Audio not initialized yet");
@@ -159,14 +245,14 @@
       const audio = new Audio(screams[chosenIndex]);
       audio.play().catch(e => console.log("Ginger scream audio play failed:", e));
     }
-
+  
     document.getElementById('startBtn').addEventListener('click', function() {
       menuMusic.pause();
       startGame();
     });
     
     document.getElementById('settingsBtn').addEventListener('click', () => {
-      document.getElementById('settingsMenu').style.display = 
+      document.getElementById('settingsMenu').style.display =
         document.getElementById('settingsMenu').style.display === 'block' ? 'none' : 'block';
     });
     
@@ -174,12 +260,12 @@
       speedrunEnabled = e.target.checked;
       localStorage.setItem('speedrunEnabled', speedrunEnabled);
     });
-
+  
     if (localStorage.getItem('speedrunEnabled') === 'true') {
       document.getElementById('speedrunToggle').checked = true;
       speedrunEnabled = true;
     }
-
+  
     function startGame() {
       gameStarted = true;
       document.getElementById('mainMenu').style.display = 'none';
@@ -198,41 +284,41 @@
         gameLoop();
       });
     }
-
+  
     function updateTimer() {
       const elapsed = Date.now() - startTime;
       const minutes = Math.floor(elapsed / 60000);
       const seconds = Math.floor((elapsed % 60000) / 1000);
       const milliseconds = Math.floor((elapsed % 1000) / 10);
-      document.getElementById('speedrunClock').textContent = 
+      document.getElementById('speedrunClock').textContent =
         `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
     }
-
+  
     // Game code
     const carImage = new Image();
     carImage.src = 'car1.png';
     let car = null;
-
+  
     function setupCanvas() {
       const canvas = document.getElementById('gameCanvas');
       canvas.width = 800;
       canvas.height = 600;
     }
     setupCanvas();
-
+  
     function handleResize() {
       const container = document.getElementById('gameContainer');
       const wrapper = document.getElementById('gameWrapper');
       const scale = Math.min(container.clientWidth / 800, container.clientHeight / 600);
       wrapper.style.setProperty('--game-scale', scale);
     }
-
+  
     window.addEventListener('resize', handleResize);
     handleResize();
-
+  
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-
+  
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
     
@@ -240,22 +326,22 @@
     newBackgroundImage.src = 'fr.png';
     
     let currentBackground = backgroundImage;
-
+  
     const playerImage = new Image();
     playerImage.src = 'idle.png';
-
+  
     const punchImage = new Image();
     punchImage.src = 'punch.png';
-
+  
     const enemyDeadImage = new Image();
     enemyDeadImage.src = 'dead.png';
-
+  
     const enemyKneelingImage = new Image();
     enemyKneelingImage.src = 'kneeling.png';
-
+  
     const lyingImage = new Image();
     lyingImage.src = 'lying.png';
-
+  
     const player = {
       x: 200,
       y: 500,
@@ -264,12 +350,12 @@
       speed: 5,
       isPunching: false
     };
-
+  
     // The first enemy ("dude/guy/ginger") is handled via enemyActive with type "default".
     // We add a flag for the first ape and an array to hold extra apes.
     if (!window.firstApeSpawned) { window.firstApeSpawned = false; }
     let extraApes = [];
-
+  
     let enemyActive = {
       x: 326.5,
       y: 194,
@@ -284,24 +370,24 @@
       idleImage: new Image(),
       hitImage: new Image(),
       type: 'default', // first enemy is the "guy"
-      hitCount: 0 // counter to track hits for playing the sound every 2 hits
+      hitCount: 0 // counter to track hits for playing the sound every 3 hits
     };
     enemyActive.idleImage.src = 'enemyidle.png';
     enemyActive.hitImage.src = 'hit.png';
-
+  
     let enemyCorpse = null;
-
+  
     const walls = [
       { x: 1.5, y: 331, width: 250.5, height: 25 },
       { x: 342, y: 330, width: 500, height: 25 },
       { x: 153, y: 0, width: 25, height: 200 },
       { x: 0.5, y: 166, width: 75, height: 25 }
     ];
-
+  
     const keys = {};
     document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
     document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-
+  
     function isColliding(rect1, rect2) {
       return (
         rect1.x < rect2.x + rect2.width &&
@@ -310,7 +396,7 @@
         rect1.y + rect1.height > rect2.y
       );
     }
-
+  
     function moveEntity(entity, dx, dy) {
       entity.x += dx;
       for (const wall of walls) {
@@ -327,11 +413,11 @@
         }
       }
     }
-
+  
     function showDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'block';
     }
-
+  
     function hideDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'none';
     }
@@ -356,7 +442,7 @@
         spawnApeEnemy(); // spawn the initial ape
       };
     }
-
+  
     // This function spawns an ape enemy at the default position (used in playCrashVideo)
     function spawnApeEnemy() {
       enemyActive = {
@@ -380,7 +466,7 @@
       enemyActive.idleImage.src = 'ape.png';
       enemyActive.hitImage.src = 'chimphurt.png';
     }
-
+  
     // New helper function to spawn an extra ape enemy at a given position.
     function spawnApeEnemyWithPosition(x, y) {
       let newApe = {
@@ -405,7 +491,7 @@
       newApe.hitImage.src = 'chimphurt.png';
       extraApes.push(newApe);
     }
-
+  
     let lastAttackTime = 0;
     // Modified attack() to check both enemyActive and extraApes.
     function attack() {
@@ -431,7 +517,7 @@
           player.isPunching = true;
           setTimeout(() => { player.isPunching = false; }, 200);
           
-          // For the first enemy (type "default" on enemyActive), increment hit counter and play sound every 2 hits.
+          // For the first enemy (type "default" on enemyActive), increment hit counter and play sound every 3 hits.
           if (target === enemyActive && target.type === 'default') {
             target.hitCount = (target.hitCount || 0) + 1;
             if (target.hitCount % 3 === 0) {
@@ -499,7 +585,7 @@
       });
       setTimeout(() => { targets.forEach(t => { t.isHurt = false; }); }, 1000);
     }
-
+  
     function spawnNewEnemy() {
       enemyActive = {
         x: 518,
@@ -518,7 +604,7 @@
       };
       enemyActive.idleImage.src = 'woman.png';
       enemyActive.hitImage.src = 'womanhit.png';
-
+  
       car = {
         x: 600,
         y: 460,
@@ -527,7 +613,7 @@
         image: carImage
       };
     }
-
+  
     function getDistanceBetween(entity1, entity2) {
       const x1 = entity1.x + entity1.width / 2;
       const y1 = entity1.y + entity1.height / 2;
@@ -537,7 +623,7 @@
       const dy = y1 - y2;
       return Math.sqrt(dx * dx + dy * dy);
     }
-
+  
     function update() {
       if (!gameStarted || document.getElementById('introVideo').style.display === 'block') return;
       
@@ -625,7 +711,7 @@
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
     }
-
+  
     function draw() {
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -633,7 +719,7 @@
       if (currentBackground.complete) {
         ctx.drawImage(currentBackground, 0, 0, 800, 600);
       }
-
+  
       if (enemyCorpse) {
         if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
           ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
@@ -643,11 +729,11 @@
           ctx.drawImage(enemyKneelingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         }
       }
-
+  
       if (car && car.image.complete) {
         ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
       }
-
+  
       if (enemyActive) {
         if (enemyActive.isDead) {
           if (enemyActive.type === 'woman') {
@@ -675,7 +761,7 @@
           }
         }
       }
-
+  
       // Draw extra ape enemies.
       extraApes.forEach(ape => {
         if (ape.isDead) {
@@ -692,20 +778,20 @@
           }
         }
       });
-
+  
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
         ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
       }
     }
-
+  
     const crashVideo = document.getElementById('crashVideo');
     document.addEventListener('click', function enableAudio() {
       crashVideo.volume = 1.0;
       document.removeEventListener('click', enableAudio);
     }, { once: true });
-
+  
     function gameLoop() {
       update();
       draw();
@@ -714,6 +800,7 @@
   </script>
 </body>
 </html>
+
 
 
 
