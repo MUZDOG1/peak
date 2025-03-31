@@ -148,11 +148,15 @@
       }
     }
     
-    // New function to play a random gingerscream sound.
+    // Global variable to keep track of last gingerscream index.
+    let lastGingerScreamIndex = -1;
+    // Function to play a random gingerscream sound ensuring it's not the same as the last one.
     function playRandomGingerScream() {
       const screams = ["gingerscream1.mp3", "gingerscream2.mp3", "gingerscream3.mp3"];
-      const chosen = screams[Math.floor(Math.random() * screams.length)];
-      const audio = new Audio(chosen);
+      const availableIndices = screams.map((_, i) => i).filter(i => i !== lastGingerScreamIndex);
+      const chosenIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+      lastGingerScreamIndex = chosenIndex;
+      const audio = new Audio(screams[chosenIndex]);
       audio.play().catch(e => console.log("Ginger scream audio play failed:", e));
     }
 
