@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>game</title>
+  <title>Manhunt-Style Game – Stealth Detection</title>
   <style>
     body {
       margin: 0;
@@ -30,7 +30,7 @@
       speed: 3
     };
 
-    // Place the goal at the bottom-right
+    // Place the goal at the bottom-right corner.
     const goal = {
       x: 750,
       y: 550,
@@ -57,6 +57,8 @@
         this.y = path[0].y;
         this.size = 20;
         this.currentWaypoint = 1;
+        // Current direction vector (normalized) based on patrol target
+        this.dir = { x: 1, y: 0 };
       }
 
       update() {
@@ -66,12 +68,14 @@
         let dy = target.y - this.y;
         const distance = Math.hypot(dx, dy);
         if (distance < 2) {
-          // Switch to next waypoint
+          // Switch to next waypoint when near the target
           this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
         } else {
           // Normalize the direction and update position
           dx /= distance;
           dy /= distance;
+          this.dir.x = dx;
+          this.dir.y = dy;
           this.x += dx * this.speed;
           this.y += dy * this.speed;
         }
@@ -99,16 +103,16 @@
       { x: 380, y: 520 }
     ];
 
-    // Lower enemy speed so they don't zip around too fast
+    // Lower enemy speed further so they move slowly
     const enemies = [
-      new Enemy(enemy1Path, 1.5, 'red'),
-      new Enemy(enemy2Path, 1.5, 'orange')
+      new Enemy(enemy1Path, 1.0, 'red'),
+      new Enemy(enemy2Path, 1.0, 'orange')
     ];
 
     // --- Game State ---
     let gameOver = false;
     let gameWin = false;
-    let bloodSplats = null; // Will hold blood effect data on death
+    let bloodSplats = null; // Blood effect data generated on death
 
     // --- Input Handling ---
     const keys = {};
@@ -116,9 +120,8 @@
     window.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
     // --- Collision Helpers ---
-    // For player vs building/enemy collisions
+    // General collision detection (AABB)
     function isColliding(a, b) {
-      // For building, b.width and b.height exist; for player/enemy, we treat size as width and height.
       const widthA = a.size || a.width;
       const heightA = a.size || a.height;
       const widthB = b.size || b.width;
@@ -165,18 +168,86 @@
         player.y = prevY;
       }
 
-      // Keep player within canvas
+      // Keep player within canvas bounds
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
     }
 
-    // --- Check Collisions between Player and Enemies/Goal ---
+    // --- Line-of-Sight Helpers --- 
+    // Check if two line segments (p1 to p2 and p3 to p4) intersect
+    function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
+      const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+      if (denom === 0) return false;
+      const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
+      const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
+      return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
+    }
+
+    // Check if a line segment from (x1,y1) to (x2,y2) intersects a rectangle
+    function lineIntersectsRect(x1, y1, x2, y2, rect) {
+      const left = rect.x;
+      const right = rect.x + rect.width;
+      const top = rect.y;
+      const bottom = rect.y + rect.height;
+      // Check each edge of the rectangle
+      if (lineIntersectsLine(x1, y1, x2, y2, left, top, right, top)) return true;
+      if (lineIntersectsLine(x1, y1, x2, y2, right, top, right, bottom)) return true;
+      if (lineIntersectsLine(x1, y1, x2, y2, left, bottom, right, bottom)) return true;
+      if (lineIntersectsLine(x1, y1, x2, y2, left, top, left, bottom)) return true;
+      return false;
+    }
+
+    // Check if the line of sight between enemy and player is blocked by any building
+    function lineOfSightBlocked(enemy, player) {
+      const ex = enemy.x + enemy.size / 2;
+      const ey = enemy.y + enemy.size / 2;
+      const px = player.x + player.size / 2;
+      const py = player.y + player.size / 2;
+      for (let b of buildings) {
+        if (lineIntersectsRect(ex, ey, px, py, b)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // --- Enemy Vision ---
+    // Returns true if the enemy can "see" the player
+    function enemyCanSeePlayer(enemy, player) {
+      // Compute centers
+      const ex = enemy.x + enemy.size / 2;
+      const ey = enemy.y + enemy.size / 2;
+      const px = player.x + player.size / 2;
+      const py = player.y + player.size / 2;
+      const dx = px - ex;
+      const dy = py - ey;
+      const distance = Math.hypot(dx, dy);
+      const sightRange = 150; // Adjust sight range as desired
+      if (distance > sightRange) return false;
+
+      // Determine enemy's facing direction (from current position toward its target waypoint)
+      let edx = enemy.dir.x;
+      let edy = enemy.dir.y;
+      // Normalize vector from enemy to player
+      const pdx = dx / distance;
+      const pdy = dy / distance;
+      // Dot product to get cosine of the angle between enemy's facing direction and vector to player
+      const dot = edx * pdx + edy * pdy;
+      const fov = Math.cos(45 * Math.PI / 180); // 45° on either side (90° FOV)
+      if (dot < fov) return false;
+
+      // Finally, check if any building blocks the line of sight
+      if (lineOfSightBlocked(enemy, player)) return false;
+
+      return true;
+    }
+
+    // --- Check for Enemy Vision Detection & Goal ---
     function checkCollisions() {
+      // Instead of physical contact, check if any enemy can see the player.
       for (let enemy of enemies) {
-        const enemyRect = { x: enemy.x, y: enemy.y, size: enemy.size };
-        if (isColliding(player, enemyRect)) {
+        if (enemyCanSeePlayer(enemy, player)) {
           gameOver = true;
-          // Generate blood splat effect once
           if (!bloodSplats) {
             bloodSplats = generateBloodSplats(25);
           }
@@ -188,7 +259,7 @@
       }
     }
 
-    // --- Generate Blood Splatter Data (array of splat shapes) ---
+    // --- Generate Blood Splatter Data ---
     function generateBloodSplats(num) {
       const splats = [];
       for (let i = 0; i < num; i++) {
@@ -196,7 +267,6 @@
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           radius: Math.random() * 40 + 10,
-          // random irregularity: we can simulate by drawing arcs at varying angles
           startAngle: Math.random() * Math.PI * 2,
           endAngle: Math.random() * Math.PI * 2
         });
@@ -211,7 +281,6 @@
       ctx.fillStyle = 'red';
       for (let splat of bloodSplats) {
         ctx.beginPath();
-        // Use arc to create a splat-like circle
         ctx.arc(splat.x, splat.y, splat.radius, 0, Math.PI * 2);
         ctx.fill();
       }
@@ -230,11 +299,11 @@
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw buildings (city-like style)
+      // Draw buildings (with a city-like look)
       buildings.forEach(b => {
         ctx.fillStyle = b.color;
         ctx.fillRect(b.x, b.y, b.width, b.height);
-        // Optional: add windows for a city look
+        // Optional: add windows to enhance city look
         ctx.fillStyle = '#222';
         for (let i = 0; i < 5; i++) {
           for (let j = 0; j < 3; j++) {
@@ -254,7 +323,7 @@
       // Draw enemies
       enemies.forEach(enemy => enemy.draw());
 
-      // Show win/lose messages
+      // Display win/lose messages
       if (gameWin) {
         ctx.fillStyle = 'white';
         ctx.font = '48px sans-serif';
@@ -264,7 +333,6 @@
         ctx.fillStyle = 'white';
         ctx.font = '48px sans-serif';
         ctx.fillText('Game Over!', canvas.width / 2 - 120, canvas.height / 2);
-        // Draw blood splatter overlay
         if (bloodSplats) {
           drawBloodEffect();
         }
