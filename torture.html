@@ -38,8 +38,7 @@
       image-rendering: -webkit-optimize-contrast;
       image-rendering: pixelated;
     }
-    /* Video and overlay elements */
-    #deathGifOverlay, #introVideo, #womanExecutionVideo, #crashVideo {
+    #deathGifOverlay, #introVideo, #womanExecutionVideo, #crashVideo, #gingerDeathVideo {
       position: absolute;
       top: 0;
       left: 0;
@@ -50,9 +49,11 @@
     }
     #deathGifOverlay { z-index: 5; }
     #introVideo { z-index: 10; background: #000; }
+    #gingerDeathVideo { z-index: 10; background: #000; }
     #womanExecutionVideo { z-index: 11; background: #000; }
     #crashVideo { z-index: 12; background: #000; }
-    /* Title screen and menu styles */
+    
+    /* Title screen styles */
     #titleScreen {
       position: absolute;
       top: 0;
@@ -85,6 +86,8 @@
       background: #333;
       border-color: #666;
     }
+    
+    /* Menu styles */
     #mainMenu {
       position: absolute;
       top: 50%;
@@ -128,13 +131,13 @@
       display: none;
       z-index: 15;
     }
-    /* Clock image inside the gameplay area */
+    /* Clock image now inside the gameplay area (#gameWrapper) */
     #clockImg {
       position: absolute;
       top: 0;
       right: 0;
       z-index: 9999;
-      width: 110px;
+      width: 110px; /* 2x bigger */
       height: auto;
     }
   </style>
@@ -146,6 +149,7 @@
       <div id="titleText">CLOCKWORK DESOLATION</div>
       <button id="continueBtn">CONTINUE</button>
     </div>
+    
     <!-- Main Menu -->
     <div id="mainMenu">
       <button class="menu-btn" id="startBtn">START</button>
@@ -156,12 +160,15 @@
         </label>
       </div>
     </div>
+    
     <div id="speedrunClock">00:00:00</div>
     <div id="gameWrapper">
+      <!-- Clock Image now placed inside the gameplay area -->
       <img id="clockImg" src="clock12.png" alt="Clock">
       <canvas id="gameCanvas"></canvas>
       <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
       <video id="introVideo" src="gps.mp4" playsinline muted></video>
+      <video id="gingerDeathVideo" src="gingerdeath.mp4" playsinline muted></video>
       <video id="womanExecutionVideo" src="womanexecution.mp4" playsinline muted></video>
       <video id="crashVideo" src="crash.mp4" playsinline></video>
     </div>
@@ -172,25 +179,28 @@
   </audio>
   
   <script>
-    /***** MENU AND AUDIO INITIALIZATION *****/
+    // Menu system variables
     let gameStarted = false;
     let speedrunEnabled = false;
     let startTime = 0;
     let timerInterval = null;
     const menuMusic = document.getElementById('menuMusic');
-    menuMusic.volume = 0.5;
     
-    let audioContext, punchSoundBuffer;
+    menuMusic.volume = 0.5;
+  
+    // Audio system initialization
+    let audioContext;
+    let punchSoundBuffer;
     let audioInitialized = false;
     const audioPromises = [];
-    
+  
     document.getElementById('continueBtn').addEventListener('click', function() {
       menuMusic.play().catch(e => console.log("Audio play failed:", e));
       document.getElementById('titleScreen').style.display = 'none';
       document.getElementById('mainMenu').style.display = 'block';
       initAudio();
     });
-    
+  
     function initAudio() {
       if (audioInitialized) return;
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -206,7 +216,7 @@
         });
       audioPromises.push(loadPunchSound);
     }
-    
+  
     function playPunchSound() {
       if (!audioInitialized) {
         console.log("Audio not initialized yet");
@@ -225,7 +235,9 @@
       }
     }
     
+    // Global variable to keep track of last gingerscream index.
     let lastGingerScreamIndex = -1;
+    // Function to play a random gingerscream sound ensuring it's not the same as the last one.
     function playRandomGingerScream() {
       const screams = ["gingerscream1.mp3", "gingerscream2.mp3", "gingerscream3.mp3"];
       const availableIndices = screams.map((_, i) => i).filter(i => i !== lastGingerScreamIndex);
@@ -234,29 +246,30 @@
       const audio = new Audio(screams[chosenIndex]);
       audio.play().catch(e => console.log("Ginger scream audio play failed:", e));
     }
-    
+  
     document.getElementById('startBtn').addEventListener('click', function() {
       menuMusic.pause();
       startGame();
     });
     
     document.getElementById('settingsBtn').addEventListener('click', () => {
-      const settings = document.getElementById('settingsMenu');
-      settings.style.display = settings.style.display === 'block' ? 'none' : 'block';
+      document.getElementById('settingsMenu').style.display =
+        document.getElementById('settingsMenu').style.display === 'block' ? 'none' : 'block';
     });
     
     document.getElementById('speedrunToggle').addEventListener('change', (e) => {
       speedrunEnabled = e.target.checked;
       localStorage.setItem('speedrunEnabled', speedrunEnabled);
     });
-    
+  
     if (localStorage.getItem('speedrunEnabled') === 'true') {
       document.getElementById('speedrunToggle').checked = true;
       speedrunEnabled = true;
     }
-    
+  
     function startGame() {
       gameStarted = true;
+      // Hide title and menu elements when gameplay starts.
       document.getElementById('titleScreen').style.display = 'none';
       document.getElementById('mainMenu').style.display = 'none';
       const introVideo = document.getElementById('introVideo');
@@ -274,7 +287,7 @@
         gameLoop();
       });
     }
-    
+  
     function updateTimer() {
       const elapsed = Date.now() - startTime;
       const minutes = Math.floor(elapsed / 60000);
@@ -283,49 +296,55 @@
       document.getElementById('speedrunClock').textContent =
         `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
     }
-    
-    /***** GAME SETUP *****/
+  
+    // Game code
     const carImage = new Image();
     carImage.src = 'car1.png';
     let car = null;
-    
+  
     function setupCanvas() {
       const canvas = document.getElementById('gameCanvas');
       canvas.width = 800;
       canvas.height = 600;
     }
     setupCanvas();
-    
+  
     function handleResize() {
       const container = document.getElementById('gameContainer');
       const wrapper = document.getElementById('gameWrapper');
       const scale = Math.min(container.clientWidth / 800, container.clientHeight / 600);
       wrapper.style.setProperty('--game-scale', scale);
     }
-    
+  
     window.addEventListener('resize', handleResize);
     handleResize();
-    
+  
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    
+  
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
+    
     const newBackgroundImage = new Image();
     newBackgroundImage.src = 'fr.png';
-    let currentBackground = backgroundImage;
     
+    let currentBackground = backgroundImage;
+  
     const playerImage = new Image();
     playerImage.src = 'idle.png';
+  
     const punchImage = new Image();
     punchImage.src = 'punch.png';
+  
     const enemyDeadImage = new Image();
     enemyDeadImage.src = 'dead.png';
+  
     const enemyKneelingImage = new Image();
     enemyKneelingImage.src = 'kneeling.png';
+  
     const lyingImage = new Image();
     lyingImage.src = 'lying.png';
-    
+  
     const player = {
       x: 200,
       y: 500,
@@ -334,8 +353,12 @@
       speed: 5,
       isPunching: false
     };
-    
-    // Start with the default enemy (the “guy”)
+  
+    // The first enemy ("dude/guy/ginger") is handled via enemyActive with type "default".
+    // We add a flag for the first ape and an array to hold extra apes.
+    if (!window.firstApeSpawned) { window.firstApeSpawned = false; }
+    let extraApes = [];
+  
     let enemyActive = {
       x: 326.5,
       y: 194,
@@ -349,26 +372,25 @@
       health: 300,
       idleImage: new Image(),
       hitImage: new Image(),
-      type: 'default', // default enemy
-      hitCount: 0
+      type: 'default', // first enemy is the "ginger man"
+      hitCount: 0 // counter to track hits for playing the sound every 3 hits
     };
     enemyActive.idleImage.src = 'enemyidle.png';
     enemyActive.hitImage.src = 'hit.png';
-    
+  
     let enemyCorpse = null;
-    const extraApes = [];
-    
+  
     const walls = [
       { x: 1.5, y: 331, width: 250.5, height: 25 },
       { x: 342, y: 330, width: 500, height: 25 },
       { x: 153, y: 0, width: 25, height: 200 },
       { x: 0.5, y: 166, width: 75, height: 25 }
     ];
-    
+  
     const keys = {};
     document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
     document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-    
+  
     function isColliding(rect1, rect2) {
       return (
         rect1.x < rect2.x + rect2.width &&
@@ -377,7 +399,7 @@
         rect1.y + rect1.height > rect2.y
       );
     }
-    
+  
     function moveEntity(entity, dx, dy) {
       entity.x += dx;
       for (const wall of walls) {
@@ -394,17 +416,15 @@
         }
       }
     }
-    
+  
     function showDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'block';
     }
-    
+  
     function hideDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'none';
     }
     
-    /***** VIDEO FUNCTIONS *****/
-    // When the crash video ends, change the background, remove walls, and spawn the ape enemy(ies)
     function playCrashVideo() {
       const crashVideo = document.getElementById('crashVideo');
       crashVideo.style.display = 'block';
@@ -422,61 +442,11 @@
         walls.length = 0;
         car = null;
         enemyCorpse = null;
-        spawnApeEnemy(); // Spawn the ape enemy(ies)
+        spawnApeEnemy(); // spawn the initial ape
       };
     }
-    
-    // When the woman enemy is killed, her execution video plays.
-    // Once it finishes, the crash video is played.
-    function playWomanExecutionVideo() {
-      const womanVideo = document.getElementById('womanExecutionVideo');
-      womanVideo.style.display = 'block';
-      womanVideo.currentTime = 0;
-      womanVideo.volume = 1.0;
-      const playPromise = womanVideo.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error("Error playing woman execution video:", error);
-        });
-      }
-      womanVideo.onended = () => {
-        womanVideo.style.display = 'none';
-        playCrashVideo();
-      }
-    }
-    
-    /***** ENEMY SPAWNING FUNCTIONS *****/
-    // Spawns the woman enemy. This is called when the default enemy dies.
-    function spawnNewEnemy() {
-      enemyActive = {
-        x: 518,
-        y: 475,
-        width: 50,
-        height: 50,
-        isHurt: false,
-        knockbackVelocity: { x: 0, y: 0 },
-        knockbackDuration: 0,
-        isDead: false,
-        deathState: '',
-        health: 300,
-        idleImage: new Image(),
-        hitImage: new Image(),
-        type: 'woman'
-      };
-      enemyActive.idleImage.src = 'woman.png';
-      enemyActive.hitImage.src = 'womanhit.png';
-      
-      // Optionally, set up the car if it is part of the woman enemy sequence.
-      car = {
-        x: 600,
-        y: 460,
-        width: 150,
-        height: 80,
-        image: carImage
-      };
-    }
-    
-    // Spawns an ape enemy.
+  
+    // This function spawns an ape enemy at the default position (used in playCrashVideo)
     function spawnApeEnemy() {
       enemyActive = {
         x: 400,
@@ -499,8 +469,8 @@
       enemyActive.idleImage.src = 'ape.png';
       enemyActive.hitImage.src = 'chimphurt.png';
     }
-    
-    // Helper: spawn additional apes if needed.
+  
+    // New helper function to spawn an extra ape enemy at a given position.
     function spawnApeEnemyWithPosition(x, y) {
       let newApe = {
         x: x,
@@ -524,9 +494,9 @@
       newApe.hitImage.src = 'chimphurt.png';
       extraApes.push(newApe);
     }
-    
-    /***** ATTACK FUNCTION *****/
+  
     let lastAttackTime = 0;
+    // Modified attack() to check both enemyActive and extraApes.
     function attack() {
       let targets = [];
       if (enemyActive && !enemyActive.isDead) { targets.push(enemyActive); }
@@ -550,6 +520,7 @@
           player.isPunching = true;
           setTimeout(() => { player.isPunching = false; }, 200);
           
+          // For the first enemy (type "default" on enemyActive), increment hit counter and play sound every 3 hits.
           if (target === enemyActive && target.type === 'default') {
             target.hitCount = (target.hitCount || 0) + 1;
             if (target.hitCount % 3 === 0) {
@@ -566,31 +537,95 @@
           target.knockbackDuration = knockbackDuration;
           target.health -= 10;
           
-          if (target.health <= 0) {
-            target.health = 0;
-            target.isDead = true;
-            // For default enemy, show death animation then spawn woman enemy.
-            if (target.type === 'default') {
-              target.deathState = 'dead';
-              setTimeout(() => {
-                // After death animation, spawn the woman enemy.
-                spawnNewEnemy();
-              }, 2000);
+          // Special handling for ape enemy:
+          if (target.type === 'ape') {
+            if (target.health > 0) {
+              target.hitImage.src = 'chimphurt.png';
+              target.isFleeing = true;
+              target.fleeingDuration = 120;
+              setTimeout(() => { target.isHurt = false; }, 2000);
+            } else {
+              target.health = 0;
+              target.isDead = true;
+              target.idleImage.src = 'placeholder.jpg';
+              // Only for the initial ape (enemyActive), spawn extra apes separated by 100px.
+              if (target === enemyActive && !window.firstApeSpawned) {
+                window.firstApeSpawned = true;
+                spawnApeEnemyWithPosition(target.x - 100, target.y);
+                spawnApeEnemyWithPosition(target.x + 100, target.y);
+              }
             }
-            // For woman enemy, do not show any death image – immediately play her video.
-            else if (target.type === 'woman') {
-              enemyActive = null; // Remove from rendering
-              playWomanExecutionVideo();
+          } else {
+            if (target.health <= 0) {
+              target.health = 0;
+              target.isDead = true;
+              if (target.type === 'woman') {
+                // Woman enemy: set kill image and after a 5-second delay play the crash video.
+                target.idleImage.src = "womandead.png";
+                setTimeout(() => {
+                  playCrashVideo();
+                }, 5000);
+              } else if (target.type === 'default') {
+                // Ginger man: play the ginger death video.
+                let gingerDeathVideo = document.getElementById('gingerDeathVideo');
+                gingerDeathVideo.style.display = 'block';
+                gingerDeathVideo.currentTime = 0;
+                gingerDeathVideo.play();
+                gingerDeathVideo.onended = () => {
+                  gingerDeathVideo.style.display = 'none';
+                  spawnNewEnemy();
+                };
+              } else {
+                target.deathState = 'dead';
+                setTimeout(() => { target.deathState = 'kneeling'; }, 2500);
+                setTimeout(() => {
+                  showDeathGif();
+                  setTimeout(() => {
+                    hideDeathGif();
+                    target.deathState = 'lying';
+                    enemyCorpse = target;
+                    if (target.type === 'default') {
+                      spawnNewEnemy();
+                    }
+                  }, 5000);
+                }, 4000);
+              }
             }
-            // (Other enemy types can be handled here if needed.)
           }
-          
           lastAttackTime = now;
         }
       });
       setTimeout(() => { targets.forEach(t => { t.isHurt = false; }); }, 1000);
     }
-    
+  
+    function spawnNewEnemy() {
+      enemyActive = {
+        x: 518,
+        y: 475,
+        width: 50,
+        height: 50,
+        isHurt: false,
+        knockbackVelocity: { x: 0, y: 0 },
+        knockbackDuration: 0,
+        isDead: false,
+        deathState: '',
+        health: 300,
+        idleImage: new Image(),
+        hitImage: new Image(),
+        type: 'woman'
+      };
+      enemyActive.idleImage.src = 'woman.png';
+      enemyActive.hitImage.src = 'womanhit.png';
+  
+      car = {
+        x: 600,
+        y: 460,
+        width: 150,
+        height: 80,
+        image: carImage
+      };
+    }
+  
     function getDistanceBetween(entity1, entity2) {
       const x1 = entity1.x + entity1.width / 2;
       const y1 = entity1.y + entity1.height / 2;
@@ -601,7 +636,8 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
     
-    /***** CLOCK VISIBILITY *****/
+    // New function to update clock image visibility.
+    // The clock will only display during gameplay.
     function updateClockVisibility() {
       const clockImg = document.getElementById('clockImg');
       if (
@@ -618,8 +654,7 @@
         clockImg.style.display = 'none';
       }
     }
-    
-    /***** GAME LOOP *****/
+  
     function update() {
       if (!gameStarted || document.getElementById('introVideo').style.display === 'block') return;
       
@@ -658,7 +693,9 @@
             enemyActive.isFleeing = false;
           }
         } else {
-          if (enemyActive.type !== 'ape') {
+          if (enemyActive.type === 'ape') {
+            // Ape stands still when not fleeing.
+          } else {
             if (Math.random() < 0.02) {
               const randX = Math.random() * 6 - 3;
               const randY = Math.random() * 6 - 3;
@@ -669,7 +706,7 @@
         enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
         enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
       }
-      
+      // Update extra ape enemies.
       extraApes.forEach(ape => {
         if (!ape.isDead) {
           if (ape.knockbackDuration > 0) {
@@ -705,9 +742,10 @@
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       
+      // Update clock image visibility.
       updateClockVisibility();
     }
-    
+  
     function draw() {
       ctx.fillStyle = 'black';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -715,7 +753,7 @@
       if (currentBackground.complete) {
         ctx.drawImage(currentBackground, 0, 0, 800, 600);
       }
-      
+  
       if (enemyCorpse) {
         if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
           ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
@@ -725,25 +763,26 @@
           ctx.drawImage(enemyKneelingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
         }
       }
-      
+  
       if (car && car.image.complete) {
         ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
       }
-      
+  
       if (enemyActive) {
         if (enemyActive.isDead) {
-          // For the woman enemy we do not draw a death image.
-          if (enemyActive.type !== 'woman') {
-            if (enemyActive.type === 'ape') {
-              if (enemyActive.idleImage.complete) {
-                ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-              }
-            } else {
-              if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
-                ctx.drawImage(enemyDeadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-              } else if (enemyActive.deathState === 'kneeling' && enemyKneelingImage.complete) {
-                ctx.drawImage(enemyKneelingImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-              }
+          if (enemyActive.type === 'woman') {
+            if (enemyActive.idleImage.complete) {
+              ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            }
+          } else if (enemyActive.type === 'ape') {
+            if (enemyActive.idleImage.complete) {
+              ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            }
+          } else {
+            if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
+              ctx.drawImage(enemyDeadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
+            } else if (enemyActive.deathState === 'kneeling' && enemyKneelingImage.complete) {
+              ctx.drawImage(enemyKneelingImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
             }
           }
         } else {
@@ -756,7 +795,8 @@
           }
         }
       }
-      
+  
+      // Draw extra ape enemies.
       extraApes.forEach(ape => {
         if (ape.isDead) {
           if (ape.idleImage.complete) {
@@ -772,26 +812,27 @@
           }
         }
       });
-      
+  
       if (player.isPunching && punchImage.complete) {
         ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
       } else if (playerImage.complete) {
         ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
       }
     }
-    
+  
     const crashVideo = document.getElementById('crashVideo');
     document.addEventListener('click', function enableAudio() {
       crashVideo.volume = 1.0;
       document.removeEventListener('click', enableAudio);
     }, { once: true });
-    
+  
     function gameLoop() {
       update();
       draw();
       requestAnimationFrame(gameLoop);
     }
     
+    // Always update clock visibility.
     setInterval(updateClockVisibility, 100);
   </script>
 </body>
