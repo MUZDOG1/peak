@@ -38,6 +38,7 @@
       image-rendering: -webkit-optimize-contrast;
       image-rendering: pixelated;
     }
+    /* Video and GIF overlays */
     #deathGifOverlay, #introVideo, #gingerDeathVideo, #womanExecutionVideo, #crashVideo {
       position: absolute;
       top: 0;
@@ -131,13 +132,13 @@
       display: none;
       z-index: 15;
     }
-    /* Clock image now inside the gameplay area (#gameWrapper) */
+    /* Clock image inside gameplay area */
     #clockImg {
       position: absolute;
       top: 0;
       right: 0;
       z-index: 9999;
-      width: 110px; /* 2x bigger */
+      width: 110px;
       height: auto;
     }
   </style>
@@ -163,7 +164,7 @@
     
     <div id="speedrunClock">00:00:00</div>
     <div id="gameWrapper">
-      <!-- Clock Image now placed inside the gameplay area -->
+      <!-- Clock Image -->
       <img id="clockImg" src="clock12.png" alt="Clock">
       <canvas id="gameCanvas"></canvas>
       <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
@@ -179,7 +180,9 @@
   </audio>
   
   <script>
-    // Menu system variables
+    // -------------------------------
+    // Menu & Audio Initialization
+    // -------------------------------
     let gameStarted = false;
     let speedrunEnabled = false;
     let startTime = 0;
@@ -188,7 +191,6 @@
     
     menuMusic.volume = 0.5;
   
-    // Audio system initialization
     let audioContext;
     let punchSoundBuffer;
     let audioInitialized = false;
@@ -235,9 +237,10 @@
       }
     }
     
-    // Global variable to keep track of last gingerscream index.
+    // -------------------------------
+    // Scream Audio for Ginger Man
+    // -------------------------------
     let lastGingerScreamIndex = -1;
-    // Function to play a random gingerscream sound ensuring it's not the same as the last one.
     function playRandomGingerScream() {
       const screams = ["gingerscream1.mp3", "gingerscream2.mp3", "gingerscream3.mp3"];
       const availableIndices = screams.map((_, i) => i).filter(i => i !== lastGingerScreamIndex);
@@ -247,6 +250,9 @@
       audio.play().catch(e => console.log("Ginger scream audio play failed:", e));
     }
   
+    // -------------------------------
+    // Menu Event Listeners
+    // -------------------------------
     document.getElementById('startBtn').addEventListener('click', function() {
       menuMusic.pause();
       startGame();
@@ -267,9 +273,11 @@
       speedrunEnabled = true;
     }
   
+    // -------------------------------
+    // Start Game & Timer Functions
+    // -------------------------------
     function startGame() {
       gameStarted = true;
-      // Hide title and menu elements when gameplay starts.
       document.getElementById('titleScreen').style.display = 'none';
       document.getElementById('mainMenu').style.display = 'none';
       const introVideo = document.getElementById('introVideo');
@@ -297,7 +305,9 @@
         `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
     }
   
-    // Game code
+    // -------------------------------
+    // Canvas & Resizing Setup
+    // -------------------------------
     const carImage = new Image();
     carImage.src = 'car1.png';
     let car = null;
@@ -322,6 +332,9 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
   
+    // -------------------------------
+    // Image Assets
+    // -------------------------------
     const backgroundImage = new Image();
     backgroundImage.src = 'house_background.png';
     
@@ -345,6 +358,9 @@
     const lyingImage = new Image();
     lyingImage.src = 'lying.png';
   
+    // -------------------------------
+    // Player Object
+    // -------------------------------
     const player = {
       x: 200,
       y: 500,
@@ -354,11 +370,13 @@
       isPunching: false
     };
   
-    // The first enemy ("dude/guy/ginger") is handled via enemyActive with type "default".
-    // We add a flag for the first ape and an array to hold extra apes.
+    // -------------------------------
+    // Enemy Initialization
+    // -------------------------------
     if (!window.firstApeSpawned) { window.firstApeSpawned = false; }
     let extraApes = [];
   
+    // enemyActive is the currently active enemy.
     let enemyActive = {
       x: 326.5,
       y: 194,
@@ -372,12 +390,13 @@
       health: 300,
       idleImage: new Image(),
       hitImage: new Image(),
-      type: 'default', // first enemy is the "ginger man"
-      hitCount: 0 // counter to track hits for playing the sound every 3 hits
+      type: 'default', // "ginger man"
+      hitCount: 0 // for triggering scream sound every 3 hits
     };
     enemyActive.idleImage.src = 'enemyidle.png';
     enemyActive.hitImage.src = 'hit.png';
   
+    // This object holds the corpse data once an enemy dies.
     let enemyCorpse = null;
   
     const walls = [
@@ -387,6 +406,9 @@
       { x: 0.5, y: 166, width: 75, height: 25 }
     ];
   
+    // -------------------------------
+    // Input & Collision Functions
+    // -------------------------------
     const keys = {};
     document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
     document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
@@ -417,6 +439,9 @@
       }
     }
   
+    // -------------------------------
+    // Helper Functions for Effects
+    // -------------------------------
     function showDeathGif() {
       document.getElementById('deathGifOverlay').style.display = 'block';
     }
@@ -425,6 +450,7 @@
       document.getElementById('deathGifOverlay').style.display = 'none';
     }
     
+    // Plays the crash video, then changes background and spawns the first ape.
     function playCrashVideo() {
       const crashVideo = document.getElementById('crashVideo');
       crashVideo.style.display = 'block';
@@ -442,11 +468,11 @@
         walls.length = 0;
         car = null;
         enemyCorpse = null;
-        spawnApeEnemy(); // spawn the initial ape
+        spawnApeEnemy(); // Spawn initial ape enemy.
       };
     }
   
-    // This function spawns an ape enemy at the default position (used in playCrashVideo)
+    // Spawns an ape enemy at the default position (used after crash video).
     function spawnApeEnemy() {
       enemyActive = {
         x: 400,
@@ -470,7 +496,7 @@
       enemyActive.hitImage.src = 'chimphurt.png';
     }
   
-    // New helper function to spawn an extra ape enemy at a given position.
+    // Spawns an extra ape enemy at a given position.
     function spawnApeEnemyWithPosition(x, y) {
       let newApe = {
         x: x,
@@ -495,8 +521,10 @@
       extraApes.push(newApe);
     }
   
+    // -------------------------------
+    // Attack Function
+    // -------------------------------
     let lastAttackTime = 0;
-    // Modified attack() to check both enemyActive and extraApes.
     function attack() {
       let targets = [];
       if (enemyActive && !enemyActive.isDead) { targets.push(enemyActive); }
@@ -520,7 +548,7 @@
           player.isPunching = true;
           setTimeout(() => { player.isPunching = false; }, 200);
           
-          // For the first enemy (type "default" on enemyActive), increment hit counter and play sound every 3 hits.
+          // For default enemy ("ginger man")
           if (target === enemyActive && target.type === 'default') {
             target.hitCount = (target.hitCount || 0) + 1;
             if (target.hitCount % 3 === 0) {
@@ -537,7 +565,7 @@
           target.knockbackDuration = knockbackDuration;
           target.health -= 10;
           
-          // Special handling for ape enemy:
+          // Handling for ape enemy
           if (target.type === 'ape') {
             if (target.health > 0) {
               target.hitImage.src = 'chimphurt.png';
@@ -548,7 +576,6 @@
               target.health = 0;
               target.isDead = true;
               target.idleImage.src = 'placeholder.jpg';
-              // Only for the initial ape (enemyActive), spawn extra apes separated by 100px.
               if (target === enemyActive && !window.firstApeSpawned) {
                 window.firstApeSpawned = true;
                 spawnApeEnemyWithPosition(target.x - 100, target.y);
@@ -559,27 +586,32 @@
             if (target.health <= 0) {
               target.health = 0;
               target.isDead = true;
+              // Woman enemy branch: play death video and then spawn corpse.
               if (target.type === 'woman') {
-                // For the woman enemy: play her death video.
                 const womanVideo = document.getElementById('womanExecutionVideo');
                 womanVideo.style.display = 'block';
                 womanVideo.currentTime = 0;
                 womanVideo.play();
                 womanVideo.onended = () => {
                   womanVideo.style.display = 'none';
-                  // After a 5-second delay, play the crash video.
+                  // Set the enemy as corpse with deathState "lying"
+                  enemyCorpse = target;
+                  enemyCorpse.deathState = 'lying';
+                  // After 5-second delay, play crash video
                   setTimeout(() => {
                     playCrashVideo();
                   }, 5000);
                 };
               } else if (target.type === 'default') {
-                // Ginger man: play the ginger death video.
+                // Default enemy branch: play death video and spawn corpse
                 let gingerDeathVideo = document.getElementById('gingerDeathVideo');
                 gingerDeathVideo.style.display = 'block';
                 gingerDeathVideo.currentTime = 0;
                 gingerDeathVideo.play();
                 gingerDeathVideo.onended = () => {
                   gingerDeathVideo.style.display = 'none';
+                  enemyCorpse = target;
+                  enemyCorpse.deathState = 'lying';
                   spawnNewEnemy();
                 };
               } else {
@@ -605,6 +637,7 @@
       setTimeout(() => { targets.forEach(t => { t.isHurt = false; }); }, 1000);
     }
   
+    // Spawns a new enemy (in this case, a woman enemy) and sets up the car.
     function spawnNewEnemy() {
       enemyActive = {
         x: 518,
@@ -633,6 +666,9 @@
       };
     }
   
+    // -------------------------------
+    // Utility & Rendering Functions
+    // -------------------------------
     function getDistanceBetween(entity1, entity2) {
       const x1 = entity1.x + entity1.width / 2;
       const y1 = entity1.y + entity1.height / 2;
@@ -643,8 +679,6 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
     
-    // New function to update clock image visibility.
-    // The clock will only display during gameplay.
     function updateClockVisibility() {
       const clockImg = document.getElementById('clockImg');
       if (
@@ -713,7 +747,6 @@
         enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
         enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
       }
-      // Update extra ape enemies.
       extraApes.forEach(ape => {
         if (!ape.isDead) {
           if (ape.knockbackDuration > 0) {
@@ -749,7 +782,6 @@
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       
-      // Update clock image visibility.
       updateClockVisibility();
     }
   
@@ -803,7 +835,6 @@
         }
       }
   
-      // Draw extra ape enemies.
       extraApes.forEach(ape => {
         if (ape.isDead) {
           if (ape.idleImage.complete) {
@@ -839,9 +870,45 @@
       requestAnimationFrame(gameLoop);
     }
     
-    // Always update clock visibility.
     setInterval(updateClockVisibility, 100);
   </script>
+  
+  <!--
+  Code Notes for Next AI:
+  
+  1. **Menu & Audio Initialization:**  
+     - Sets up the title screen, main menu, and initializes audio (including punch sound and background music).
+  
+  2. **Scream Audio for Ginger Man:**  
+     - Plays one of several scream sounds every three hits for the default enemy.
+  
+  3. **Menu Event Listeners:**  
+     - Controls the transition from title to main menu and the toggling of the speedrun clock.
+  
+  4. **Start Game & Timer Functions:**  
+     - Manages the intro video, starting the game loop, and updating the speedrun clock timer.
+  
+  5. **Canvas & Resizing Setup:**  
+     - Sets the canvas size and handles scaling for responsiveness.
+  
+  6. **Image Assets & Player/Enemy Initialization:**  
+     - Loads images for the background, player, and enemy states. The active enemy is stored in `enemyActive` and any dying enemy becomes `enemyCorpse`.
+  
+  7. **Collision & Input Functions:**  
+     - Manages player input, collision detection, and entity movement.
+  
+  8. **Attack Function:**  
+     - Checks for nearby enemies when the attack key (space) is pressed.  
+     - For ape enemies, processes knockback and fleeing behavior.  
+     - For the default (ginger man) and woman enemies, plays a death video upon reaching 0 health, assigns a corpse (with `deathState = 'lying'`), and then triggers either `spawnNewEnemy()` or the crash video sequence.
+  
+  9. **Utility & Rendering Functions:**  
+     - Continuously updates the game state, draws the game elements (background, enemies, corpses, player, etc.), and manages the clock visibility.
+  
+  10. **Game Loop:**  
+      - Calls `update()` and `draw()` repeatedly to animate the game.
+  
+  -->
 </body>
 </html>
 
