@@ -434,7 +434,7 @@
           // For the first enemy (type "default" on enemyActive), increment hit counter and play sound every 2 hits.
           if (target === enemyActive && target.type === 'default') {
             target.hitCount = (target.hitCount || 0) + 1;
-            if (target.hitCount % 2 === 0) {
+            if (target.hitCount % 3 === 0) {
               playRandomGingerScream();
             }
           }
