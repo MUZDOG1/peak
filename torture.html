@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Basic Manhunt-Style Game</title>
+  <title>Advanced Manhunt-Style Game</title>
   <style>
     body {
       margin: 0;
@@ -10,7 +10,7 @@
     }
     canvas {
       display: block;
-      background: #222;
+      background: #333;
       margin: 0 auto;
     }
   </style>
@@ -18,11 +18,10 @@
 <body>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
-    // Get canvas and context
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Game objects
+    // Player setup
     const player = {
       x: 50,
       y: 50,
@@ -31,16 +30,7 @@
       speed: 3
     };
 
-    const enemy = {
-      x: 700,
-      y: 500,
-      size: 20,
-      color: 'red',
-      speed: 2,
-      // Starting movement: to the left
-      direction: { x: -1, y: 0 }
-    };
-
+    // Goal setup
     const goal = {
       x: 750,
       y: 50,
@@ -48,78 +38,191 @@
       color: 'yellow'
     };
 
+    // Building obstacles (not passable)
+    const buildings = [
+      { x: 200, y: 100, width: 150, height: 100, color: '#555' },
+      { x: 500, y: 300, width: 200, height: 150, color: '#555' },
+      // Add more buildings if desired
+      { x: 100, y: 400, width: 120, height: 100, color: '#555' }
+    ];
+
+    // Enemies with patrol paths
+    class Enemy {
+      constructor(path, speed, color) {
+        this.path = path; // Array of waypoints: { x, y }
+        this.speed = speed;
+        this.color = color;
+        // Start at the first waypoint
+        this.x = path[0].x;
+        this.y = path[0].y;
+        this.size = 20;
+        this.currentWaypoint = 1;
+      }
+
+      update() {
+        // Determine target waypoint
+        const target = this.path[this.currentWaypoint];
+        // Calculate direction vector
+        let dx = target.x - this.x;
+        let dy = target.y - this.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance < 2) {
+          // Arrived at waypoint; move to next
+          this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
+        } else {
+          // Normalize direction and move
+          dx /= distance;
+          dy /= distance;
+          const newX = this.x + dx * this.speed;
+          const newY = this.y + dy * this.speed;
+          // Check for collisions with buildings before moving
+          if (!collidesWithBuildings({ x: newX, y: this.y, size: this.size })) {
+            this.x = newX;
+          }
+          if (!collidesWithBuildings({ x: this.x, y: newY, size: this.size })) {
+            this.y = newY;
+          }
+        }
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+      }
+    }
+
+    // Define patrol paths for two enemies.
+    // Enemy 1 patrols around the first building.
+    const enemy1Path = [
+      { x: 200, y: 50 },
+      { x: 370, y: 50 },
+      { x: 370, y: 220 },
+      { x: 200, y: 220 }
+    ];
+    // Enemy 2 patrols around the second building.
+    const enemy2Path = [
+      { x: 500, y: 260 },
+      { x: 710, y: 260 },
+      { x: 710, y: 480 },
+      { x: 500, y: 480 }
+    ];
+
+    const enemies = [
+      new Enemy(enemy1Path, 2, 'red'),
+      new Enemy(enemy2Path, 2, 'orange')
+    ];
+
     // Game state flags
     let gameOver = false;
     let gameWin = false;
 
-    // Track key presses
+    // Track keys pressed
     const keys = {};
     window.addEventListener('keydown', (e) => { keys[e.key] = true; });
     window.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
-    // Update game logic
-    function update() {
-      if (gameOver || gameWin) return;
+    // Helper: Check collision between two AABB rectangles
+    function isColliding(a, b) {
+      return a.x < b.x + b.width &&
+             a.x + a.size > b.x &&
+             a.y < b.y + b.height &&
+             a.y + a.size > b.y;
+    }
 
-      // Move player with arrow keys or WASD
-      if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
-      if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
-      if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
-      if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+    // Check collision for an object with all buildings
+    // The object here is expected to have x, y, size properties
+    function collidesWithBuildings(obj) {
+      for (let building of buildings) {
+        if (isColliding(obj, building)) {
+          return true;
+        }
+      }
+      return false;
+    }
 
-      // Keep player inside canvas bounds
+    // Update player movement with collision resolution (axis-aligned)
+    function updatePlayer() {
+      let prevX = player.x;
+      let prevY = player.y;
+
+      // Move horizontally and check collision
+      if (keys['ArrowLeft'] || keys['a']) {
+        player.x -= player.speed;
+      }
+      if (keys['ArrowRight'] || keys['d']) {
+        player.x += player.speed;
+      }
+      if (collidesWithBuildings(player)) {
+        player.x = prevX; // revert horizontal move
+      }
+
+      // Move vertically and check collision
+      if (keys['ArrowUp'] || keys['w']) {
+        player.y -= player.speed;
+      }
+      if (keys['ArrowDown'] || keys['s']) {
+        player.y += player.speed;
+      }
+      if (collidesWithBuildings(player)) {
+        player.y = prevY; // revert vertical move
+      }
+
+      // Keep player within canvas bounds
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+    }
 
-      // Update enemy position
-      enemy.x += enemy.speed * enemy.direction.x;
-      enemy.y += enemy.speed * enemy.direction.y;
-
-      // Bounce enemy off the canvas edges by reversing its direction
-      if (enemy.x <= 0 || enemy.x >= canvas.width - enemy.size) {
-        enemy.direction.x *= -1;
+    // Check collisions: player with enemies and goal
+    function checkCollisions() {
+      // Player and enemies
+      for (let enemy of enemies) {
+        const enemyRect = { x: enemy.x, y: enemy.y, size: enemy.size, width: enemy.size, height: enemy.size };
+        if (isColliding(player, enemyRect)) {
+          gameOver = true;
+        }
       }
-      if (enemy.y <= 0 || enemy.y >= canvas.height - enemy.size) {
-        enemy.direction.y *= -1;
-      }
-
-      // Check collision between player and enemy
-      if (isColliding(player, enemy)) {
-        gameOver = true;
-      }
-
-      // Check collision between player and goal
-      if (isColliding(player, goal)) {
+      // Player and goal (goal treated as a rectangle)
+      const goalRect = { x: goal.x, y: goal.y, size: goal.size, width: goal.size, height: goal.size };
+      if (isColliding(player, goalRect)) {
         gameWin = true;
       }
     }
 
-    // Basic AABB collision detection
-    function isColliding(a, b) {
-      return a.x < b.x + b.size &&
-             a.x + a.size > b.x &&
-             a.y < b.y + b.size &&
-             a.y + a.size > b.y;
+    // Main update function
+    function update() {
+      if (gameOver || gameWin) return;
+      updatePlayer();
+      for (let enemy of enemies) {
+        enemy.update();
+      }
+      checkCollisions();
     }
 
-    // Draw game objects and messages
+    // Draw game objects
     function draw() {
-      // Clear the canvas
+      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw player
-      ctx.fillStyle = player.color;
-      ctx.fillRect(player.x, player.y, player.size, player.size);
-
-      // Draw enemy
-      ctx.fillStyle = enemy.color;
-      ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+      // Draw buildings
+      for (let building of buildings) {
+        ctx.fillStyle = building.color;
+        ctx.fillRect(building.x, building.y, building.width, building.height);
+      }
 
       // Draw goal
       ctx.fillStyle = goal.color;
       ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
 
-      // Display messages if game is over or won
+      // Draw player
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.size, player.size);
+
+      // Draw enemies
+      for (let enemy of enemies) {
+        enemy.draw();
+      }
+
+      // Display messages for win/lose
       if (gameOver) {
         ctx.fillStyle = 'white';
         ctx.font = '48px sans-serif';
@@ -132,7 +235,7 @@
       }
     }
 
-    // Main game loop using requestAnimationFrame
+    // Main game loop
     function gameLoop() {
       update();
       draw();
@@ -141,7 +244,7 @@
       }
     }
 
-    // Start the game
+    // Start the game loop
     gameLoop();
   </script>
 </body>
