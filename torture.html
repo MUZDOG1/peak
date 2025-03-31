@@ -440,7 +440,7 @@
         walls.length = 0;
         car = null;
         enemyCorpse = null;
-        spawnApeEnemy(); // spawn the initial ape
+        spawnApeEnemy(); // spawn the initial ape enemy(s)
       };
     }
     
@@ -458,7 +458,8 @@
       }
       womanVideo.onended = () => {
         womanVideo.style.display = 'none';
-        spawnNewEnemy();
+        // When the woman video finishes, play the crash video which will spawn apes.
+        playCrashVideo();
       }
     }
   
@@ -536,7 +537,7 @@
           player.isPunching = true;
           setTimeout(() => { player.isPunching = false; }, 200);
           
-          // For the first enemy (type "default" on enemyActive), increment hit counter and play sound every 3 hits.
+          // For the first enemy (type "default") increment hit counter and play sound every 3 hits.
           if (target === enemyActive && target.type === 'default') {
             target.hitCount = (target.hitCount || 0) + 1;
             if (target.hitCount % 3 === 0) {
@@ -564,7 +565,6 @@
               target.health = 0;
               target.isDead = true;
               target.idleImage.src = 'placeholder.jpg';
-              // Only for the initial ape (enemyActive), spawn extra apes separated by 100px.
               if (target === enemyActive && !window.firstApeSpawned) {
                 window.firstApeSpawned = true;
                 spawnApeEnemyWithPosition(target.x - 100, target.y);
@@ -577,11 +577,9 @@
               target.health = 0;
               target.isDead = true;
               if (target.type === 'woman') {
-                // Instead of showing a death image, remove the enemy from rendering.
+                // Remove woman from rendering and play her execution video immediately.
                 enemyActive = null;
-                setTimeout(() => {
-                  playWomanExecutionVideo();
-                }, 5000);
+                playWomanExecutionVideo();
               } else {
                 target.deathState = 'dead';
                 setTimeout(() => { target.deathState = 'kneeling'; }, 2500);
@@ -592,7 +590,8 @@
                     target.deathState = 'lying';
                     enemyCorpse = target;
                     if (target.type === 'default') {
-                      spawnNewEnemy();
+                      // For default enemy, you might spawn a new one here.
+                      // spawnNewEnemy();
                     }
                   }, 5000);
                 }, 4000);
@@ -605,34 +604,6 @@
       setTimeout(() => { targets.forEach(t => { t.isHurt = false; }); }, 1000);
     }
   
-    function spawnNewEnemy() {
-      enemyActive = {
-        x: 518,
-        y: 475,
-        width: 50,
-        height: 50,
-        isHurt: false,
-        knockbackVelocity: { x: 0, y: 0 },
-        knockbackDuration: 0,
-        isDead: false,
-        deathState: '',
-        health: 300,
-        idleImage: new Image(),
-        hitImage: new Image(),
-        type: 'woman'
-      };
-      enemyActive.idleImage.src = 'woman.png';
-      enemyActive.hitImage.src = 'womanhit.png';
-  
-      car = {
-        x: 600,
-        y: 460,
-        width: 150,
-        height: 80,
-        image: carImage
-      };
-    }
-  
     function getDistanceBetween(entity1, entity2) {
       const x1 = entity1.x + entity1.width / 2;
       const y1 = entity1.y + entity1.height / 2;
@@ -643,8 +614,7 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
     
-    // New function to update clock image visibility.
-    // The clock will only display during gameplay.
+    // Update clock image visibility based on active game elements.
     function updateClockVisibility() {
       const clockImg = document.getElementById('clockImg');
       if (
@@ -700,9 +670,7 @@
             enemyActive.isFleeing = false;
           }
         } else {
-          if (enemyActive.type === 'ape') {
-            // Ape stands still when not fleeing.
-          } else {
+          if (enemyActive.type !== 'ape') {
             if (Math.random() < 0.02) {
               const randX = Math.random() * 6 - 3;
               const randY = Math.random() * 6 - 3;
@@ -749,7 +717,6 @@
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       
-      // Update clock image visibility.
       updateClockVisibility();
     }
   
@@ -803,7 +770,6 @@
         }
       }
   
-      // Draw extra ape enemies.
       extraApes.forEach(ape => {
         if (ape.isDead) {
           if (ape.idleImage.complete) {
@@ -839,7 +805,6 @@
       requestAnimationFrame(gameLoop);
     }
     
-    // Always update clock visibility.
     setInterval(updateClockVisibility, 100);
   </script>
 </body>
