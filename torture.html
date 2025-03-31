@@ -238,7 +238,7 @@
     }
     
     // -------------------------------
-    // Scream Audio for Ginger Man
+    // Scream Audio for Ginger Dude (the man enemy)
     // -------------------------------
     let lastGingerScreamIndex = -1;
     function playRandomGingerScream() {
@@ -377,6 +377,7 @@
     let extraApes = [];
   
     // enemyActive is the currently active enemy.
+    // "ginger dude" is the man enemy.
     let enemyActive = {
       x: 326.5,
       y: 194,
@@ -390,14 +391,16 @@
       health: 300,
       idleImage: new Image(),
       hitImage: new Image(),
-      type: 'default', // "ginger man"
-      hitCount: 0 // for triggering scream sound every 3 hits
+      type: 'default', // "ginger dude" (the man enemy)
+      hitCount: 0 // triggers scream sound every 3 hits
     };
     enemyActive.idleImage.src = 'enemyidle.png';
     enemyActive.hitImage.src = 'hit.png';
   
-    // This object holds the corpse data once an enemy dies.
-    let enemyCorpse = null;
+    // -------------------------------
+    // Corpse Array to store dead enemies
+    // -------------------------------
+    let corpseArray = [];
   
     const walls = [
       { x: 1.5, y: 331, width: 250.5, height: 25 },
@@ -467,7 +470,7 @@
         currentBackground = newBackgroundImage;
         walls.length = 0;
         car = null;
-        enemyCorpse = null;
+        // Do not clear corpseArray so corpses remain.
         spawnApeEnemy(); // Spawn initial ape enemy.
       };
     }
@@ -548,7 +551,7 @@
           player.isPunching = true;
           setTimeout(() => { player.isPunching = false; }, 200);
           
-          // For default enemy ("ginger man")
+          // For ginger dude enemy (default)
           if (target === enemyActive && target.type === 'default') {
             target.hitCount = (target.hitCount || 0) + 1;
             if (target.hitCount % 3 === 0) {
@@ -594,24 +597,24 @@
                 womanVideo.play();
                 womanVideo.onended = () => {
                   womanVideo.style.display = 'none';
-                  // Set the enemy as corpse with deathState "lying"
-                  enemyCorpse = target;
-                  enemyCorpse.deathState = 'lying';
-                  // After 5-second delay, play crash video
+                  target.deathState = 'lying';
+                  // Push the dead woman enemy into the corpse array.
+                  corpseArray.push(Object.assign({}, target));
+                  // After 5-second delay, play crash video.
                   setTimeout(() => {
                     playCrashVideo();
                   }, 5000);
                 };
               } else if (target.type === 'default') {
-                // Default enemy branch: play death video and spawn corpse
+                // Ginger dude branch: play death video and then spawn corpse.
                 let gingerDeathVideo = document.getElementById('gingerDeathVideo');
                 gingerDeathVideo.style.display = 'block';
                 gingerDeathVideo.currentTime = 0;
                 gingerDeathVideo.play();
                 gingerDeathVideo.onended = () => {
                   gingerDeathVideo.style.display = 'none';
-                  enemyCorpse = target;
-                  enemyCorpse.deathState = 'lying';
+                  target.deathState = 'lying';
+                  corpseArray.push(Object.assign({}, target));
                   spawnNewEnemy();
                 };
               } else {
@@ -622,7 +625,7 @@
                   setTimeout(() => {
                     hideDeathGif();
                     target.deathState = 'lying';
-                    enemyCorpse = target;
+                    corpseArray.push(Object.assign({}, target));
                     if (target.type === 'default') {
                       spawnNewEnemy();
                     }
@@ -793,38 +796,23 @@
         ctx.drawImage(currentBackground, 0, 0, 800, 600);
       }
   
-      if (enemyCorpse) {
-        if (enemyCorpse.deathState === 'lying' && lyingImage.complete) {
-          ctx.drawImage(lyingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
-        } else if (enemyCorpse.deathState === 'dead' && enemyDeadImage.complete) {
-          ctx.drawImage(enemyDeadImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
-        } else if (enemyCorpse.deathState === 'kneeling' && enemyKneelingImage.complete) {
-          ctx.drawImage(enemyKneelingImage, enemyCorpse.x, enemyCorpse.y, enemyCorpse.width, enemyCorpse.height);
+      // Draw corpses (dead enemies) from corpseArray
+      corpseArray.forEach(corpse => {
+        if (corpse.deathState === 'lying' && lyingImage.complete) {
+          ctx.drawImage(lyingImage, corpse.x, corpse.y, corpse.width, corpse.height);
+        } else if (corpse.deathState === 'dead' && enemyDeadImage.complete) {
+          ctx.drawImage(enemyDeadImage, corpse.x, corpse.y, corpse.width, corpse.height);
+        } else if (corpse.deathState === 'kneeling' && enemyKneelingImage.complete) {
+          ctx.drawImage(enemyKneelingImage, corpse.x, corpse.y, corpse.width, corpse.height);
         }
-      }
+      });
   
       if (car && car.image.complete) {
         ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
       }
   
       if (enemyActive) {
-        if (enemyActive.isDead) {
-          if (enemyActive.type === 'woman') {
-            if (enemyActive.idleImage.complete) {
-              ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-            }
-          } else if (enemyActive.type === 'ape') {
-            if (enemyActive.idleImage.complete) {
-              ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-            }
-          } else {
-            if (enemyActive.deathState === 'dead' && enemyDeadImage.complete) {
-              ctx.drawImage(enemyDeadImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-            } else if (enemyActive.deathState === 'kneeling' && enemyKneelingImage.complete) {
-              ctx.drawImage(enemyKneelingImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-            }
-          }
-        } else {
+        if (!enemyActive.isDead) {
           if (enemyActive.isHurt) {
             if (enemyActive.hitImage.complete) {
               ctx.drawImage(enemyActive.hitImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
@@ -876,37 +864,42 @@
   <!--
   Code Notes for Next AI:
   
-  1. **Menu & Audio Initialization:**  
+  1. Menu & Audio Initialization:
      - Sets up the title screen, main menu, and initializes audio (including punch sound and background music).
   
-  2. **Scream Audio for Ginger Man:**  
-     - Plays one of several scream sounds every three hits for the default enemy.
+  2. Scream Audio for Ginger Dude:
+     - Plays one of several scream sounds every three hits for the default enemy. ("ginger dude" is the man enemy.)
   
-  3. **Menu Event Listeners:**  
+  3. Menu Event Listeners:
      - Controls the transition from title to main menu and the toggling of the speedrun clock.
   
-  4. **Start Game & Timer Functions:**  
+  4. Start Game & Timer Functions:
      - Manages the intro video, starting the game loop, and updating the speedrun clock timer.
   
-  5. **Canvas & Resizing Setup:**  
+  5. Canvas & Resizing Setup:
      - Sets the canvas size and handles scaling for responsiveness.
   
-  6. **Image Assets & Player/Enemy Initialization:**  
-     - Loads images for the background, player, and enemy states. The active enemy is stored in `enemyActive` and any dying enemy becomes `enemyCorpse`.
+  6. Image Assets & Player/Enemy Initialization:
+     - Loads images for the background, player, and enemy states.
+     - The active enemy is stored in `enemyActive` and any dying enemy is pushed into the `corpseArray`.
   
-  7. **Collision & Input Functions:**  
+  7. Input & Collision Functions:
      - Manages player input, collision detection, and entity movement.
   
-  8. **Attack Function:**  
-     - Checks for nearby enemies when the attack key (space) is pressed.  
-     - For ape enemies, processes knockback and fleeing behavior.  
-     - For the default (ginger man) and woman enemies, plays a death video upon reaching 0 health, assigns a corpse (with `deathState = 'lying'`), and then triggers either `spawnNewEnemy()` or the crash video sequence.
+  8. Attack Function:
+     - Checks for nearby enemies when the attack key (space) is pressed.
+     - For ape enemies, processes knockback and fleeing behavior.
+     - For the ginger dude (default enemy) and woman enemy:
+         • Plays a death video when health reaches 0.
+         • On video end, sets the enemy’s `deathState` to "lying" and pushes a copy into `corpseArray`.
+         • Then spawns a new enemy (for ginger dude) or, for the woman, plays the crash video after a 5‑second delay.
   
-  9. **Utility & Rendering Functions:**  
-     - Continuously updates the game state, draws the game elements (background, enemies, corpses, player, etc.), and manages the clock visibility.
+  9. Utility & Rendering Functions:
+     - Continuously updates the game state and draws game elements.
+     - Corpses from `corpseArray` are drawn first so dead enemies remain at their death positions.
   
-  10. **Game Loop:**  
-      - Calls `update()` and `draw()` repeatedly to animate the game.
+  10. Game Loop:
+      - Repeatedly calls `update()` and `draw()` to animate the game.
   
   -->
 </body>
