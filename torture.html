@@ -554,7 +554,7 @@
           // For ginger dude enemy (default)
           if (target === enemyActive && target.type === 'default') {
             target.hitCount = (target.hitCount || 0) + 1;
-            if (target.hitCount % 3 === 0) {
+            if (target.hitCount % 4 === 0) {
               playRandomGingerScream();
             }
           }
