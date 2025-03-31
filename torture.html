@@ -443,6 +443,25 @@
         spawnApeEnemy(); // spawn the initial ape
       };
     }
+    
+    // New function for playing the woman execution video.
+    function playWomanExecutionVideo() {
+      const womanVideo = document.getElementById('womanExecutionVideo');
+      womanVideo.style.display = 'block';
+      womanVideo.currentTime = 0;
+      womanVideo.volume = 1.0;
+      const playPromise = womanVideo.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Error playing woman execution video:", error);
+        });
+      }
+      womanVideo.onended = () => {
+        womanVideo.style.display = 'none';
+        // You can add any additional behavior after the video ends.
+        spawnNewEnemy();
+      }
+    }
   
     // This function spawns an ape enemy at the default position (used in playCrashVideo)
     function spawnApeEnemy() {
@@ -559,10 +578,10 @@
               target.health = 0;
               target.isDead = true;
               if (target.type === 'woman') {
-                // Instead of playing a video, we simply change the image and then call playCrashVideo.
+                // Change the image then play the woman execution video after a delay.
                 target.idleImage.src = "womandead.png";
                 setTimeout(() => {
-                  playCrashVideo();
+                  playWomanExecutionVideo();
                 }, 5000);
               } else {
                 target.deathState = 'dead';
