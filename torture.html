@@ -147,6 +147,14 @@
         console.error("Error playing punch sound:", error);
       }
     }
+    
+    // New function to play a random gingerscream sound.
+    function playRandomGingerScream() {
+      const screams = ["gingerscream1.mp3", "gingerscream2.mp3", "gingerscream3.mp3"];
+      const chosen = screams[Math.floor(Math.random() * screams.length)];
+      const audio = new Audio(chosen);
+      audio.play().catch(e => console.log("Ginger scream audio play failed:", e));
+    }
 
     document.getElementById('startBtn').addEventListener('click', function() {
       menuMusic.pause();
@@ -417,6 +425,13 @@
           playPunchSound();
           player.isPunching = true;
           setTimeout(() => { player.isPunching = false; }, 200);
+          
+          // For the "man" enemy (type 'woman') play a random gingerscream sound on the first hit.
+          if (target.type === 'woman' && !target.gingerScreamPlayed) {
+            playRandomGingerScream();
+            target.gingerScreamPlayed = true;
+          }
+          
           target.isHurt = true;
           const knockbackIntensity = 7.5;
           const knockbackDuration = 15;
@@ -450,17 +465,11 @@
               target.health = 0;
               target.isDead = true;
               if (target.type === 'woman') {
-                const womanVideo = document.getElementById('womanExecutionVideo');
-                womanVideo.style.display = 'block';
-                womanVideo.currentTime = 0;
-                womanVideo.play();
-                womanVideo.onended = () => {
-                  target.idleImage.src = "womandead.png";
-                  womanVideo.style.display = 'none';
-                  setTimeout(() => {
-                    playCrashVideo();
-                  }, 5000);
-                };
+                // Instead of playing a video, we simply change the image and then call playCrashVideo.
+                target.idleImage.src = "womandead.png";
+                setTimeout(() => {
+                  playCrashVideo();
+                }, 5000);
               } else {
                 target.deathState = 'dead';
                 setTimeout(() => { target.deathState = 'kneeling'; }, 2500);
@@ -698,7 +707,6 @@
   </script>
 </body>
 </html>
-
 
 
 
