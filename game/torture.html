@@ -2,910 +2,147 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Clockwork Desolation</title>
+  <title>Basic Manhunt-Style Game</title>
   <style>
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      background: black;
-      overflow: hidden;
-      font-family: 'Courier New', monospace;
+      background: #000;
     }
-    #gameContainer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: black;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #gameWrapper {
-      position: relative;
-      width: 800px;
-      height: 600px;
-      transform-origin: center center;
-      transform: scale(var(--game-scale));
-    }
-    #gameCanvas {
-      width: 800px;
-      height: 600px;
-      image-rendering: -moz-crisp-edges;
-      image-rendering: -webkit-optimize-contrast;
-      image-rendering: pixelated;
-    }
-    /* Video and GIF overlays */
-    #deathGifOverlay, #introVideo, #gingerDeathVideo, #womanExecutionVideo, #crashVideo {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      display: none;
-    }
-    #deathGifOverlay { z-index: 5; }
-    #introVideo { z-index: 10; background: #000; }
-    #gingerDeathVideo { z-index: 10; background: #000; }
-    #womanExecutionVideo { z-index: 11; background: #000; }
-    #crashVideo { z-index: 12; background: #000; }
-    
-    /* Title screen styles */
-    #titleScreen {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: black;
-      z-index: 30;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      color: white;
-    }
-    #titleText {
-      font-size: 4em;
-      margin-bottom: 50px;
-      text-align: center;
-    }
-    #continueBtn {
+    canvas {
+      display: block;
       background: #222;
-      border: 2px solid #444;
-      color: white;
-      padding: 15px 30px;
-      cursor: pointer;
-      font-size: 1.2em;
-      transition: all 0.3s;
-    }
-    #continueBtn:hover {
-      background: #333;
-      border-color: #666;
-    }
-    
-    /* Menu styles */
-    #mainMenu {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 20;
-      text-align: center;
-      display: none;
-    }
-    .menu-btn {
-      background: #222;
-      border: 2px solid #444;
-      color: white;
-      padding: 15px 30px;
-      margin: 10px;
-      cursor: pointer;
-      font-size: 1.2em;
-      transition: all 0.3s;
-    }
-    .menu-btn:hover {
-      background: #333;
-      border-color: #666;
-    }
-    #settingsMenu {
-      display: none;
-      position: absolute;
-      background: rgba(0,0,0,0.8);
-      padding: 20px;
-      border: 1px solid #444;
-    }
-    .settings-item {
-      margin: 10px 0;
-      color: white;
-    }
-    #speedrunClock {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      color: white;
-      font-size: 1.5em;
-      display: none;
-      z-index: 15;
-    }
-    /* Clock image inside gameplay area */
-    #clockImg {
-      position: absolute;
-      top: 0;
-      right: 0;
-      z-index: 9999;
-      width: 110px;
-      height: auto;
+      margin: 0 auto;
     }
   </style>
 </head>
 <body>
-  <div id="gameContainer">
-    <!-- Title Screen -->
-    <div id="titleScreen">
-      <div id="titleText">CLOCKWORK DESOLATION</div>
-      <button id="continueBtn">CONTINUE</button>
-    </div>
-    
-    <!-- Main Menu -->
-    <div id="mainMenu">
-      <button class="menu-btn" id="startBtn">START</button>
-      <button class="menu-btn" id="settingsBtn">SETTINGS</button>
-      <div id="settingsMenu">
-        <label class="settings-item">
-          <input type="checkbox" id="speedrunToggle"> Enable Speedrun Clock
-        </label>
-      </div>
-    </div>
-    
-    <div id="speedrunClock">00:00:00</div>
-    <div id="gameWrapper">
-      <!-- Clock Image -->
-      <img id="clockImg" src="clock12.png" alt="Clock">
-      <canvas id="gameCanvas"></canvas>
-      <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
-      <video id="introVideo" src="gps.mp4" playsinline muted></video>
-      <video id="gingerDeathVideo" src="gingerdeath.mp4" playsinline muted></video>
-      <video id="womanExecutionVideo" src="womanexecution.mp4" playsinline muted></video>
-      <video id="crashVideo" src="crash.mp4" playsinline></video>
-    </div>
-  </div>
-  
-  <audio id="menuMusic" loop>
-    <source src="lives.mp3" type="audio/mpeg">
-  </audio>
-  
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
-    // -------------------------------
-    // Menu & Audio Initialization
-    // -------------------------------
-    let gameStarted = false;
-    let speedrunEnabled = false;
-    let startTime = 0;
-    let timerInterval = null;
-    const menuMusic = document.getElementById('menuMusic');
-    
-    menuMusic.volume = 0.5;
-  
-    let audioContext;
-    let punchSoundBuffer;
-    let audioInitialized = false;
-    const audioPromises = [];
-  
-    document.getElementById('continueBtn').addEventListener('click', function() {
-      menuMusic.play().catch(e => console.log("Audio play failed:", e));
-      document.getElementById('titleScreen').style.display = 'none';
-      document.getElementById('mainMenu').style.display = 'block';
-      initAudio();
-    });
-  
-    function initAudio() {
-      if (audioInitialized) return;
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const loadPunchSound = fetch('punch.mp3')
-        .then(response => response.arrayBuffer())
-        .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-        .then(buffer => {
-          punchSoundBuffer = buffer;
-          audioInitialized = true;
-        })
-        .catch(error => {
-          console.error('Error loading audio:', error);
-        });
-      audioPromises.push(loadPunchSound);
-    }
-  
-    function playPunchSound() {
-      if (!audioInitialized) {
-        console.log("Audio not initialized yet");
-        return;
-      }
-      try {
-        const source = audioContext.createBufferSource();
-        source.buffer = punchSoundBuffer;
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = 3.0;
-        source.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        source.start(0);
-      } catch (error) {
-        console.error("Error playing punch sound:", error);
-      }
-    }
-    
-    // -------------------------------
-    // Scream Audio for Ginger Dude (the man enemy)
-    // -------------------------------
-    let lastGingerScreamIndex = -1;
-    function playRandomGingerScream() {
-      const screams = ["gingerscream1.mp3", "gingerscream2.mp3", "gingerscream3.mp3"];
-      const availableIndices = screams.map((_, i) => i).filter(i => i !== lastGingerScreamIndex);
-      const chosenIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
-      lastGingerScreamIndex = chosenIndex;
-      const audio = new Audio(screams[chosenIndex]);
-      audio.play().catch(e => console.log("Ginger scream audio play failed:", e));
-    }
-  
-    // -------------------------------
-    // Menu Event Listeners
-    // -------------------------------
-    document.getElementById('startBtn').addEventListener('click', function() {
-      menuMusic.pause();
-      startGame();
-    });
-    
-    document.getElementById('settingsBtn').addEventListener('click', () => {
-      document.getElementById('settingsMenu').style.display =
-        document.getElementById('settingsMenu').style.display === 'block' ? 'none' : 'block';
-    });
-    
-    document.getElementById('speedrunToggle').addEventListener('change', (e) => {
-      speedrunEnabled = e.target.checked;
-      localStorage.setItem('speedrunEnabled', speedrunEnabled);
-    });
-  
-    if (localStorage.getItem('speedrunEnabled') === 'true') {
-      document.getElementById('speedrunToggle').checked = true;
-      speedrunEnabled = true;
-    }
-  
-    // -------------------------------
-    // Start Game & Timer Functions
-    // -------------------------------
-    function startGame() {
-      gameStarted = true;
-      document.getElementById('titleScreen').style.display = 'none';
-      document.getElementById('mainMenu').style.display = 'none';
-      const introVideo = document.getElementById('introVideo');
-      introVideo.style.display = 'block';
-      introVideo.play();
-      introVideo.addEventListener('ended', () => {
-        introVideo.style.display = 'none';
-        if (speedrunEnabled) {
-          startTime = Date.now();
-          document.getElementById('speedrunClock').style.display = 'block';
-          updateTimer();
-          timerInterval = setInterval(updateTimer, 10);
-        }
-        handleResize();
-        gameLoop();
-      });
-    }
-  
-    function updateTimer() {
-      const elapsed = Date.now() - startTime;
-      const minutes = Math.floor(elapsed / 60000);
-      const seconds = Math.floor((elapsed % 60000) / 1000);
-      const milliseconds = Math.floor((elapsed % 1000) / 10);
-      document.getElementById('speedrunClock').textContent =
-        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
-    }
-  
-    // -------------------------------
-    // Canvas & Resizing Setup
-    // -------------------------------
-    const carImage = new Image();
-    carImage.src = 'car1.png';
-    let car = null;
-  
-    function setupCanvas() {
-      const canvas = document.getElementById('gameCanvas');
-      canvas.width = 800;
-      canvas.height = 600;
-    }
-    setupCanvas();
-  
-    function handleResize() {
-      const container = document.getElementById('gameContainer');
-      const wrapper = document.getElementById('gameWrapper');
-      const scale = Math.min(container.clientWidth / 800, container.clientHeight / 600);
-      wrapper.style.setProperty('--game-scale', scale);
-    }
-  
-    window.addEventListener('resize', handleResize);
-    handleResize();
-  
+    // Get canvas and context
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-  
-    // -------------------------------
-    // Image Assets
-    // -------------------------------
-    const backgroundImage = new Image();
-    backgroundImage.src = 'house_background.png';
-    
-    const newBackgroundImage = new Image();
-    newBackgroundImage.src = 'fr.png';
-    
-    let currentBackground = backgroundImage;
-  
-    const playerImage = new Image();
-    playerImage.src = 'idle.png';
-  
-    const punchImage = new Image();
-    punchImage.src = 'punch.png';
-  
-    const enemyDeadImage = new Image();
-    enemyDeadImage.src = 'dead.png';
-  
-    const enemyKneelingImage = new Image();
-    enemyKneelingImage.src = 'kneeling.png';
-  
-    const lyingImage = new Image();
-    lyingImage.src = 'lying.png';
-  
-    // -------------------------------
-    // Player Object
-    // -------------------------------
+
+    // Game objects
     const player = {
-      x: 200,
+      x: 50,
+      y: 50,
+      size: 20,
+      color: 'lime',
+      speed: 3
+    };
+
+    const enemy = {
+      x: 700,
       y: 500,
-      width: 50,
-      height: 50,
-      speed: 5,
-      isPunching: false
+      size: 20,
+      color: 'red',
+      speed: 2,
+      // Starting movement: to the left
+      direction: { x: -1, y: 0 }
     };
-  
-    // -------------------------------
-    // Enemy Initialization
-    // -------------------------------
-    if (!window.firstApeSpawned) { window.firstApeSpawned = false; }
-    let extraApes = [];
-  
-    // enemyActive is the currently active enemy.
-    // "ginger dude" is the man enemy.
-    let enemyActive = {
-      x: 326.5,
-      y: 194,
-      width: 50,
-      height: 50,
-      isHurt: false,
-      knockbackVelocity: { x: 0, y: 0 },
-      knockbackDuration: 0,
-      isDead: false,
-      deathState: '',
-      health: 300,
-      idleImage: new Image(),
-      hitImage: new Image(),
-      type: 'default', // "ginger dude" (the man enemy)
-      hitCount: 0 // triggers scream sound every 3 hits
+
+    const goal = {
+      x: 750,
+      y: 50,
+      size: 20,
+      color: 'yellow'
     };
-    enemyActive.idleImage.src = 'enemyidle.png';
-    enemyActive.hitImage.src = 'hit.png';
-  
-    // -------------------------------
-    // Corpse Array to store dead enemies
-    // -------------------------------
-    let corpseArray = [];
-  
-    const walls = [
-      { x: 1.5, y: 331, width: 250.5, height: 25 },
-      { x: 342, y: 330, width: 500, height: 25 },
-      { x: 153, y: 0, width: 25, height: 200 },
-      { x: 0.5, y: 166, width: 75, height: 25 }
-    ];
-  
-    // -------------------------------
-    // Input & Collision Functions
-    // -------------------------------
+
+    // Game state flags
+    let gameOver = false;
+    let gameWin = false;
+
+    // Track key presses
     const keys = {};
-    document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
-    document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-  
-    function isColliding(rect1, rect2) {
-      return (
-        rect1.x < rect2.x + rect2.width &&
-        rect1.x + rect1.width > rect2.x &&
-        rect1.y < rect2.y + rect2.height &&
-        rect1.y + rect1.height > rect2.y
-      );
-    }
-  
-    function moveEntity(entity, dx, dy) {
-      entity.x += dx;
-      for (const wall of walls) {
-        if (isColliding(entity, wall)) {
-          entity.x -= dx;
-          break;
-        }
-      }
-      entity.y += dy;
-      for (const wall of walls) {
-        if (isColliding(entity, wall)) {
-          entity.y -= dy;
-          break;
-        }
-      }
-    }
-  
-    // -------------------------------
-    // Helper Functions for Effects
-    // -------------------------------
-    function showDeathGif() {
-      document.getElementById('deathGifOverlay').style.display = 'block';
-    }
-  
-    function hideDeathGif() {
-      document.getElementById('deathGifOverlay').style.display = 'none';
-    }
-    
-    // Plays the crash video, then changes background and spawns the first ape.
-    function playCrashVideo() {
-      const crashVideo = document.getElementById('crashVideo');
-      crashVideo.style.display = 'block';
-      crashVideo.currentTime = 0;
-      crashVideo.volume = 1.0;
-      const playPromise = crashVideo.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error("Error playing crash video:", error);
-        });
-      }
-      crashVideo.onended = () => {
-        crashVideo.style.display = 'none';
-        currentBackground = newBackgroundImage;
-        walls.length = 0;
-        car = null;
-        // Do not clear corpseArray so corpses remain.
-        spawnApeEnemy(); // Spawn initial ape enemy.
-      };
-    }
-  
-    // Spawns an ape enemy at the default position (used after crash video).
-    function spawnApeEnemy() {
-      enemyActive = {
-        x: 400,
-        y: 300,
-        width: 50,
-        height: 50,
-        isHurt: false,
-        knockbackVelocity: { x: 0, y: 0 },
-        knockbackDuration: 0,
-        isDead: false,
-        deathState: '',
-        health: 300,
-        idleImage: new Image(),
-        hitImage: new Image(),
-        type: 'ape',
-        isFleeing: false,
-        fleeingDuration: 0,
-        safeDistance: 300
-      };
-      enemyActive.idleImage.src = 'ape.png';
-      enemyActive.hitImage.src = 'chimphurt.png';
-    }
-  
-    // Spawns an extra ape enemy at a given position.
-    function spawnApeEnemyWithPosition(x, y) {
-      let newApe = {
-        x: x,
-        y: y,
-        width: 50,
-        height: 50,
-        isHurt: false,
-        knockbackVelocity: { x: 0, y: 0 },
-        knockbackDuration: 0,
-        isDead: false,
-        deathState: '',
-        health: 300,
-        idleImage: new Image(),
-        hitImage: new Image(),
-        type: 'ape',
-        isFleeing: false,
-        fleeingDuration: 0,
-        safeDistance: 300
-      };
-      newApe.idleImage.src = 'ape.png';
-      newApe.hitImage.src = 'chimphurt.png';
-      extraApes.push(newApe);
-    }
-  
-    // -------------------------------
-    // Attack Function
-    // -------------------------------
-    let lastAttackTime = 0;
-    function attack() {
-      let targets = [];
-      if (enemyActive && !enemyActive.isDead) { targets.push(enemyActive); }
-      extraApes.forEach(ape => {
-        if (!ape.isDead) { targets.push(ape); }
-      });
-      if (targets.length === 0) return;
-      const now = Date.now();
-      if (now - lastAttackTime < 500) return;
-      
-      targets.forEach(target => {
-        const px = player.x + player.width / 2;
-        const py = player.y + player.height / 2;
-        const tx = target.x + target.width / 2;
-        const ty = target.y + target.height / 2;
-        const dx = px - tx;
-        const dy = py - ty;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 100) {
-          playPunchSound();
-          player.isPunching = true;
-          setTimeout(() => { player.isPunching = false; }, 200);
-          
-          // For ginger dude enemy (default)
-          if (target === enemyActive && target.type === 'default') {
-            target.hitCount = (target.hitCount || 0) + 1;
-            if (target.hitCount % 4 === 0) {
-              playRandomGingerScream();
-            }
-          }
-          
-          target.isHurt = true;
-          const knockbackIntensity = 7.5;
-          const knockbackDuration = 15;
-          const mag = Math.sqrt(dx * dx + dy * dy);
-          target.knockbackVelocity.x = -(dx / mag) * knockbackIntensity;
-          target.knockbackVelocity.y = -(dy / mag) * knockbackIntensity;
-          target.knockbackDuration = knockbackDuration;
-          target.health -= 10;
-          
-          // Handling for ape enemy
-          if (target.type === 'ape') {
-            if (target.health > 0) {
-              target.hitImage.src = 'chimphurt.png';
-              target.isFleeing = true;
-              target.fleeingDuration = 120;
-              setTimeout(() => { target.isHurt = false; }, 2000);
-            } else {
-              target.health = 0;
-              target.isDead = true;
-              target.idleImage.src = 'placeholder.jpg';
-              if (target === enemyActive && !window.firstApeSpawned) {
-                window.firstApeSpawned = true;
-                spawnApeEnemyWithPosition(target.x - 100, target.y);
-                spawnApeEnemyWithPosition(target.x + 100, target.y);
-              }
-            }
-          } else {
-            if (target.health <= 0) {
-              target.health = 0;
-              target.isDead = true;
-              // Woman enemy branch: play death video and then spawn corpse.
-              if (target.type === 'woman') {
-                const womanVideo = document.getElementById('womanExecutionVideo');
-                womanVideo.style.display = 'block';
-                womanVideo.currentTime = 0;
-                womanVideo.play();
-                womanVideo.onended = () => {
-                  womanVideo.style.display = 'none';
-                  target.deathState = 'lying';
-                  // Push the dead woman enemy into the corpse array.
-                  corpseArray.push(Object.assign({}, target));
-                  // After 5-second delay, play crash video.
-                  setTimeout(() => {
-                    playCrashVideo();
-                  }, 5000);
-                };
-              } else if (target.type === 'default') {
-                // Ginger dude branch: play death video and then spawn corpse.
-                let gingerDeathVideo = document.getElementById('gingerDeathVideo');
-                gingerDeathVideo.style.display = 'block';
-                gingerDeathVideo.currentTime = 0;
-                gingerDeathVideo.play();
-                gingerDeathVideo.onended = () => {
-                  gingerDeathVideo.style.display = 'none';
-                  target.deathState = 'lying';
-                  corpseArray.push(Object.assign({}, target));
-                  spawnNewEnemy();
-                };
-              } else {
-                target.deathState = 'dead';
-                setTimeout(() => { target.deathState = 'kneeling'; }, 2500);
-                setTimeout(() => {
-                  showDeathGif();
-                  setTimeout(() => {
-                    hideDeathGif();
-                    target.deathState = 'lying';
-                    corpseArray.push(Object.assign({}, target));
-                    if (target.type === 'default') {
-                      spawnNewEnemy();
-                    }
-                  }, 5000);
-                }, 4000);
-              }
-            }
-          }
-          lastAttackTime = now;
-        }
-      });
-      setTimeout(() => { targets.forEach(t => { t.isHurt = false; }); }, 1000);
-    }
-  
-    // Spawns a new enemy (in this case, a woman enemy) and sets up the car.
-    function spawnNewEnemy() {
-      enemyActive = {
-        x: 518,
-        y: 475,
-        width: 50,
-        height: 50,
-        isHurt: false,
-        knockbackVelocity: { x: 0, y: 0 },
-        knockbackDuration: 0,
-        isDead: false,
-        deathState: '',
-        health: 300,
-        idleImage: new Image(),
-        hitImage: new Image(),
-        type: 'woman'
-      };
-      enemyActive.idleImage.src = 'woman.png';
-      enemyActive.hitImage.src = 'womanhit.png';
-  
-      car = {
-        x: 600,
-        y: 460,
-        width: 150,
-        height: 80,
-        image: carImage
-      };
-    }
-  
-    // -------------------------------
-    // Utility & Rendering Functions
-    // -------------------------------
-    function getDistanceBetween(entity1, entity2) {
-      const x1 = entity1.x + entity1.width / 2;
-      const y1 = entity1.y + entity1.height / 2;
-      const x2 = entity2.x + entity2.width / 2;
-      const y2 = entity2.y + entity2.height / 2;
-      const dx = x1 - x2;
-      const dy = y1 - y2;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-    
-    function updateClockVisibility() {
-      const clockImg = document.getElementById('clockImg');
-      if (
-        gameStarted &&
-        document.getElementById('introVideo').style.display !== 'block' &&
-        document.getElementById('crashVideo').style.display !== 'block' &&
-        document.getElementById('womanExecutionVideo').style.display !== 'block' &&
-        document.getElementById('deathGifOverlay').style.display !== 'block' &&
-        document.getElementById('titleScreen').style.display !== 'block' &&
-        document.getElementById('mainMenu').style.display !== 'block'
-      ) {
-        clockImg.style.display = 'block';
-      } else {
-        clockImg.style.display = 'none';
-      }
-    }
-  
+    window.addEventListener('keydown', (e) => { keys[e.key] = true; });
+    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+
+    // Update game logic
     function update() {
-      if (!gameStarted || document.getElementById('introVideo').style.display === 'block') return;
-      
-      let moveX = 0, moveY = 0;
-      if (keys['w']) moveY = -player.speed;
-      if (keys['s']) moveY = player.speed;
-      if (keys['a']) moveX = -player.speed;
-      if (keys['d']) moveX = player.speed;
-      moveEntity(player, moveX, moveY);
-      if (keys[' ']) attack();
-      
-      if (enemyActive && !enemyActive.isDead) {
-        if (enemyActive.knockbackDuration > 0) {
-          moveEntity(enemyActive, enemyActive.knockbackVelocity.x, enemyActive.knockbackVelocity.y);
-          enemyActive.knockbackVelocity.x *= 0.9;
-          enemyActive.knockbackVelocity.y *= 0.9;
-          enemyActive.knockbackDuration--;
-        } else if (enemyActive.type === 'ape' && enemyActive.isFleeing) {
-          const distanceToPlayer = getDistanceBetween(enemyActive, player);
-          if (distanceToPlayer >= enemyActive.safeDistance) {
-            enemyActive.fleeingDuration -= 2;
-          }
-          const px = player.x + player.width / 2;
-          const py = player.y + player.height / 2;
-          const ex = enemyActive.x + enemyActive.width / 2;
-          const ey = enemyActive.y + enemyActive.height / 2;
-          const dx = ex - px;
-          const dy = ey - py;
-          const mag = Math.sqrt(dx * dx + dy * dy) || 1;
-          const fleespeed = 3.5;
-          const moveX = (dx / mag) * fleespeed;
-          const moveY = (dy / mag) * fleespeed;
-          moveEntity(enemyActive, moveX, moveY);
-          enemyActive.fleeingDuration--;
-          if (enemyActive.fleeingDuration <= 0) {
-            enemyActive.isFleeing = false;
-          }
-        } else {
-          if (enemyActive.type === 'ape') {
-            // Ape stands still when not fleeing.
-          } else {
-            if (Math.random() < 0.02) {
-              const randX = Math.random() * 6 - 3;
-              const randY = Math.random() * 6 - 3;
-              moveEntity(enemyActive, randX, randY);
-            }
-          }
-        }
-        enemyActive.x = Math.max(0, Math.min(canvas.width - enemyActive.width, enemyActive.x));
-        enemyActive.y = Math.max(0, Math.min(canvas.height - enemyActive.height, enemyActive.y));
+      if (gameOver || gameWin) return;
+
+      // Move player with arrow keys or WASD
+      if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
+      if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
+      if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+      if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+
+      // Keep player inside canvas bounds
+      player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+      player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+
+      // Update enemy position
+      enemy.x += enemy.speed * enemy.direction.x;
+      enemy.y += enemy.speed * enemy.direction.y;
+
+      // Bounce enemy off the canvas edges by reversing its direction
+      if (enemy.x <= 0 || enemy.x >= canvas.width - enemy.size) {
+        enemy.direction.x *= -1;
       }
-      extraApes.forEach(ape => {
-        if (!ape.isDead) {
-          if (ape.knockbackDuration > 0) {
-            moveEntity(ape, ape.knockbackVelocity.x, ape.knockbackVelocity.y);
-            ape.knockbackVelocity.x *= 0.9;
-            ape.knockbackVelocity.y *= 0.9;
-            ape.knockbackDuration--;
-          } else if (ape.isFleeing) {
-            const distanceToPlayer = getDistanceBetween(ape, player);
-            if (distanceToPlayer >= ape.safeDistance) {
-              ape.fleeingDuration -= 2;
-            }
-            const px = player.x + player.width / 2;
-            const py = player.y + player.height / 2;
-            const ex = ape.x + ape.width / 2;
-            const ey = ape.y + ape.height / 2;
-            const dx = ex - px;
-            const dy = ey - py;
-            const mag = Math.sqrt(dx * dx + dy * dy) || 1;
-            const fleespeed = 3.5;
-            const moveX = (dx / mag) * fleespeed;
-            const moveY = (dy / mag) * fleespeed;
-            moveEntity(ape, moveX, moveY);
-            ape.fleeingDuration--;
-            if (ape.fleeingDuration <= 0) {
-              ape.isFleeing = false;
-            }
-          }
-          ape.x = Math.max(0, Math.min(canvas.width - ape.width, ape.x));
-          ape.y = Math.max(0, Math.min(canvas.height - ape.height, ape.y));
-        }
-      });
-      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-      player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
-      
-      updateClockVisibility();
+      if (enemy.y <= 0 || enemy.y >= canvas.height - enemy.size) {
+        enemy.direction.y *= -1;
+      }
+
+      // Check collision between player and enemy
+      if (isColliding(player, enemy)) {
+        gameOver = true;
+      }
+
+      // Check collision between player and goal
+      if (isColliding(player, goal)) {
+        gameWin = true;
+      }
     }
-  
+
+    // Basic AABB collision detection
+    function isColliding(a, b) {
+      return a.x < b.x + b.size &&
+             a.x + a.size > b.x &&
+             a.y < b.y + b.size &&
+             a.y + a.size > b.y;
+    }
+
+    // Draw game objects and messages
     function draw() {
-      ctx.fillStyle = 'black';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      if (currentBackground.complete) {
-        ctx.drawImage(currentBackground, 0, 0, 800, 600);
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw player
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.size, player.size);
+
+      // Draw enemy
+      ctx.fillStyle = enemy.color;
+      ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+
+      // Draw goal
+      ctx.fillStyle = goal.color;
+      ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
+
+      // Display messages if game is over or won
+      if (gameOver) {
+        ctx.fillStyle = 'white';
+        ctx.font = '48px sans-serif';
+        ctx.fillText('Game Over!', canvas.width / 2 - 120, canvas.height / 2);
       }
-  
-      // Draw corpses (dead enemies) from corpseArray
-      corpseArray.forEach(corpse => {
-        if (corpse.deathState === 'lying' && lyingImage.complete) {
-          ctx.drawImage(lyingImage, corpse.x, corpse.y, corpse.width, corpse.height);
-        } else if (corpse.deathState === 'dead' && enemyDeadImage.complete) {
-          ctx.drawImage(enemyDeadImage, corpse.x, corpse.y, corpse.width, corpse.height);
-        } else if (corpse.deathState === 'kneeling' && enemyKneelingImage.complete) {
-          ctx.drawImage(enemyKneelingImage, corpse.x, corpse.y, corpse.width, corpse.height);
-        }
-      });
-  
-      if (car && car.image.complete) {
-        ctx.drawImage(car.image, car.x, car.y, car.width, car.height);
-      }
-  
-      if (enemyActive) {
-        if (!enemyActive.isDead) {
-          if (enemyActive.isHurt) {
-            if (enemyActive.hitImage.complete) {
-              ctx.drawImage(enemyActive.hitImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-            }
-          } else if (enemyActive.idleImage.complete) {
-            ctx.drawImage(enemyActive.idleImage, enemyActive.x, enemyActive.y, enemyActive.width, enemyActive.height);
-          }
-        }
-      }
-  
-      extraApes.forEach(ape => {
-        if (ape.isDead) {
-          if (ape.idleImage.complete) {
-            ctx.drawImage(ape.idleImage, ape.x, ape.y, ape.width, ape.height);
-          }
-        } else {
-          if (ape.isHurt) {
-            if (ape.hitImage.complete) {
-              ctx.drawImage(ape.hitImage, ape.x, ape.y, ape.width, ape.height);
-            }
-          } else if (ape.idleImage.complete) {
-            ctx.drawImage(ape.idleImage, ape.x, ape.y, ape.width, ape.height);
-          }
-        }
-      });
-  
-      if (player.isPunching && punchImage.complete) {
-        ctx.drawImage(punchImage, player.x, player.y, player.width, player.height);
-      } else if (playerImage.complete) {
-        ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+      if (gameWin) {
+        ctx.fillStyle = 'white';
+        ctx.font = '48px sans-serif';
+        ctx.fillText('You Win!', canvas.width / 2 - 100, canvas.height / 2);
       }
     }
-  
-    const crashVideo = document.getElementById('crashVideo');
-    document.addEventListener('click', function enableAudio() {
-      crashVideo.volume = 1.0;
-      document.removeEventListener('click', enableAudio);
-    }, { once: true });
-  
+
+    // Main game loop using requestAnimationFrame
     function gameLoop() {
       update();
       draw();
-      requestAnimationFrame(gameLoop);
+      if (!gameOver && !gameWin) {
+        requestAnimationFrame(gameLoop);
+      }
     }
-    
-    setInterval(updateClockVisibility, 100);
+
+    // Start the game
+    gameLoop();
   </script>
-  
-  <!--
-  Code Notes for Next AI:
-  
-  1. Menu & Audio Initialization:
-     - Sets up the title screen, main menu, and initializes audio (including punch sound and background music).
-  
-  2. Scream Audio for Ginger Dude:
-     - Plays one of several scream sounds every three hits for the default enemy. ("ginger dude" is the man enemy.)
-  
-  3. Menu Event Listeners:
-     - Controls the transition from title to main menu and the toggling of the speedrun clock.
-  
-  4. Start Game & Timer Functions:
-     - Manages the intro video, starting the game loop, and updating the speedrun clock timer.
-  
-  5. Canvas & Resizing Setup:
-     - Sets the canvas size and handles scaling for responsiveness.
-  
-  6. Image Assets & Player/Enemy Initialization:
-     - Loads images for the background, player, and enemy states.
-     - The active enemy is stored in `enemyActive` and any dying enemy is pushed into the `corpseArray`.
-  
-  7. Input & Collision Functions:
-     - Manages player input, collision detection, and entity movement.
-  
-  8. Attack Function:
-     - Checks for nearby enemies when the attack key (space) is pressed.
-     - For ape enemies, processes knockback and fleeing behavior.
-     - For the ginger dude (default enemy) and woman enemy:
-         • Plays a death video when health reaches 0.
-         • On video end, sets the enemy’s `deathState` to "lying" and pushes a copy into `corpseArray`.
-         • Then spawns a new enemy (for ginger dude) or, for the woman, plays the crash video after a 5‑second delay.
-  
-  9. Utility & Rendering Functions:
-     - Continuously updates the game state and draws game elements.
-     - Corpses from `corpseArray` are drawn first so dead enemies remain at their death positions.
-  
-  10. Game Loop:
-      - Repeatedly calls `update()` and `draw()` to animate the game.
-  
-  -->
 </body>
 </html>
-
-
-
-
-<!--fix: chimp hurt image, get rid of borders on new map, get rid of cars and corpses on new map aswell.-->
