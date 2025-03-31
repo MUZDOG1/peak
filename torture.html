@@ -458,7 +458,6 @@
       }
       womanVideo.onended = () => {
         womanVideo.style.display = 'none';
-        // You can add any additional behavior after the video ends.
         spawnNewEnemy();
       }
     }
@@ -578,8 +577,8 @@
               target.health = 0;
               target.isDead = true;
               if (target.type === 'woman') {
-                // Change the image then play the woman execution video after a delay.
-                target.idleImage.src = "womandead.png";
+                // Instead of showing a death image, remove the enemy from rendering.
+                enemyActive = null;
                 setTimeout(() => {
                   playWomanExecutionVideo();
                 }, 5000);
