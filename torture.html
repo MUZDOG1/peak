@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Manhunt-Style Game – Hallways & AI Notes</title>
+  <title>Manhunt-Style Hallways with Light/Shadow</title>
   <style>
     body {
       margin: 0;
@@ -16,398 +16,431 @@
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<script>
+/*
+  -------------------------------------------------------
+  MANHUNT-STYLE HALLWAYS WITH LIGHT/SHADOW & PATROLLING AI
+  -------------------------------------------------------
+  1) Two enemies patrol set routes through a hallway layout.
+  2) If the player is not standing in a light circle, they
+     cannot be spotted.
+  3) If in light, enemies can spot them if they're within
+     sight range, in front of the enemy (FOV), and not
+     blocked by walls.
+  4) On being spotted, a blood-splatter overlay appears.
+*/
 
-    // -------------------------
-    // Game Entities & Parameters
-    // -------------------------
+/* -------------------------------------
+   CANVAS & CONTEXT
+------------------------------------- */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-    // Player setup
-    const player = {
-      x: 50,
-      y: 50,
-      size: 20,
-      color: 'lime',
-      speed: 3
-    };
+/* -------------------------------------
+   GAME ENTITIES
+------------------------------------- */
+// Player
+const player = {
+  x: 60,
+  y: 60,
+  size: 20,
+  color: 'lime',
+  speed: 3
+};
 
-    // Goal placement (reaching the goal wins the game)
-    const goal = {
-      x: 750,
-      y: 550,
-      size: 20,
-      color: 'yellow'
-    };
+// Goal (e.g. bottom-right corner)
+const goal = {
+  x: 740,
+  y: 540,
+  size: 20,
+  color: 'yellow'
+};
 
-    // Walls arranged to create hallways.
-    // These walls block movement and line-of-sight.
-    const walls = [
-      // Left vertical wall (with a gap for a hallway)
-      { x: 200, y: 0, width: 20, height: 150, color: '#777' },
-      { x: 200, y: 250, width: 20, height: 350, color: '#777' },
-      // Right vertical wall (with a gap for a hallway)
-      { x: 580, y: 50, width: 20, height: 200, color: '#777' },
-      { x: 580, y: 300, width: 20, height: 250, color: '#777' },
-      // Horizontal walls forming corridors between left and right sides
-      { x: 220, y: 150, width: 360, height: 20, color: '#777' },
-      { x: 220, y: 300, width: 360, height: 20, color: '#777' }
-    ];
+// Walls to form hallways. These rectangles define impassable areas.
+// The layout here is a rough approximation of your drawing.
+const walls = [
+  // Top horizontal wall across the entire top, leaving a hallway below it
+  { x: 0,   y: 0,   width: 800, height: 40,  color: '#555' },
 
-    // -------------------------
-    // Enemy Patrol Class & Setup
-    // -------------------------
+  // Left vertical bar, leaving hallway to its right
+  { x: 0,   y: 0,   width: 40,  height: 600, color: '#555' },
 
-    class Enemy {
-      constructor(path, speed, color) {
-        this.path = path; // Array of waypoints { x, y }
-        this.speed = speed;
-        this.color = color;
-        // Start at the first waypoint
-        this.x = path[0].x;
-        this.y = path[0].y;
-        this.size = 20;
-        this.currentWaypoint = 1;
-        // Direction vector (normalized) based on current movement
-        this.dir = { x: 1, y: 0 };
-      }
+  // A central “rectangle” that forms a block in the middle
+  { x: 200, y: 120, width: 200, height: 200, color: '#555' },
 
-      update() {
-        const target = this.path[this.currentWaypoint];
-        let dx = target.x - this.x;
-        let dy = target.y - this.y;
-        const distance = Math.hypot(dx, dy);
-        if (distance < 2) {
-          // Arrived at the waypoint; switch to next
-          this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
-        } else {
-          // Normalize direction vector
-          dx /= distance;
-          dy /= distance;
-          this.dir.x = dx;
-          this.dir.y = dy;
-          // Update enemy position with reduced speed
-          this.x += dx * this.speed;
-          this.y += dy * this.speed;
-        }
-      }
+  // Another block to the right of that
+  { x: 440, y: 120, width: 200, height: 200, color: '#555' },
 
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.size, this.size);
-      }
+  // Lower “horizontal bar” that closes off the bottom corridor
+  { x: 0,   y: 560, width: 800, height: 40,  color: '#555' },
+
+  // Rightmost vertical bar
+  { x: 760, y: 0,   width: 40,  height: 600, color: '#555' },
+
+  // Middle horizontal bar (below the central rectangles),
+  // leaving a hallway between y=320 and y=360
+  { x: 200, y: 360, width: 440, height: 40,  color: '#555' },
+
+  // A small vertical “divider” in the middle corridor
+  { x: 360, y: 320, width: 40,  height: 80,  color: '#555' }
+];
+
+// Define a few “light sources” (circular).  Only inside these circles
+// is the area considered lit.  Adjust positions/radii to taste.
+const lights = [
+  { x: 150, y: 80,  radius: 80 },
+  { x: 370, y: 200, radius: 100 },
+  { x: 660, y: 200, radius: 80 },
+  { x: 300, y: 400, radius: 80 },
+  { x: 500, y: 400, radius: 80 }
+];
+
+/* -------------------------------------
+   ENEMY PATROL CLASS
+------------------------------------- */
+class Enemy {
+  constructor(path, speed, color) {
+    this.path = path; // Array of waypoints { x, y }
+    this.speed = speed;
+    this.color = color;
+    // Start at the first waypoint
+    this.x = path[0].x;
+    this.y = path[0].y;
+    this.size = 20;
+    this.currentWaypoint = 1;
+    // Direction vector (normalized)
+    this.dir = { x: 1, y: 0 };
+  }
+
+  update() {
+    const target = this.path[this.currentWaypoint];
+    let dx = target.x - this.x;
+    let dy = target.y - this.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance < 2) {
+      // Move to next waypoint
+      this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
+    } else {
+      dx /= distance;
+      dy /= distance;
+      this.dir.x = dx;
+      this.dir.y = dy;
+      this.x += dx * this.speed;
+      this.y += dy * this.speed;
     }
+  }
 
-    // Define enemy patrol paths that follow the hallways.
-    // Enemy 1 patrols vertically along the left corridor.
-    const enemy1Path = [
-      { x: 100, y: 50 },
-      { x: 100, y: 250 },
-      { x: 100, y: 450 },
-      { x: 100, y: 250 }
-    ];
-    // Enemy 2 patrols vertically along the right corridor.
-    const enemy2Path = [
-      { x: 650, y: 100 },
-      { x: 650, y: 400 },
-      { x: 650, y: 550 },
-      { x: 650, y: 400 }
-    ];
-    // Slower enemy speed (0.8) for more measured patrols.
-    const enemies = [
-      new Enemy(enemy1Path, 0.8, 'red'),
-      new Enemy(enemy2Path, 0.8, 'orange')
-    ];
+  draw() {
+    ctx.fillStyle = this.color;
+    ctx.fillRect(this.x, this.y, this.size, this.size);
+  }
+}
 
-    // -------------------------
-    // Game State & Input Handling
-    // -------------------------
+/* -------------------------------------
+   ENEMIES & THEIR PATROLS
+------------------------------------- */
+// Two enemies, each patrolling along a set of waypoints through the hallways.
+const enemy1Path = [
+  // Enemy 1: Moves around left side & top hallway
+  { x: 100, y: 60 },
+  { x: 300, y: 60 },
+  { x: 300, y: 320 },
+  { x: 220, y: 320 },
+  { x: 220, y: 200 },
+  { x: 100, y: 200 },
+  { x: 100, y: 60 }
+];
 
-    let gameOver = false;
-    let gameWin = false;
-    let bloodSplats = null; // Data for blood effect on detection
+const enemy2Path = [
+  // Enemy 2: Moves around the right side & lower hallway
+  { x: 700, y: 200 },
+  { x: 500, y: 200 },
+  { x: 500, y: 400 },
+  { x: 550, y: 400 },
+  { x: 550, y: 320 },
+  { x: 700, y: 320 },
+  { x: 700, y: 200 }
+];
 
-    // Track key presses for player movement.
-    const keys = {};
-    window.addEventListener('keydown', (e) => { keys[e.key] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+// Slower speed so they patrol at a walking pace
+const enemies = [
+  new Enemy(enemy1Path, 1.0, 'red'),
+  new Enemy(enemy2Path, 1.0, 'orange')
+];
 
-    // -------------------------
-    // Collision & Movement Helpers
-    // -------------------------
+/* -------------------------------------
+   GAME STATE
+------------------------------------- */
+let gameOver = false;
+let gameWin = false;
+let bloodSplats = null; // For the blood effect
 
-    // General AABB collision detection.
-    function isColliding(a, b) {
-      const widthA = a.size || a.width;
-      const heightA = a.size || a.height;
-      const widthB = b.size || b.width;
-      const heightB = b.size || b.height;
-      return a.x < b.x + widthB &&
-             a.x + widthA > b.x &&
-             a.y < b.y + heightB &&
-             a.y + heightA > b.y;
-    }
+// Keyboard input
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.key] = true; });
+window.addEventListener('keyup', e => { keys[e.key] = false; });
 
-    // Check collision between an entity and any wall.
-    function collidesWithWalls(entity) {
-      for (let w of walls) {
-        if (isColliding(entity, w)) {
-          return true;
-        }
-      }
-      return false;
-    }
+/* -------------------------------------
+   COLLISION & MOVEMENT
+------------------------------------- */
+function isColliding(a, b) {
+  const wA = a.size || a.width;
+  const hA = a.size || a.height;
+  const wB = b.size || b.width;
+  const hB = b.size || b.height;
+  return a.x < b.x + wB &&
+         a.x + wA > b.x &&
+         a.y < b.y + hB &&
+         a.y + hA > b.y;
+}
 
-    // Update player movement and revert movement if a wall is hit.
-    function updatePlayer() {
-      const prevX = player.x;
-      const prevY = player.y;
-
-      // Horizontal movement.
-      if (keys['ArrowLeft'] || keys['a']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d']) {
-        player.x += player.speed;
-      }
-      if (collidesWithWalls(player)) {
-        player.x = prevX;
-      }
-
-      // Vertical movement.
-      if (keys['ArrowUp'] || keys['w']) {
-        player.y -= player.speed;
-      }
-      if (keys['ArrowDown'] || keys['s']) {
-        player.y += player.speed;
-      }
-      if (collidesWithWalls(player)) {
-        player.y = prevY;
-      }
-
-      // Ensure player stays within the canvas.
-      player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
-      player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
-    }
-
-    // -------------------------
-    // Line-of-Sight (LOS) & Enemy Detection
-    // -------------------------
-
-    // Check if two line segments (p1 to p2 and p3 to p4) intersect.
-    function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
-      const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-      if (denom === 0) return false;
-      const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
-      const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
-      return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
-    }
-
-    // Check if a line segment from (x1,y1) to (x2,y2) intersects a rectangle.
-    function lineIntersectsRect(x1, y1, x2, y2, rect) {
-      const left = rect.x;
-      const right = rect.x + rect.width;
-      const top = rect.y;
-      const bottom = rect.y + rect.height;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, top, right, top)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, right, top, right, bottom)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, bottom, right, bottom)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, top, left, bottom)) return true;
-      return false;
-    }
-
-    // Determine if any wall blocks the line of sight between an enemy and the player.
-    function lineOfSightBlocked(enemy, player) {
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      for (let w of walls) {
-        if (lineIntersectsRect(ex, ey, px, py, w)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    // Enemy vision check: returns true if the enemy can see the player.
-    function enemyCanSeePlayer(enemy, player) {
-      // Calculate center points.
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      const dx = px - ex;
-      const dy = py - ey;
-      const distance = Math.hypot(dx, dy);
-      const sightRange = 150; // Maximum sight range.
-      if (distance > sightRange) return false;
-
-      // Determine the enemy's facing direction.
-      let edx = enemy.dir.x;
-      let edy = enemy.dir.y;
-      // Normalize the vector from enemy to player.
-      const pdx = dx / distance;
-      const pdy = dy / distance;
-      // Dot product gives cosine of angle between enemy's facing and the vector to the player.
-      const dot = edx * pdx + edy * pdy;
-      const fov = Math.cos(45 * Math.PI / 180); // 45° on each side (90° total FOV).
-      if (dot < fov) return false;
-
-      // Check if any wall obstructs the view.
-      if (lineOfSightBlocked(enemy, player)) return false;
-
+function collidesWithWalls(entity) {
+  for (let w of walls) {
+    if (isColliding(entity, w)) {
       return true;
     }
+  }
+  return false;
+}
 
-    // -------------------------
-    // Game Collision & State Check
-    // -------------------------
+function updatePlayer() {
+  const prevX = player.x;
+  const prevY = player.y;
 
-    // Instead of contact, check if an enemy "spots" the player.
-    function checkCollisions() {
-      for (let enemy of enemies) {
-        if (enemyCanSeePlayer(enemy, player)) {
-          gameOver = true;
-          if (!bloodSplats) {
-            bloodSplats = generateBloodSplats(25);
-          }
-        }
-      }
-      // Check if the player has reached the goal.
-      const goalRect = { x: goal.x, y: goal.y, size: goal.size };
-      if (isColliding(player, goalRect)) {
-        gameWin = true;
+  // Horizontal
+  if (keys['ArrowLeft'] || keys['a']) {
+    player.x -= player.speed;
+  }
+  if (keys['ArrowRight'] || keys['d']) {
+    player.x += player.speed;
+  }
+  if (collidesWithWalls(player)) {
+    player.x = prevX;
+  }
+
+  // Vertical
+  if (keys['ArrowUp'] || keys['w']) {
+    player.y -= player.speed;
+  }
+  if (keys['ArrowDown'] || keys['s']) {
+    player.y += player.speed;
+  }
+  if (collidesWithWalls(player)) {
+    player.y = prevY;
+  }
+
+  // Keep player within canvas
+  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+  player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+}
+
+/* -------------------------------------
+   LIGHT/SHADOW LOGIC
+------------------------------------- */
+// Check if the player’s center is inside *any* light circle.
+function playerIsInLight() {
+  const px = player.x + player.size / 2;
+  const py = player.y + player.size / 2;
+  for (let l of lights) {
+    const dx = px - l.x;
+    const dy = py - l.y;
+    if (dx*dx + dy*dy <= l.radius*l.radius) {
+      return true; // inside at least one light circle
+    }
+  }
+  return false;
+}
+
+/* -------------------------------------
+   LINE-OF-SIGHT & ENEMY DETECTION
+------------------------------------- */
+// Basic line intersection
+function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
+  const denom = (y4 - y3)*(x2 - x1) - (x4 - x3)*(y2 - y1);
+  if (denom === 0) return false; // parallel or coincident
+  const ua = ((x4 - x3)*(y1 - y3) - (y4 - y3)*(x1 - x3)) / denom;
+  const ub = ((x2 - x1)*(y1 - y3) - (y2 - y1)*(x1 - x3)) / denom;
+  return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1);
+}
+
+function lineIntersectsRect(x1, y1, x2, y2, rect) {
+  const left = rect.x;
+  const right = rect.x + rect.width;
+  const top = rect.y;
+  const bottom = rect.y + rect.height;
+  // Check each edge
+  if (lineIntersectsLine(x1, y1, x2, y2, left, top, right, top)) return true;
+  if (lineIntersectsLine(x1, y1, x2, y2, right, top, right, bottom)) return true;
+  if (lineIntersectsLine(x1, y1, x2, y2, left, bottom, right, bottom)) return true;
+  if (lineIntersectsLine(x1, y1, x2, y2, left, top, left, bottom)) return true;
+  return false;
+}
+
+// Check if walls block LOS from enemy to player
+function lineOfSightBlocked(enemy, player) {
+  const ex = enemy.x + enemy.size/2;
+  const ey = enemy.y + enemy.size/2;
+  const px = player.x + player.size/2;
+  const py = player.y + player.size/2;
+  for (let w of walls) {
+    if (lineIntersectsRect(ex, ey, px, py, w)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// The main detection check
+function enemyCanSeePlayer(enemy, player) {
+  // If player is not in light, they cannot be seen at all
+  if (!playerIsInLight()) {
+    return false;
+  }
+
+  // Player *is* in light, so do normal distance + FOV + LOS checks
+  const ex = enemy.x + enemy.size / 2;
+  const ey = enemy.y + enemy.size / 2;
+  const px = player.x + player.size / 2;
+  const py = player.y + player.size / 2;
+  const dx = px - ex;
+  const dy = py - ey;
+  const distance = Math.hypot(dx, dy);
+  const sightRange = 150;
+  if (distance > sightRange) return false;
+
+  // Check FOV via dot product
+  let edx = enemy.dir.x;
+  let edy = enemy.dir.y;
+  const pdx = dx / distance;
+  const pdy = dy / distance;
+  const dot = edx*pdx + edy*pdy;
+  const fov = Math.cos(45 * Math.PI / 180); // 90° total
+  if (dot < fov) return false;
+
+  // Check if walls block LOS
+  if (lineOfSightBlocked(enemy, player)) return false;
+
+  return true;
+}
+
+/* -------------------------------------
+   CHECK COLLISIONS (SPOTTING, GOAL, ETC.)
+------------------------------------- */
+function checkCollisions() {
+  // If any enemy sees the player => game over
+  for (let enemy of enemies) {
+    if (enemyCanSeePlayer(enemy, player)) {
+      gameOver = true;
+      if (!bloodSplats) {
+        bloodSplats = generateBloodSplats(25);
       }
     }
+  }
+  // Check goal
+  const goalRect = { x: goal.x, y: goal.y, size: goal.size };
+  if (isColliding(player, goalRect)) {
+    gameWin = true;
+  }
+}
 
-    // -------------------------
-    // Blood Splatter Effect
-    // -------------------------
+/* -------------------------------------
+   BLOOD SPLATTER
+------------------------------------- */
+function generateBloodSplats(num) {
+  const splats = [];
+  for (let i = 0; i < num; i++) {
+    splats.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      radius: Math.random() * 40 + 10
+    });
+  }
+  return splats;
+}
 
-    // Generate data for blood splatter effect upon detection.
-    function generateBloodSplats(num) {
-      const splats = [];
-      for (let i = 0; i < num; i++) {
-        splats.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          radius: Math.random() * 40 + 10,
-          startAngle: Math.random() * Math.PI * 2,
-          endAngle: Math.random() * Math.PI * 2
-        });
-      }
-      return splats;
+function drawBloodEffect() {
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  ctx.fillStyle = 'red';
+  for (let splat of bloodSplats) {
+    ctx.beginPath();
+    ctx.arc(splat.x, splat.y, splat.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* -------------------------------------
+   MAIN LOOP
+------------------------------------- */
+function update() {
+  if (gameOver || gameWin) return;
+  updatePlayer();
+  enemies.forEach(e => e.update());
+  checkCollisions();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw walls
+  for (let w of walls) {
+    ctx.fillStyle = w.color;
+    ctx.fillRect(w.x, w.y, w.width, w.height);
+  }
+
+  // Draw lights as faint circles (optional visual)
+  // so you can see where the "lit" spots are.
+  // (You can remove or comment this out if you prefer.)
+  ctx.save();
+  ctx.globalAlpha = 0.15; 
+  ctx.fillStyle = 'white';
+  for (let l of lights) {
+    ctx.beginPath();
+    ctx.arc(l.x, l.y, l.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Draw goal
+  ctx.fillStyle = goal.color;
+  ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
+
+  // Draw player
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+
+  // Draw enemies
+  enemies.forEach(e => e.draw());
+
+  // Win/lose messages
+  if (gameWin) {
+    ctx.fillStyle = 'white';
+    ctx.font = '48px sans-serif';
+    ctx.fillText('You Win!', canvas.width / 2 - 100, canvas.height / 2);
+  }
+  if (gameOver) {
+    ctx.fillStyle = 'white';
+    ctx.font = '48px sans-serif';
+    ctx.fillText('Game Over!', canvas.width / 2 - 120, canvas.height / 2);
+    if (bloodSplats) {
+      drawBloodEffect();
     }
+  }
+}
 
-    // Render the blood splatter effect overlay.
-    function drawBloodEffect() {
-      ctx.save();
-      ctx.globalAlpha = 0.6;
-      ctx.fillStyle = 'red';
-      for (let splat of bloodSplats) {
-        ctx.beginPath();
-        ctx.arc(splat.x, splat.y, splat.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
+function gameLoop() {
+  update();
+  draw();
+  if (!gameOver && !gameWin) {
+    requestAnimationFrame(gameLoop);
+  }
+}
 
-    // -------------------------
-    // Main Game Loop
-    // -------------------------
-
-    function update() {
-      if (gameOver || gameWin) return;
-      updatePlayer();
-      enemies.forEach(enemy => enemy.update());
-      checkCollisions();
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw hallway walls.
-      walls.forEach(w => {
-        ctx.fillStyle = w.color;
-        ctx.fillRect(w.x, w.y, w.width, w.height);
-      });
-
-      // Draw the goal.
-      ctx.fillStyle = goal.color;
-      ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
-
-      // Draw the player.
-      ctx.fillStyle = player.color;
-      ctx.fillRect(player.x, player.y, player.size, player.size);
-
-      // Draw the enemies.
-      enemies.forEach(enemy => enemy.draw());
-
-      // Display win/lose messages.
-      if (gameWin) {
-        ctx.fillStyle = 'white';
-        ctx.font = '48px sans-serif';
-        ctx.fillText('You Win!', canvas.width / 2 - 100, canvas.height / 2);
-      }
-      if (gameOver) {
-        ctx.fillStyle = 'white';
-        ctx.font = '48px sans-serif';
-        ctx.fillText('Game Over!', canvas.width / 2 - 120, canvas.height / 2);
-        if (bloodSplats) {
-          drawBloodEffect();
-        }
-      }
-    }
-
-    function gameLoop() {
-      update();
-      draw();
-      if (!gameOver && !gameWin) {
-        requestAnimationFrame(gameLoop);
-      }
-    }
-
-    // Start the game.
-    gameLoop();
-
-    // -------------------------
-    // NOTES 
-    //
-    // 1. OVERALL STRUCTURE:
-    //    - This is a complete HTML file with embedded JavaScript that runs a simple top‑down stealth game.
-    //    - The game is rendered on an HTML5 canvas and uses a main game loop (via requestAnimationFrame).
-    //
-    // 2. GAME ENTITIES:
-    //    - Player: Controlled via arrow keys/WASD; collision detection prevents moving through walls.
-    //    - Enemies: Two enemies that patrol preset paths (defined as arrays of waypoints). They update their position gradually.
-    //    - Goal: A target square that the player must reach to win.
-    //    - Walls: Rectangular obstacles arranged to form hallways (instead of a city). They block movement and line-of-sight.
-    //
-    // 3. ENEMY AI & DETECTION:
-    //    - Enemies move along their patrol paths using normalized vectors.
-    //    - Each enemy has a field-of-view (90° total) and a sight range.
-    //    - Instead of physical contact, an enemy “spots” the player if:
-    //         a) The player is within sight range.
-    //         b) The player is within the enemy’s field-of-view (checked using a dot product).
-    //         c) No wall blocks the line-of-sight (line-intersection checks with walls).
-    //
-    // 4. EFFECTS:
-    //    - When an enemy spots the player, the game ends and a blood splatter effect overlays the screen.
-    //    - The blood splatter is generated randomly and rendered with a semi-transparent red overlay.
-    //
-    // 5. INPUT & COLLISIONS:
-    //    - The game listens for keyboard events to update the player’s position.
-    //    - Collision detection uses axis-aligned bounding boxes (AABB).
-    //
-    // 6. GAME LOOP:
-    //    - The gameLoop() function calls update() and draw() in succession.
-    //    - It stops when either the player wins or gets caught.
-    //
-    // These notes are meant to help future developers understand the structure, logic, and flow of the game.
-    // -------------------------
-  </script>
+// Start
+gameLoop();
+</script>
 </body>
 </html>
+
