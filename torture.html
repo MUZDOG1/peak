@@ -359,12 +359,12 @@
         ctx.fillRect(w.x, w.y, w.width, w.height);
       });
 
-      // Draw rectangular lights with a bloom effect.
-      // This part still draws the lights normally for a subtle glow.
+      // Draw enhanced light zones to simulate factory lighting.
       ctx.save();
-      ctx.shadowColor = 'rgba(255,255,200,0.8)';
-      ctx.shadowBlur = 30;
-      ctx.fillStyle = 'rgba(255,255,180,0.15)';
+      // Use a stronger fill for the light zones.
+      ctx.shadowColor = 'rgba(255,255,220,1)';
+      ctx.shadowBlur = 40;
+      ctx.fillStyle = 'rgba(255,255,210,0.9)';
       lights.forEach(l => {
         ctx.fillRect(l.x, l.y, l.width, l.height);
       });
@@ -381,16 +381,16 @@
       // Draw the enemies.
       enemies.forEach(enemy => enemy.draw());
 
-      // Apply a dark overlay to make areas outside the lights much darker.
+      // Apply a lighter dark overlay to make areas outside the lights slightly dark.
       ctx.save();
-      // Draw a nearly opaque dark rectangle over the entire canvas.
-      ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+      // Lower opacity for the dark overlay.
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       // Set composite operation to cut out light zones.
       ctx.globalCompositeOperation = "destination-out";
       lights.forEach(l => {
-        // Use a blur to create a soft edge for the light.
-        ctx.filter = "blur(30px)";
+        // Use a softer blur for the light edges.
+        ctx.filter = "blur(15px)";
         ctx.fillStyle = "rgba(0, 0, 0, 1)";
         ctx.fillRect(l.x, l.y, l.width, l.height);
         ctx.filter = "none";
