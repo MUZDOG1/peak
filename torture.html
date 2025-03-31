@@ -130,21 +130,22 @@
       display: none;
       z-index: 15;
     }
-    /* New Clock Image Styling */
+    /* New Clock Image Styling:
+       Positioned in the very top right of the gameplay area and overlapping the canvas.
+    */
     #clockImg {
       position: absolute;
-      top: 40px;  /* Positioned under the speedrun clock */
-      right: 10px;
-      z-index: 20;
-      width: 200px; /* 2x bigger */
+      top: 0;
+      right: 0;
+      z-index: 9999;
+      width: 200px; /* 2x bigger than before */
       height: auto;
-      display: none; /* hidden by default */
     }
   </style>
 </head>
 <body>
   <div id="gameContainer">
-    <!-- Clock Image -->
+    <!-- Clock Image (always part of the game container, but its visibility is controlled) -->
     <img id="clockImg" src="clock12.png" alt="Clock">
     
     <!-- Title Screen -->
@@ -269,6 +270,8 @@
   
     function startGame() {
       gameStarted = true;
+      // Hide title and menu elements when gameplay starts.
+      document.getElementById('titleScreen').style.display = 'none';
       document.getElementById('mainMenu').style.display = 'none';
       const introVideo = document.getElementById('introVideo');
       introVideo.style.display = 'block';
@@ -626,21 +629,22 @@
     }
     
     // New function to update clock image visibility.
+    // The clock will only display when gameplay is active (gameStarted true)
+    // and none of the cutscene or menu elements are visible.
     function updateClockVisibility() {
       const clockImg = document.getElementById('clockImg');
-      // Hide clock if game hasn't started or if any cutscene/menu is visible.
       if (
-        !gameStarted ||
-        document.getElementById('introVideo').style.display === 'block' ||
-        document.getElementById('crashVideo').style.display === 'block' ||
-        document.getElementById('womanExecutionVideo').style.display === 'block' ||
-        document.getElementById('deathGifOverlay').style.display === 'block' ||
-        document.getElementById('titleScreen').style.display === 'block' ||
-        document.getElementById('mainMenu').style.display === 'block'
+        gameStarted &&
+        document.getElementById('introVideo').style.display !== 'block' &&
+        document.getElementById('crashVideo').style.display !== 'block' &&
+        document.getElementById('womanExecutionVideo').style.display !== 'block' &&
+        document.getElementById('deathGifOverlay').style.display !== 'block' &&
+        document.getElementById('titleScreen').style.display !== 'block' &&
+        document.getElementById('mainMenu').style.display !== 'block'
       ) {
-        clockImg.style.display = 'none';
-      } else {
         clockImg.style.display = 'block';
+      } else {
+        clockImg.style.display = 'none';
       }
     }
   
@@ -821,7 +825,7 @@
       requestAnimationFrame(gameLoop);
     }
     
-    // Always update clock visibility regardless of game loop.
+    // Always update clock visibility.
     setInterval(updateClockVisibility, 100);
   </script>
 </body>
