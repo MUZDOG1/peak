@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Advanced Manhunt-Style Game</title>
+  <title>Manhunt-Style Game with City Layout & Blood Effect</title>
   <style>
     body {
       margin: 0;
@@ -10,7 +10,7 @@
     }
     canvas {
       display: block;
-      background: #333;
+      background: #444;
       margin: 0 auto;
     }
   </style>
@@ -21,7 +21,7 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Player setup
+    // --- Game Entities ---
     const player = {
       x: 50,
       y: 50,
@@ -30,26 +30,26 @@
       speed: 3
     };
 
-    // Goal setup
+    // Place the goal at the bottom-right
     const goal = {
       x: 750,
-      y: 50,
+      y: 550,
       size: 20,
       color: 'yellow'
     };
 
-    // Building obstacles (not passable)
+    // City-like buildings arranged in a grid (city block)
     const buildings = [
-      { x: 200, y: 100, width: 150, height: 100, color: '#555' },
-      { x: 500, y: 300, width: 200, height: 150, color: '#555' },
-      // Add more buildings if desired
-      { x: 100, y: 400, width: 120, height: 100, color: '#555' }
+      { x: 200, y: 150, width: 150, height: 150, color: '#555' },
+      { x: 400, y: 150, width: 150, height: 150, color: '#555' },
+      { x: 200, y: 350, width: 150, height: 150, color: '#555' },
+      { x: 400, y: 350, width: 150, height: 150, color: '#555' }
     ];
 
-    // Enemies with patrol paths
+    // --- Enemy Patrol Class ---
     class Enemy {
       constructor(path, speed, color) {
-        this.path = path; // Array of waypoints: { x, y }
+        this.path = path; // Array of waypoints { x, y }
         this.speed = speed;
         this.color = color;
         // Start at the first waypoint
@@ -60,28 +60,20 @@
       }
 
       update() {
-        // Determine target waypoint
+        // Target the current waypoint
         const target = this.path[this.currentWaypoint];
-        // Calculate direction vector
         let dx = target.x - this.x;
         let dy = target.y - this.y;
         const distance = Math.hypot(dx, dy);
         if (distance < 2) {
-          // Arrived at waypoint; move to next
+          // Switch to next waypoint
           this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
         } else {
-          // Normalize direction and move
+          // Normalize the direction and update position
           dx /= distance;
           dy /= distance;
-          const newX = this.x + dx * this.speed;
-          const newY = this.y + dy * this.speed;
-          // Check for collisions with buildings before moving
-          if (!collidesWithBuildings({ x: newX, y: this.y, size: this.size })) {
-            this.x = newX;
-          }
-          if (!collidesWithBuildings({ x: this.x, y: newY, size: this.size })) {
-            this.y = newY;
-          }
+          this.x += dx * this.speed;
+          this.y += dy * this.speed;
         }
       }
 
@@ -91,61 +83,67 @@
       }
     }
 
-    // Define patrol paths for two enemies.
-    // Enemy 1 patrols around the first building.
+    // --- Define enemy patrol paths (carefully chosen to avoid buildings) ---
+    // Enemy 1 patrols a rectangle around the upper-left building
     const enemy1Path = [
-      { x: 200, y: 50 },
-      { x: 370, y: 50 },
-      { x: 370, y: 220 },
-      { x: 200, y: 220 }
+      { x: 180, y: 140 },
+      { x: 360, y: 140 },
+      { x: 360, y: 320 },
+      { x: 180, y: 320 }
     ];
-    // Enemy 2 patrols around the second building.
+    // Enemy 2 patrols a rectangle around the bottom-right building
     const enemy2Path = [
-      { x: 500, y: 260 },
-      { x: 710, y: 260 },
-      { x: 710, y: 480 },
-      { x: 500, y: 480 }
+      { x: 380, y: 340 },
+      { x: 560, y: 340 },
+      { x: 560, y: 520 },
+      { x: 380, y: 520 }
     ];
 
+    // Lower enemy speed so they don't zip around too fast
     const enemies = [
-      new Enemy(enemy1Path, 2, 'red'),
-      new Enemy(enemy2Path, 2, 'orange')
+      new Enemy(enemy1Path, 1.5, 'red'),
+      new Enemy(enemy2Path, 1.5, 'orange')
     ];
 
-    // Game state flags
+    // --- Game State ---
     let gameOver = false;
     let gameWin = false;
+    let bloodSplats = null; // Will hold blood effect data on death
 
-    // Track keys pressed
+    // --- Input Handling ---
     const keys = {};
     window.addEventListener('keydown', (e) => { keys[e.key] = true; });
     window.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
-    // Helper: Check collision between two AABB rectangles
+    // --- Collision Helpers ---
+    // For player vs building/enemy collisions
     function isColliding(a, b) {
-      return a.x < b.x + b.width &&
-             a.x + a.size > b.x &&
-             a.y < b.y + b.height &&
-             a.y + a.size > b.y;
+      // For building, b.width and b.height exist; for player/enemy, we treat size as width and height.
+      const widthA = a.size || a.width;
+      const heightA = a.size || a.height;
+      const widthB = b.size || b.width;
+      const heightB = b.size || b.height;
+      return a.x < b.x + widthB &&
+             a.x + widthA > b.x &&
+             a.y < b.y + heightB &&
+             a.y + heightA > b.y;
     }
 
-    // Check collision for an object with all buildings
-    // The object here is expected to have x, y, size properties
-    function collidesWithBuildings(obj) {
-      for (let building of buildings) {
-        if (isColliding(obj, building)) {
+    function collidesWithBuildings(entity) {
+      for (let b of buildings) {
+        if (isColliding(entity, b)) {
           return true;
         }
       }
       return false;
     }
 
-    // Update player movement with collision resolution (axis-aligned)
+    // --- Player Movement with Building Collision ---
     function updatePlayer() {
-      let prevX = player.x;
-      let prevY = player.y;
+      const prevX = player.x;
+      const prevY = player.y;
 
-      // Move horizontally and check collision
+      // Horizontal movement
       if (keys['ArrowLeft'] || keys['a']) {
         player.x -= player.speed;
       }
@@ -153,10 +151,10 @@
         player.x += player.speed;
       }
       if (collidesWithBuildings(player)) {
-        player.x = prevX; // revert horizontal move
+        player.x = prevX;
       }
 
-      // Move vertically and check collision
+      // Vertical movement
       if (keys['ArrowUp'] || keys['w']) {
         player.y -= player.speed;
       }
@@ -164,50 +162,86 @@
         player.y += player.speed;
       }
       if (collidesWithBuildings(player)) {
-        player.y = prevY; // revert vertical move
+        player.y = prevY;
       }
 
-      // Keep player within canvas bounds
+      // Keep player within canvas
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
     }
 
-    // Check collisions: player with enemies and goal
+    // --- Check Collisions between Player and Enemies/Goal ---
     function checkCollisions() {
-      // Player and enemies
       for (let enemy of enemies) {
-        const enemyRect = { x: enemy.x, y: enemy.y, size: enemy.size, width: enemy.size, height: enemy.size };
+        const enemyRect = { x: enemy.x, y: enemy.y, size: enemy.size };
         if (isColliding(player, enemyRect)) {
           gameOver = true;
+          // Generate blood splat effect once
+          if (!bloodSplats) {
+            bloodSplats = generateBloodSplats(25);
+          }
         }
       }
-      // Player and goal (goal treated as a rectangle)
-      const goalRect = { x: goal.x, y: goal.y, size: goal.size, width: goal.size, height: goal.size };
+      const goalRect = { x: goal.x, y: goal.y, size: goal.size };
       if (isColliding(player, goalRect)) {
         gameWin = true;
       }
     }
 
-    // Main update function
+    // --- Generate Blood Splatter Data (array of splat shapes) ---
+    function generateBloodSplats(num) {
+      const splats = [];
+      for (let i = 0; i < num; i++) {
+        splats.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 40 + 10,
+          // random irregularity: we can simulate by drawing arcs at varying angles
+          startAngle: Math.random() * Math.PI * 2,
+          endAngle: Math.random() * Math.PI * 2
+        });
+      }
+      return splats;
+    }
+
+    // --- Draw Blood Splatter Effect ---
+    function drawBloodEffect() {
+      ctx.save();
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = 'red';
+      for (let splat of bloodSplats) {
+        ctx.beginPath();
+        // Use arc to create a splat-like circle
+        ctx.arc(splat.x, splat.y, splat.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // --- Main Update and Draw Functions ---
     function update() {
       if (gameOver || gameWin) return;
       updatePlayer();
-      for (let enemy of enemies) {
-        enemy.update();
-      }
+      enemies.forEach(enemy => enemy.update());
       checkCollisions();
     }
 
-    // Draw game objects
     function draw() {
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw buildings
-      for (let building of buildings) {
-        ctx.fillStyle = building.color;
-        ctx.fillRect(building.x, building.y, building.width, building.height);
-      }
+      // Draw buildings (city-like style)
+      buildings.forEach(b => {
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, b.y, b.width, b.height);
+        // Optional: add windows for a city look
+        ctx.fillStyle = '#222';
+        for (let i = 0; i < 5; i++) {
+          for (let j = 0; j < 3; j++) {
+            ctx.fillRect(b.x + 10 + j * 40, b.y + 10 + i * 25, 20, 15);
+          }
+        }
+      });
 
       // Draw goal
       ctx.fillStyle = goal.color;
@@ -218,24 +252,25 @@
       ctx.fillRect(player.x, player.y, player.size, player.size);
 
       // Draw enemies
-      for (let enemy of enemies) {
-        enemy.draw();
-      }
+      enemies.forEach(enemy => enemy.draw());
 
-      // Display messages for win/lose
-      if (gameOver) {
-        ctx.fillStyle = 'white';
-        ctx.font = '48px sans-serif';
-        ctx.fillText('Game Over!', canvas.width / 2 - 120, canvas.height / 2);
-      }
+      // Show win/lose messages
       if (gameWin) {
         ctx.fillStyle = 'white';
         ctx.font = '48px sans-serif';
         ctx.fillText('You Win!', canvas.width / 2 - 100, canvas.height / 2);
       }
+      if (gameOver) {
+        ctx.fillStyle = 'white';
+        ctx.font = '48px sans-serif';
+        ctx.fillText('Game Over!', canvas.width / 2 - 120, canvas.height / 2);
+        // Draw blood splatter overlay
+        if (bloodSplats) {
+          drawBloodEffect();
+        }
+      }
     }
 
-    // Main game loop
     function gameLoop() {
       update();
       draw();
@@ -244,7 +279,7 @@
       }
     }
 
-    // Start the game loop
+    // --- Start the Game ---
     gameLoop();
   </script>
 </body>
