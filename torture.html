@@ -59,9 +59,7 @@
     // -------------------------
     // Lighting: Rectangular Lights in Main Halls
     // -------------------------
-    // We define two rectangular light zones with a bloom effect.
-    // The left light covers the left corridor (from x=0 to 200) and
-    // the right light covers the right corridor (from x=580 to 800).
+    // Two light zones that will remain bright while the rest of the area is darkened.
     const lights = [
       { x: 35,   y: 50,   width: 120, height: 500 },
       { x: 640, y: 50,   width: 140, height: 510 }
@@ -342,7 +340,7 @@
     }
 
     // -------------------------
-    // Main Game Loop
+    // Main Game Loop & Drawing
     // -------------------------
 
     function update() {
@@ -362,7 +360,7 @@
       });
 
       // Draw rectangular lights with a bloom effect.
-      // We set a shadowBlur and shadowColor to simulate bloom.
+      // This part still draws the lights normally for a subtle glow.
       ctx.save();
       ctx.shadowColor = 'rgba(255,255,200,0.8)';
       ctx.shadowBlur = 30;
@@ -383,7 +381,23 @@
       // Draw the enemies.
       enemies.forEach(enemy => enemy.draw());
 
-      // Display win/lose messages.
+      // Apply a dark overlay to make areas outside the lights much darker.
+      ctx.save();
+      // Draw a nearly opaque dark rectangle over the entire canvas.
+      ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Set composite operation to cut out light zones.
+      ctx.globalCompositeOperation = "destination-out";
+      lights.forEach(l => {
+        // Use a blur to create a soft edge for the light.
+        ctx.filter = "blur(30px)";
+        ctx.fillStyle = "rgba(0, 0, 0, 1)";
+        ctx.fillRect(l.x, l.y, l.width, l.height);
+        ctx.filter = "none";
+      });
+      ctx.restore();
+
+      // Display win/lose messages on top.
       if (gameWin) {
         ctx.fillStyle = 'white';
         ctx.font = '48px sans-serif';
@@ -409,18 +423,6 @@
 
     // Start the game.
     gameLoop();
-
-    // -------------------------
-    // NOTES 
-    //
-    // 1. Lighting System:
-    //    - Two rectangular light zones (left and right) are defined in the 'lights' array.
-    //    - The function playerIsInLight() checks if the player's center is inside one of these rectangles.
-    //    - In enemyCanSeePlayer(), if the player is not in a light zone, they cannot be detected.
-    //    - The draw() function uses shadowBlur and shadowColor settings to simulate a bloom effect on the light zones.
-    //
-    // 2. Other mechanics (collision, enemy patrols, blood effect) remain unchanged.
-    // -------------------------
   </script>
 </body>
 </html>
