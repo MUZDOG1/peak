@@ -261,7 +261,7 @@
       isPunching: false
     };
 
-    // In your code the enemy is handled via the single variable "enemyActive".
+    // The first enemy ("dude/guy/ginger") is handled via enemyActive with type "default".
     // We add a flag for the first ape and an array to hold extra apes.
     if (!window.firstApeSpawned) { window.firstApeSpawned = false; }
     let extraApes = [];
@@ -279,7 +279,8 @@
       health: 300,
       idleImage: new Image(),
       hitImage: new Image(),
-      type: 'default'
+      type: 'default', // first enemy is the "guy"
+      hitCount: 0 // counter to track hits for playing the sound every 2 hits
     };
     enemyActive.idleImage.src = 'enemyidle.png';
     enemyActive.hitImage.src = 'hit.png';
@@ -426,10 +427,12 @@
           player.isPunching = true;
           setTimeout(() => { player.isPunching = false; }, 200);
           
-          // For the "man" enemy (type 'woman') play a random gingerscream sound on the first hit.
-          if (target.type === 'woman' && !target.gingerScreamPlayed) {
-            playRandomGingerScream();
-            target.gingerScreamPlayed = true;
+          // For the first enemy (type "default" on enemyActive), increment hit counter and play sound every 2 hits.
+          if (target === enemyActive && target.type === 'default') {
+            target.hitCount = (target.hitCount || 0) + 1;
+            if (target.hitCount % 2 === 0) {
+              playRandomGingerScream();
+            }
           }
           
           target.isHurt = true;
