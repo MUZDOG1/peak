@@ -136,8 +136,9 @@
       top: 40px;  /* Positioned under the speedrun clock */
       right: 10px;
       z-index: 20;
-      width: 100px; /* Adjust width as needed */
+      width: 200px; /* 2x bigger */
       height: auto;
+      display: none; /* hidden by default */
     }
   </style>
 </head>
@@ -274,7 +275,7 @@
       introVideo.play();
       introVideo.addEventListener('ended', () => {
         introVideo.style.display = 'none';
-        if(speedrunEnabled) {
+        if (speedrunEnabled) {
           startTime = Date.now();
           document.getElementById('speedrunClock').style.display = 'block';
           updateTimer();
@@ -624,15 +625,18 @@
       return Math.sqrt(dx * dx + dy * dy);
     }
     
-    // New function to update clock image visibility
+    // New function to update clock image visibility.
     function updateClockVisibility() {
       const clockImg = document.getElementById('clockImg');
-      // If any cutscene/video/gif is visible, hide the clock image.
+      // Hide clock if game hasn't started or if any cutscene/menu is visible.
       if (
+        !gameStarted ||
         document.getElementById('introVideo').style.display === 'block' ||
         document.getElementById('crashVideo').style.display === 'block' ||
         document.getElementById('womanExecutionVideo').style.display === 'block' ||
-        document.getElementById('deathGifOverlay').style.display === 'block'
+        document.getElementById('deathGifOverlay').style.display === 'block' ||
+        document.getElementById('titleScreen').style.display === 'block' ||
+        document.getElementById('mainMenu').style.display === 'block'
       ) {
         clockImg.style.display = 'none';
       } else {
@@ -727,7 +731,7 @@
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
       
-      // Update clock image visibility based on cutscene/video status.
+      // Update clock image visibility.
       updateClockVisibility();
     }
   
@@ -816,6 +820,9 @@
       draw();
       requestAnimationFrame(gameLoop);
     }
+    
+    // Always update clock visibility regardless of game loop.
+    setInterval(updateClockVisibility, 100);
   </script>
 </body>
 </html>
