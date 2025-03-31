@@ -130,24 +130,19 @@
       display: none;
       z-index: 15;
     }
-    /* New Clock Image Styling:
-       Positioned in the very top right of the gameplay area and overlapping the canvas.
-    */
+    /* Clock image now inside the gameplay area (#gameWrapper) */
     #clockImg {
       position: absolute;
       top: 0;
       right: 0;
       z-index: 9999;
-      width: 200px; /* 2x bigger than before */
+      width: 200px; /* 2x bigger */
       height: auto;
     }
   </style>
 </head>
 <body>
   <div id="gameContainer">
-    <!-- Clock Image (always part of the game container, but its visibility is controlled) -->
-    <img id="clockImg" src="clock12.png" alt="Clock">
-    
     <!-- Title Screen -->
     <div id="titleScreen">
       <div id="titleText">CLOCKWORK DESOLATION</div>
@@ -167,6 +162,8 @@
     
     <div id="speedrunClock">00:00:00</div>
     <div id="gameWrapper">
+      <!-- Clock Image now placed inside the gameplay area -->
+      <img id="clockImg" src="clock12.png" alt="Clock">
       <canvas id="gameCanvas"></canvas>
       <img id="deathGifOverlay" src="death.gif" alt="Death Animation">
       <video id="introVideo" src="gps.mp4" playsinline muted></video>
@@ -629,8 +626,7 @@
     }
     
     // New function to update clock image visibility.
-    // The clock will only display when gameplay is active (gameStarted true)
-    // and none of the cutscene or menu elements are visible.
+    // The clock will only display during gameplay.
     function updateClockVisibility() {
       const clockImg = document.getElementById('clockImg');
       if (
