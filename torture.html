@@ -38,7 +38,7 @@
       image-rendering: -webkit-optimize-contrast;
       image-rendering: pixelated;
     }
-    #deathGifOverlay, #introVideo, #womanExecutionVideo, #crashVideo, #gingerDeathVideo {
+    #deathGifOverlay, #introVideo, #gingerDeathVideo, #womanExecutionVideo, #crashVideo {
       position: absolute;
       top: 0;
       left: 0;
@@ -560,11 +560,18 @@
               target.health = 0;
               target.isDead = true;
               if (target.type === 'woman') {
-                // Woman enemy: set kill image and after a 5-second delay play the crash video.
-                target.idleImage.src = "womandead.png";
-                setTimeout(() => {
-                  playCrashVideo();
-                }, 5000);
+                // For the woman enemy: play her death video.
+                const womanVideo = document.getElementById('womanExecutionVideo');
+                womanVideo.style.display = 'block';
+                womanVideo.currentTime = 0;
+                womanVideo.play();
+                womanVideo.onended = () => {
+                  womanVideo.style.display = 'none';
+                  // After a 5-second delay, play the crash video.
+                  setTimeout(() => {
+                    playCrashVideo();
+                  }, 5000);
+                };
               } else if (target.type === 'default') {
                 // Ginger man: play the ginger death video.
                 let gingerDeathVideo = document.getElementById('gingerDeathVideo');
