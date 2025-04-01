@@ -2,97 +2,97 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Beyond Amazing Maze Game</title>
+  <title>Ultimate Maze Game</title>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
       background: #000;
+      overflow: hidden;
     }
     canvas {
       display: block;
       background: #333;
       margin: 0 auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
     }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
+    // Grab canvas and context.
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
     // Preload images.
     const enemyImage = new Image();
     enemyImage.src = 'omni.png';
-
     const enemyImage2 = new Image();
     enemyImage2.src = 'omni2.png';
-
     const playerImage = new Image();
     playerImage.src = 'player.png';
 
     // -------------------------
     // Game Entities & Parameters
     // -------------------------
-    // Player setup.
     const player = {
       x: 50,
       y: 50,
       size: 60,
       color: 'lime',
-      speed: 1.5,
+      speed: 1.8,
       angle: 0
     };
 
-    // Goal placement.
+    // Place a larger, eye-catching goal.
     const goal = {
-      x: 730,
-      y: 530,
-      size: 40,
+      x: 720,
+      y: 520,
+      size: 60,
       color: 'yellow'
     };
 
-    // Advanced Maze-style Walls:
-    // Outer boundaries.
-    // Then an intricate maze with multiple corridors, dead ends, and passageways.
+    // Advanced Maze Walls.
+    // The maze has outer boundaries, winding corridors, dead ends, and multiple branches.
     const walls = [
       // Outer boundaries.
       { x: 0, y: 0, width: 800, height: 20 },
       { x: 0, y: 580, width: 800, height: 20 },
       { x: 0, y: 0, width: 20, height: 600 },
       { x: 780, y: 0, width: 20, height: 600 },
-      // Maze layout.
-      // Left section corridors.
-      { x: 100, y: 20, width: 20, height: 150 },
-      { x: 100, y: 200, width: 20, height: 150 },
-      { x: 100, y: 170, width: 120, height: 20 },
-      { x: 220, y: 20, width: 20, height: 150 },
-      // Central vertical barrier with gaps.
-      { x: 350, y: 20, width: 20, height: 120 },
-      { x: 350, y: 200, width: 20, height: 150 },
-      { x: 350, y: 170, width: 100, height: 20 },
-      // Right section corridors.
+      // Maze inner layout.
+      // Left block.
+      { x: 100, y: 20, width: 20, height: 200 },
+      { x: 100, y: 220, width: 180, height: 20 },
+      { x: 260, y: 20, width: 20, height: 220 },
+      // Central twisting corridor.
+      { x: 300, y: 100, width: 20, height: 300 },
+      { x: 300, y: 380, width: 150, height: 20 },
+      { x: 450, y: 100, width: 20, height: 300 },
+      // Upper branch.
       { x: 500, y: 20, width: 20, height: 150 },
-      { x: 500, y: 200, width: 20, height: 150 },
-      { x: 520, y: 170, width: 150, height: 20 },
-      // Lower maze details.
-      { x: 220, y: 400, width: 20, height: 150 },
-      { x: 220, y: 400, width: 150, height: 20 },
-      { x: 380, y: 400, width: 20, height: 150 },
-      { x: 400, y: 530, width: 150, height: 20 },
-      { x: 580, y: 400, width: 20, height: 150 },
-      { x: 600, y: 400, width: 150, height: 20 }
+      { x: 500, y: 170, width: 150, height: 20 },
+      { x: 650, y: 20, width: 20, height: 170 },
+      // Lower branch.
+      { x: 100, y: 350, width: 180, height: 20 },
+      { x: 100, y: 350, width: 20, height: 200 },
+      { x: 100, y: 530, width: 180, height: 20 },
+      // Connecting passage.
+      { x: 300, y: 500, width: 170, height: 20 },
+      { x: 470, y: 400, width: 20, height: 120 },
+      // Right side twist.
+      { x: 550, y: 350, width: 20, height: 230 },
+      { x: 550, y: 350, width: 130, height: 20 }
     ];
 
-    // -------------------------
-    // Lighting: Advanced Light Zones
-    // -------------------------
-    // Multiple light zones to illuminate key corridors.
+    // Advanced Light Zones.
+    // These zones illuminate the major corridors and add dramatic effects.
     const lights = [
-      { x: 40, y: 20, width: 120, height: 560 },
-      { x: 660, y: 20, width: 100, height: 560 },
-      { x: 300, y: 140, width: 150, height: 100 },
-      { x: 400, y: 420, width: 200, height: 100 }
+      { x: 40, y: 20, width: 140, height: 540 },
+      { x: 640, y: 20, width: 120, height: 540 },
+      { x: 280, y: 80, width: 180, height: 150 },
+      { x: 300, y: 450, width: 200, height: 100 }
     ];
 
     // -------------------------
@@ -100,11 +100,12 @@
     // -------------------------
     class Enemy {
       constructor(path, speed, color, useImage = false) {
-        this.path = path; // Array of waypoints { x, y }
+        this.path = path; // Array of waypoints.
         this.speed = speed;
         this.color = color;
         this.useImage = useImage;
-        this.image = null;
+        this.image = null; // Optional image if set.
+        // Start at first waypoint.
         this.x = path[0].x;
         this.y = path[0].y;
         this.size = 50;
@@ -112,18 +113,17 @@
         this.dir = { x: 1, y: 0 };
         this.angle = 0;
       }
-
       update() {
         const target = this.path[this.currentWaypoint];
         let dx = target.x - this.x;
         let dy = target.y - this.y;
-        const distance = Math.hypot(dx, dy);
-        if (distance < 2) {
-          // Immediately switch waypoints.
+        const dist = Math.hypot(dx, dy);
+        if (dist < 2) {
+          // Switch immediately when close.
           this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
         } else {
-          dx /= distance;
-          dy /= distance;
+          dx /= dist;
+          dy /= dist;
           this.dir.x = dx;
           this.dir.y = dy;
           this.angle = Math.atan2(dy, dx);
@@ -134,25 +134,18 @@
             this.x = nextX;
             this.y = nextY;
           } else {
-            // On collision, simply change direction.
+            // On collision, reverse direction by selecting next waypoint.
             this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
           }
         }
       }
-
       draw() {
-        const imgToUse = this.useImage ? (this.image || enemyImage) : null;
-        if (imgToUse && imgToUse.complete) {
+        const img = this.useImage ? (this.image || enemyImage) : null;
+        if (img && img.complete) {
           ctx.save();
           ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
           ctx.rotate(this.angle);
-          ctx.drawImage(
-            imgToUse,
-            -this.size / 2,
-            -this.size / 2,
-            this.size,
-            this.size
-          );
+          ctx.drawImage(img, -this.size / 2, -this.size / 2, this.size, this.size);
           ctx.restore();
         } else {
           ctx.fillStyle = this.color;
@@ -161,24 +154,22 @@
       }
     }
 
-    // Define advanced enemy patrol paths.
+    // Define enemy patrol paths tailored to the maze.
     const enemy1Path = [
-      { x: 80, y: 60 },
-      { x: 80, y: 300 },
+      { x: 80, y: 40 },
       { x: 80, y: 540 },
-      { x: 80, y: 300 }
+      { x: 280, y: 540 },
+      { x: 280, y: 40 }
     ];
     const enemy2Path = [
-      { x: 700, y: 60 },
-      { x: 700, y: 300 },
-      { x: 700, y: 540 },
-      { x: 700, y: 300 }
+      { x: 680, y: 40 },
+      { x: 680, y: 540 },
+      { x: 480, y: 540 },
+      { x: 480, y: 40 }
     ];
-
-    // Instantiate enemies.
     const enemies = [
-      new Enemy(enemy1Path, 1, 'red', true),   // Uses enemyImage (omni.png)
-      new Enemy(enemy2Path, 1, 'orange', true)   // Uses enemyImage2 (omni2.png)
+      new Enemy(enemy1Path, 1.2, 'red', true),
+      new Enemy(enemy2Path, 1.2, 'orange', true)
     ];
     enemies[1].image = enemyImage2;
 
@@ -188,61 +179,48 @@
     let gameOver = false;
     let gameWin = false;
     let bloodSplats = null;
-
     const keys = {};
-    window.addEventListener('keydown', (e) => { keys[e.key] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+    window.addEventListener('keydown', e => { keys[e.key] = true; });
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
 
     // -------------------------
     // Collision & Movement Helpers
     // -------------------------
     function isColliding(a, b) {
-      const widthA = a.size || a.width;
-      const heightA = a.size || a.height;
-      const widthB = b.size || b.width;
-      const heightB = b.size || b.height;
-      return a.x < b.x + widthB &&
-             a.x + widthA > b.x &&
-             a.y < b.y + heightB &&
-             a.y + heightA > b.y;
+      const wA = a.size || a.width, hA = a.size || a.height;
+      const wB = b.size || b.width, hB = b.size || b.height;
+      return a.x < b.x + wB && a.x + wA > b.x &&
+             a.y < b.y + hB && a.y + hA > b.y;
     }
-
     function collidesWithWalls(entity) {
-      for (let w of walls) {
-        if (isColliding(entity, w)) {
-          return true;
-        }
+      for (const wall of walls) {
+        if (isColliding(entity, wall)) return true;
       }
       return false;
     }
-
     function updatePlayer() {
-      const prevX = player.x;
-      const prevY = player.y;
-      if (keys['ArrowLeft'] || keys['a']) { player.x -= player.speed; }
-      if (keys['ArrowRight'] || keys['d']) { player.x += player.speed; }
-      if (collidesWithWalls(player)) { player.x = prevX; }
-      if (keys['ArrowUp'] || keys['w']) { player.y -= player.speed; }
-      if (keys['ArrowDown'] || keys['s']) { player.y += player.speed; }
-      if (collidesWithWalls(player)) { player.y = prevY; }
-      const dx = player.x - prevX;
-      const dy = player.y - prevY;
-      if (dx !== 0 || dy !== 0) { player.angle = Math.atan2(dy, dx); }
+      const prevX = player.x, prevY = player.y;
+      if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+      if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+      if (collidesWithWalls(player)) player.x = prevX;
+      if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
+      if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
+      if (collidesWithWalls(player)) player.y = prevY;
+      const dx = player.x - prevX, dy = player.y - prevY;
+      if (dx !== 0 || dy !== 0) player.angle = Math.atan2(dy, dx);
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
     }
 
     // -------------------------
-    // Light System: Check if player is in a lit zone.
+    // Light System
     // -------------------------
     function playerIsInLight() {
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      for (let l of lights) {
-        if (px >= l.x && px <= l.x + l.width &&
-            py >= l.y && py <= l.y + l.height) {
+      const cx = player.x + player.size/2, cy = player.y + player.size/2;
+      for (const l of lights) {
+        if (cx >= l.x && cx <= l.x + l.width &&
+            cy >= l.y && cy <= l.y + l.height)
           return true;
-        }
       }
       return false;
     }
@@ -250,52 +228,39 @@
     // -------------------------
     // Line-of-Sight & Enemy Detection
     // -------------------------
-    function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
-      const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+    function lineIntersectsLine(x1,y1,x2,y2, x3,y3,x4,y4) {
+      const denom = (y4 - y3)*(x2 - x1) - (x4 - x3)*(y2 - y1);
       if (denom === 0) return false;
-      const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
-      const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
+      const ua = ((x4 - x3)*(y1 - y3) - (y4 - y3)*(x1 - x3)) / denom;
+      const ub = ((x2 - x1)*(y1 - y3) - (y2 - y1)*(x1 - x3)) / denom;
       return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
     }
-
-    function lineIntersectsRect(x1, y1, x2, y2, rect) {
-      const left = rect.x;
-      const right = rect.x + rect.width;
-      const top = rect.y;
-      const bottom = rect.y + rect.height;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, top, right, top)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, right, top, right, bottom)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, bottom, right, bottom)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, top, left, bottom)) return true;
-      return false;
+    function lineIntersectsRect(x1,y1,x2,y2, rect) {
+      const left = rect.x, right = rect.x + rect.width;
+      const top = rect.y, bottom = rect.y + rect.height;
+      return lineIntersectsLine(x1,y1,x2,y2, left,top, right,top) ||
+             lineIntersectsLine(x1,y1,x2,y2, right,top, right,bottom) ||
+             lineIntersectsLine(x1,y1,x2,y2, left,bottom, right,bottom) ||
+             lineIntersectsLine(x1,y1,x2,y2, left,top, left,bottom);
     }
-
     function lineOfSightBlocked(enemy, player) {
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      for (let w of walls) {
-        if (lineIntersectsRect(ex, ey, px, py, w)) return true;
+      const ex = enemy.x + enemy.size/2, ey = enemy.y + enemy.size/2;
+      const px = player.x + player.size/2, py = player.y + player.size/2;
+      for (const wall of walls) {
+        if (lineIntersectsRect(ex,ey,px,py, wall))
+          return true;
       }
       return false;
     }
-
     function enemyCanSeePlayer(enemy, player) {
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      const dx = px - ex;
-      const dy = py - ey;
+      const ex = enemy.x + enemy.size/2, ey = enemy.y + enemy.size/2;
+      const px = player.x + player.size/2, py = player.y + player.size/2;
+      const dx = px - ex, dy = py - ey;
       const distance = Math.hypot(dx, dy);
       if (playerIsInLight()) {
         if (distance > 150) return false;
-        const edx = enemy.dir.x, edy = enemy.dir.y;
-        const pdx = dx / distance, pdy = dy / distance;
-        const dot = edx * pdx + edy * pdy;
-        const fov = Math.cos(45 * Math.PI / 180);
-        if (dot < fov) return false;
+        const dot = (enemy.dir.x * dx/distance + enemy.dir.y * dy/distance);
+        if (dot < Math.cos(45 * Math.PI/180)) return false;
       } else {
         if (distance > 50) return false;
       }
@@ -307,7 +272,7 @@
     // Game Collision & State Check
     // -------------------------
     function checkCollisions() {
-      for (let enemy of enemies) {
+      for (const enemy of enemies) {
         if (enemyCanSeePlayer(enemy, player)) {
           gameOver = true;
           if (!bloodSplats) bloodSplats = generateBloodSplats(25);
@@ -331,14 +296,13 @@
       }
       return splats;
     }
-
     function drawBloodEffect() {
       ctx.save();
       ctx.globalAlpha = 0.6;
       ctx.fillStyle = 'red';
-      for (let splat of bloodSplats) {
+      for (const splat of bloodSplats) {
         ctx.beginPath();
-        ctx.arc(splat.x, splat.y, splat.radius, 0, Math.PI * 2);
+        ctx.arc(splat.x, splat.y, splat.radius, 0, Math.PI*2);
         ctx.fill();
       }
       ctx.restore();
@@ -349,76 +313,68 @@
     // -------------------------
     let lastTime = performance.now();
     function gameLoop() {
-      const currentTime = performance.now();
-      lastTime = currentTime;
+      const now = performance.now();
+      lastTime = now; // delta not used here as movement is frame-independent enough
       update();
       draw();
       if (!gameOver && !gameWin) requestAnimationFrame(gameLoop);
     }
-
     function update() {
       if (gameOver || gameWin) return;
       updatePlayer();
       enemies.forEach(enemy => enemy.update());
       checkCollisions();
     }
-
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0,0,canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
-      
-      // Draw maze walls with gradient fill.
-      walls.forEach(w => {
-        const grad = ctx.createLinearGradient(w.x, w.y, w.x, w.y + w.height);
+      // Draw maze walls with gradient.
+      for (const wall of walls) {
+        const grad = ctx.createLinearGradient(wall.x, wall.y, wall.x, wall.y + wall.height);
         grad.addColorStop(0, "#1c1c1c");
         grad.addColorStop(1, "#3c3c3c");
         ctx.fillStyle = grad;
-        ctx.fillRect(w.x, w.y, w.width, w.height);
-      });
-      
-      // Draw light zones with bloom effect.
+        ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+      }
+      // Draw light zones.
       ctx.save();
       ctx.shadowColor = 'rgba(255,255,200,0.8)';
       ctx.shadowBlur = 30;
       ctx.fillStyle = 'rgba(255,255,180,0.15)';
       lights.forEach(l => ctx.fillRect(l.x, l.y, l.width, l.height));
       ctx.restore();
-
       // Draw goal.
       ctx.fillStyle = goal.color;
       ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
-
       // Draw player.
       if (playerImage.complete) {
         ctx.save();
-        ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
+        ctx.translate(player.x + player.size/2, player.y + player.size/2);
         ctx.rotate(player.angle);
-        ctx.drawImage(playerImage, -player.size / 2, -player.size / 2, player.size, player.size);
+        ctx.drawImage(playerImage, -player.size/2, -player.size/2, player.size, player.size);
         ctx.restore();
       } else {
         ctx.fillStyle = player.color;
         ctx.fillRect(player.x, player.y, player.size, player.size);
       }
-      
       // Draw enemies.
       enemies.forEach(enemy => enemy.draw());
-
-      // Display win/lose messages.
+      // Win/Lose messages.
       if (gameWin) {
         ctx.fillStyle = 'white';
-        ctx.font = '24px sans-serif';
-        ctx.fillText('You have conquered this maze!', canvas.width / 2 - 130, canvas.height / 2);
+        ctx.font = '28px sans-serif';
+        ctx.fillText('YOU WIN - Maze Conquered!', canvas.width/2 - 150, canvas.height/2);
       }
       if (gameOver) {
         ctx.fillStyle = 'white';
         ctx.font = '48px sans-serif';
-        ctx.fillText('GAME OVER', canvas.width / 2 - 120, canvas.height / 2);
+        ctx.fillText('GAME OVER', canvas.width/2 - 130, canvas.height/2);
         if (bloodSplats) drawBloodEffect();
       }
     }
 
     // -------------------------
-    // Start the Game Loop
+    // Start the Game Loop When Ready
     // -------------------------
     function startIfReady() {
       if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
@@ -426,27 +382,15 @@
         gameLoop();
       }
     }
-
     if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
       startIfReady();
     } else {
       enemyImage.onload = startIfReady;
       enemyImage2.onload = startIfReady;
       playerImage.onload = startIfReady;
-      enemyImage.onerror = function() {
-        console.error("Failed to load enemy image omni.png. Using fallback rectangle.");
-        enemies[0].useImage = false;
-        startIfReady();
-      };
-      enemyImage2.onerror = function() {
-        console.error("Failed to load enemy image omni2.png. Using fallback rectangle.");
-        enemies[1].useImage = false;
-        startIfReady();
-      };
-      playerImage.onerror = function() {
-        console.error("Failed to load player image. Using fallback rectangle.");
-        startIfReady();
-      };
+      enemyImage.onerror = () => { enemies[0].useImage = false; startIfReady(); };
+      enemyImage2.onerror = () => { enemies[1].useImage = false; startIfReady(); };
+      playerImage.onerror = startIfReady;
     }
   </script>
 </body>
