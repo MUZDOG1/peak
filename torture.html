@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>crewsxanlack it please help me</title>
+  <title>Manhunt Factory Map (Three Enemies)</title>
   <style>
     body {
       margin: 0;
@@ -21,32 +21,33 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Preload enemy images
+    // -------------------------
+    // IMAGES
+    // -------------------------
     const enemyImage = new Image();
     enemyImage.src = 'omni.png'; 
 
     const enemyImage2 = new Image();
     enemyImage2.src = 'omni2.png';
 
-    // Preload player image
     const playerImage = new Image();
     playerImage.src = 'player.png';
 
     // -------------------------
-    // Game Entities & Parameters
+    // PLAYER SETUP
     // -------------------------
-
-    // Player setup (size increased to 60)
     const player = {
       x: 50,
       y: 50,
-      size: 60,
+      size: 60,    // Larger player
       color: 'lime',
       speed: 1.5,
-      angle: 0 // player's facing direction in radians
+      angle: 0
     };
 
-    // Goal placement (reaching the goal wins the game)
+    // -------------------------
+    // GOAL
+    // -------------------------
     const goal = {
       x: 750,
       y: 550,
@@ -54,51 +55,79 @@
       color: 'yellow'
     };
 
-    // New Maze-style Walls (designed for a 60px player and a dark, manhunt vibe)
+    // -------------------------
+    // FACTORY-STYLE WALLS
+    // -------------------------
+    // This is the same "factory blueprint" from before, just repeated here.
     const walls = [
       // Outer boundaries
       { x: 0, y: 0, width: 800, height: 20 },
       { x: 0, y: 580, width: 800, height: 20 },
       { x: 0, y: 0, width: 20, height: 600 },
       { x: 780, y: 0, width: 20, height: 600 },
-      // Central vertical divider with a gap in the middle
-      { x: 400, y: 20, width: 20, height: 200 },
-      { x: 400, y: 380, width: 20, height: 200 },
-      // Horizontal walls to add more maze-like corridors
-      { x: 220, y: 220, width: 180, height: 20 },
-      { x: 420, y: 220, width: 180, height: 20 },
-      { x: 220, y: 360, width: 180, height: 20 },
-      { x: 420, y: 360, width: 180, height: 20 }
+
+      // --- Top-Left Room (Quadrant) ---
+      { x: 20, y: 20, width: 380, height: 20 },
+      { x: 20, y: 20, width: 20, height: 260 },
+      { x: 20, y: 280, width: 180, height: 20 },
+      { x: 240, y: 280, width: 160, height: 20 },
+      { x: 380, y: 20, width: 20, height: 100 },
+      { x: 380, y: 160, width: 20, height: 100 },
+
+      // --- Top-Right Room (Quadrant) ---
+      { x: 420, y: 20, width: 340, height: 20 },
+      { x: 760, y: 20, width: 20, height: 100 },
+      { x: 760, y: 160, width: 20, height: 100 },
+      { x: 420, y: 280, width: 160, height: 20 },
+      { x: 620, y: 280, width: 140, height: 20 },
+      { x: 420, y: 20, width: 20, height: 100 },
+      { x: 420, y: 160, width: 20, height: 100 },
+
+      // --- Bottom-Left Room (Quadrant) ---
+      { x: 20, y: 320, width: 380, height: 20 },
+      { x: 20, y: 320, width: 20, height: 240 },
+      { x: 20, y: 540, width: 180, height: 20 },
+      { x: 240, y: 540, width: 160, height: 20 },
+      { x: 380, y: 320, width: 20, height: 80 },
+      { x: 380, y: 440, width: 20, height: 140 },
+
+      // --- Bottom-Right Room (Quadrant) ---
+      { x: 420, y: 320, width: 340, height: 20 },
+      { x: 760, y: 320, width: 20, height: 80 },
+      { x: 760, y: 440, width: 20, height: 140 },
+      { x: 420, y: 540, width: 160, height: 20 },
+      { x: 620, y: 540, width: 140, height: 20 },
+      { x: 420, y: 320, width: 20, height: 80 },
+      { x: 420, y: 440, width: 20, height: 140 },
+
+      // --- Extra Factory Block ---
+      { x: 320, y: 80, width: 60, height: 60 }
     ];
 
     // -------------------------
-    // Lighting: Rectangular Lights in Main Halls
+    // LIGHTS (OPTIONAL)
     // -------------------------
-    // Two rectangular light zones.
+    // Same rectangular lights from before.
     const lights = [
       { x: 35,   y: 50,   width: 120, height: 500 },
-      { x: 640, y: 50,   width: 140, height: 510 }
+      { x: 640,  y: 50,   width: 140, height: 510 }
     ];
 
     // -------------------------
-    // Enemy Patrol Class & Setup
+    // ENEMIES (3 GUARDS)
     // -------------------------
-
     class Enemy {
       constructor(path, speed, color, useImage = false) {
-        this.path = path; // Array of waypoints { x, y }
+        this.path = path;
         this.speed = speed;
         this.color = color;
-        this.useImage = useImage; // Whether to use an image instead of a rectangle
-        this.image = null; // Optional image property (if set, will be used)
-        // Start at the first waypoint
+        this.useImage = useImage;
+        this.image = null;
         this.x = path[0].x;
         this.y = path[0].y;
         this.size = 50;
         this.currentWaypoint = 1;
-        // Direction vector (normalized) based on current movement
         this.dir = { x: 1, y: 0 };
-        // Angle for image rotation (in radians)
         this.angle = 0;
       }
 
@@ -106,20 +135,16 @@
         const target = this.path[this.currentWaypoint];
         let dx = target.x - this.x;
         let dy = target.y - this.y;
-        const distance = Math.hypot(dx, dy);
-        if (distance < 2) {
-          // Arrived at the waypoint; switch to next
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < 2) {
           this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
         } else {
-          dx /= distance;
-          dy /= distance;
+          dx /= dist;
+          dy /= dist;
           this.dir.x = dx;
           this.dir.y = dy;
-          
-          // Calculate rotation angle based on direction
           this.angle = Math.atan2(dy, dx);
-          
-          // Update enemy position
           this.x += dx * this.speed;
           this.y += dy * this.speed;
         }
@@ -129,16 +154,9 @@
         const imgToUse = this.useImage ? (this.image || enemyImage) : null;
         if (imgToUse && imgToUse.complete) {
           ctx.save();
-          // Translate to the center of the enemy
           ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
           ctx.rotate(this.angle);
-          ctx.drawImage(
-            imgToUse,
-            -this.size / 2,
-            -this.size / 2,
-            this.size,
-            this.size
-          );
+          ctx.drawImage(imgToUse, -this.size / 2, -this.size / 2, this.size, this.size);
           ctx.restore();
         } else {
           ctx.fillStyle = this.color;
@@ -147,54 +165,68 @@
       }
     }
 
-    // Define enemy patrol paths that follow the hallways.
+    // Three enemies, each with a different path:
+    // 1) Enemy #1 (top corridor patrol)
     const enemy1Path = [
-      { x: 100, y: 50 },
-      { x: 100, y: 250 },
-      { x: 100, y: 450 },
-      { x: 100, y: 250 }
+      { x: 100, y: 30 },
+      { x: 700, y: 30 }
     ];
+    // 2) Enemy #2 (right side loop)
     const enemy2Path = [
       { x: 650, y: 100 },
-      { x: 650, y: 400 },
-      { x: 650, y: 550 },
-      { x: 650, y: 400 }
+      { x: 650, y: 250 },
+      { x: 750, y: 250 },
+      { x: 750, y: 450 },
+      { x: 650, y: 450 },
+      { x: 650, y: 100 }
+    ];
+    // 3) Enemy #3 (middle corridor patrol)
+    const enemy3Path = [
+      { x: 350, y: 220 },
+      { x: 450, y: 220 },
+      { x: 450, y: 360 },
+      { x: 350, y: 360 }
     ];
 
-    // Instantiate enemies.
     const enemies = [
-      new Enemy(enemy1Path, 0.8, 'red', true), // Uses enemyImage (omni.png)
-      new Enemy(enemy2Path, 0.8, 'orange', true) // Will use enemyImage2 (omni2.png)
+      new Enemy(enemy1Path, 0.8, 'red',    true),
+      new Enemy(enemy2Path, 0.8, 'orange', true),
+      new Enemy(enemy3Path, 0.8, 'purple', true)
     ];
-    // Set enemy2's image to enemyImage2.
+
+    // Assign images:
+    //   Enemy #1 => omni.png
+    //   Enemy #2 => omni2.png
+    //   Enemy #3 => omni.png again
+    enemies[0].image = enemyImage;
     enemies[1].image = enemyImage2;
+    enemies[2].image = enemyImage;
 
     // -------------------------
-    // Game State & Input Handling
+    // GAME STATE & INPUT
     // -------------------------
-
     let gameOver = false;
     let gameWin = false;
-    let bloodSplats = null; // Data for blood effect on detection
+    let bloodSplats = null;
 
-    // Track key presses for player movement.
     const keys = {};
     window.addEventListener('keydown', (e) => { keys[e.key] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+    window.addEventListener('keyup',   (e) => { keys[e.key] = false; });
 
     // -------------------------
-    // Collision & Movement Helpers
+    // COLLISION & MOVEMENT
     // -------------------------
-
     function isColliding(a, b) {
       const widthA = a.size || a.width;
       const heightA = a.size || a.height;
       const widthB = b.size || b.width;
       const heightB = b.size || b.height;
-      return a.x < b.x + widthB &&
-             a.x + widthA > b.x &&
-             a.y < b.y + heightB &&
-             a.y + heightA > b.y;
+      return (
+        a.x < b.x + widthB &&
+        a.x + widthA > b.x &&
+        a.y < b.y + heightB &&
+        a.y + heightA > b.y
+      );
     }
 
     function collidesWithWalls(entity) {
@@ -210,7 +242,7 @@
       const prevX = player.x;
       const prevY = player.y;
 
-      // Horizontal movement.
+      // Horizontal
       if (keys['ArrowLeft'] || keys['a']) {
         player.x -= player.speed;
       }
@@ -221,7 +253,7 @@
         player.x = prevX;
       }
 
-      // Vertical movement.
+      // Vertical
       if (keys['ArrowUp'] || keys['w']) {
         player.y -= player.speed;
       }
@@ -232,20 +264,20 @@
         player.y = prevY;
       }
 
-      // Update player angle based on movement (if any)
+      // Update angle if moved
       const dx = player.x - prevX;
       const dy = player.y - prevY;
       if (dx !== 0 || dy !== 0) {
         player.angle = Math.atan2(dy, dx);
       }
 
-      // Ensure player stays within the canvas.
+      // Keep player in canvas
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
     }
 
     // -------------------------
-    // Light System: "Is player in hall light?"
+    // LIGHT SYSTEM (OPTIONAL)
     // -------------------------
     function playerIsInLight() {
       const px = player.x + player.size / 2;
@@ -259,9 +291,8 @@
     }
 
     // -------------------------
-    // Line-of-Sight (LOS) & Enemy Detection
+    // ENEMY VISION
     // -------------------------
-
     function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
       const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
       if (denom === 0) return false;
@@ -295,9 +326,8 @@
       return false;
     }
 
-    // Enemy vision check: returns true if the enemy can see the player.
     function enemyCanSeePlayer(enemy, player) {
-      // Calculate center points.
+      // Dist
       const ex = enemy.x + enemy.size / 2;
       const ey = enemy.y + enemy.size / 2;
       const px = player.x + player.size / 2;
@@ -306,10 +336,10 @@
       const dy = py - ey;
       const distance = Math.hypot(dx, dy);
 
-      // Set detection range based on whether the player is in light.
+      // If in light => up to 150 px, 90° FOV
+      // If not => up to 50 px, no FOV
       if (playerIsInLight()) {
         if (distance > 150) return false;
-        // Field-of-view check.
         const edx = enemy.dir.x;
         const edy = enemy.dir.y;
         const pdx = dx / distance;
@@ -318,20 +348,18 @@
         const fov = Math.cos(45 * Math.PI / 180);
         if (dot < fov) return false;
       } else {
-        // When out of the light, enemy only sees you if very close.
         if (distance > 50) return false;
       }
 
-      // Check for wall obstruction.
+      // Check if walls block line of sight
       if (lineOfSightBlocked(enemy, player)) return false;
 
       return true;
     }
 
     // -------------------------
-    // Game Collision & State Check
+    // CHECK COLLISIONS
     // -------------------------
-
     function checkCollisions() {
       for (let enemy of enemies) {
         if (enemyCanSeePlayer(enemy, player)) {
@@ -341,7 +369,7 @@
           }
         }
       }
-      // Check if the player has reached the goal.
+      // Check goal
       const goalRect = { x: goal.x, y: goal.y, size: goal.size };
       if (isColliding(player, goalRect)) {
         gameWin = true;
@@ -349,9 +377,8 @@
     }
 
     // -------------------------
-    // Blood Splatter Effect
+    // BLOOD SPLATTER
     // -------------------------
-
     function generateBloodSplats(num) {
       const splats = [];
       for (let i = 0; i < num; i++) {
@@ -377,9 +404,8 @@
     }
 
     // -------------------------
-    // Main Game Loop
+    // MAIN LOOP
     // -------------------------
-
     function update() {
       if (gameOver || gameWin) return;
       updatePlayer();
@@ -388,11 +414,11 @@
     }
 
     function draw() {
-      // Clear the canvas and reset composite operation
+      // Clear
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
 
-      // Draw maze walls with a gradient fill for a darker, manhunt feel.
+      // Draw walls with a gradient fill for that "factory" vibe
       walls.forEach(w => {
         const grad = ctx.createLinearGradient(w.x, w.y, w.x, w.y + w.height);
         grad.addColorStop(0, "#1c1c1c");
@@ -401,7 +427,7 @@
         ctx.fillRect(w.x, w.y, w.width, w.height);
       });
 
-      // Draw rectangular lights with bloom effect.
+      // Draw rectangular lights with bloom effect
       ctx.save();
       ctx.shadowColor = 'rgba(255,255,200,0.8)';
       ctx.shadowBlur = 30;
@@ -411,11 +437,11 @@
       });
       ctx.restore();
 
-      // Draw the goal.
+      // Draw goal
       ctx.fillStyle = goal.color;
       ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
 
-      // Draw the player.
+      // Draw player
       if (playerImage.complete) {
         ctx.save();
         ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
@@ -427,10 +453,10 @@
         ctx.fillRect(player.x, player.y, player.size, player.size);
       }
 
-      // Draw the enemies.
+      // Draw enemies
       enemies.forEach(enemy => enemy.draw());
 
-      // Display win/lose messages.
+      // Win/lose messages
       if (gameWin) {
         ctx.fillStyle = 'white';
         ctx.font = '24px sans-serif';
@@ -454,36 +480,23 @@
       }
     }
 
-    // Start game loop after enemy and player images load
-    if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
-      gameLoop();
-    } else {
-      enemyImage.onload = startIfReady;
-      enemyImage2.onload = startIfReady;
-      playerImage.onload = startIfReady;
-      
-      function startIfReady() {
-        if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
-          gameLoop();
-        }
+    // -------------------------
+    // START AFTER IMAGES LOAD
+    // -------------------------
+    let imagesToLoad = 3;
+    function onImageLoad() {
+      imagesToLoad--;
+      if (imagesToLoad === 0) {
+        gameLoop();
       }
-      
-      // Fallbacks in case images fail to load.
-      enemyImage.onerror = function() {
-        console.error("Failed to load enemy image omni.png. Using fallback rectangle.");
-        enemies[0].useImage = false;
-        startIfReady();
-      };
-      enemyImage2.onerror = function() {
-        console.error("Failed to load enemy image omni2.png. Using fallback rectangle for orange enemy.");
-        enemies[1].useImage = false;
-        startIfReady();
-      };
-      playerImage.onerror = function() {
-        console.error("Failed to load player image. Using fallback rectangle.");
-        startIfReady();
-      };
     }
+    enemyImage.onload  = onImageLoad;
+    enemyImage2.onload = onImageLoad;
+    playerImage.onload = onImageLoad;
+
+    enemyImage.onerror = () => { console.error("Failed to load omni.png.");   onImageLoad(); };
+    enemyImage2.onerror= () => { console.error("Failed to load omni2.png."); onImageLoad(); };
+    playerImage.onerror= () => { console.error("Failed to load player.png.");onImageLoad(); };
   </script>
 </body>
 </html>
