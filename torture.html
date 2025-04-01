@@ -54,21 +54,73 @@
       color: 'yellow'
     };
 
-    // New Maze-style Walls (designed for a 60px player and a dark, manhunt vibe)
+    // New factory-style walls.
+    // The layout is split into four main rooms (quadrants) with door gaps and extra block(s)
+    // for a gritty, industrial feel.
     const walls = [
       // Outer boundaries
-      { x: 0, y: 0, width: 800, height: 20 },
-      { x: 0, y: 580, width: 800, height: 20 },
-      { x: 0, y: 0, width: 20, height: 600 },
-      { x: 780, y: 0, width: 20, height: 600 },
-      // Central vertical divider with a gap in the middle
-      { x: 400, y: 20, width: 20, height: 200 },
-      { x: 400, y: 380, width: 20, height: 200 },
-      // Horizontal walls to add more maze-like corridors
-      { x: 220, y: 220, width: 180, height: 20 },
-      { x: 420, y: 220, width: 180, height: 20 },
-      { x: 220, y: 360, width: 180, height: 20 },
-      { x: 420, y: 360, width: 180, height: 20 }
+      { x: 0, y: 0, width: 800, height: 20, color: "#3c3c3c" },
+      { x: 0, y: 580, width: 800, height: 20, color: "#3c3c3c" },
+      { x: 0, y: 0, width: 20, height: 600, color: "#3c3c3c" },
+      { x: 780, y: 0, width: 20, height: 600, color: "#3c3c3c" },
+      
+      // --- Top-Left Room (Quadrant) ---
+      // Boundaries: from x=20 to 400, y=20 to 300
+      // Top wall
+      { x: 20, y: 20, width: 380, height: 20, color: "#3c3c3c" },
+      // Left wall
+      { x: 20, y: 20, width: 20, height: 260, color: "#3c3c3c" },
+      // Bottom wall with door gap in the middle (gap from x=200 to x=240)
+      { x: 20, y: 280, width: 180, height: 20, color: "#3c3c3c" },
+      { x: 240, y: 280, width: 160, height: 20, color: "#3c3c3c" },
+      // Right wall with door gap (gap from y=120 to y=160)
+      { x: 380, y: 20, width: 20, height: 100, color: "#3c3c3c" },
+      { x: 380, y: 160, width: 20, height: 100, color: "#3c3c3c" },
+      
+      // --- Top-Right Room (Quadrant) ---
+      // Boundaries: from x=420 to 780, y=20 to 300
+      // Top wall
+      { x: 420, y: 20, width: 340, height: 20, color: "#3c3c3c" },
+      // Right wall with door gap (gap from y=120 to y=160)
+      { x: 760, y: 20, width: 20, height: 100, color: "#3c3c3c" },
+      { x: 760, y: 160, width: 20, height: 100, color: "#3c3c3c" },
+      // Bottom wall with door gap (gap from x=580 to x=620)
+      { x: 420, y: 280, width: 160, height: 20, color: "#3c3c3c" },
+      { x: 620, y: 280, width: 140, height: 20, color: "#3c3c3c" },
+      // Left wall with door gap (gap from y=120 to y=160)
+      { x: 420, y: 20, width: 20, height: 100, color: "#3c3c3c" },
+      { x: 420, y: 160, width: 20, height: 100, color: "#3c3c3c" },
+      
+      // --- Bottom-Left Room (Quadrant) ---
+      // Boundaries: from x=20 to 400, y=320 to 580
+      // Top wall
+      { x: 20, y: 320, width: 380, height: 20, color: "#3c3c3c" },
+      // Left wall
+      { x: 20, y: 320, width: 20, height: 240, color: "#3c3c3c" },
+      // Bottom wall with door gap (gap from x=200 to x=240)
+      { x: 20, y: 540, width: 180, height: 20, color: "#3c3c3c" },
+      { x: 240, y: 540, width: 160, height: 20, color: "#3c3c3c" },
+      // Right wall with door gap (gap from y=400 to y=440)
+      { x: 380, y: 320, width: 20, height: 80, color: "#3c3c3c" },
+      { x: 380, y: 440, width: 20, height: 140, color: "#3c3c3c" },
+      
+      // --- Bottom-Right Room (Quadrant) ---
+      // Boundaries: from x=420 to 780, y=320 to 580
+      // Top wall
+      { x: 420, y: 320, width: 340, height: 20, color: "#3c3c3c" },
+      // Right wall with door gap (gap from y=400 to y=440)
+      { x: 760, y: 320, width: 20, height: 80, color: "#3c3c3c" },
+      { x: 760, y: 440, width: 20, height: 140, color: "#3c3c3c" },
+      // Bottom wall with door gap (gap from x=580 to x=620)
+      { x: 420, y: 540, width: 160, height: 20, color: "#3c3c3c" },
+      { x: 620, y: 540, width: 140, height: 20, color: "#3c3c3c" },
+      // Left wall with door gap (gap from y=400 to y=440)
+      { x: 420, y: 320, width: 20, height: 80, color: "#3c3c3c" },
+      { x: 420, y: 440, width: 20, height: 140, color: "#3c3c3c" },
+      
+      // --- Extra Factory Block ---
+      // A small isolated room-like block in the upper center for added complexity.
+      { x: 320, y: 80, width: 60, height: 60, color: "#3c3c3c" }
     ];
 
     // -------------------------
@@ -392,7 +444,7 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
 
-      // Draw maze walls with a gradient fill for a darker, manhunt feel.
+      // Draw factory-style walls with a gradient fill.
       walls.forEach(w => {
         const grad = ctx.createLinearGradient(w.x, w.y, w.x, w.y + w.height);
         grad.addColorStop(0, "#1c1c1c");
