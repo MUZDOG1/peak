@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>crewsxanlack it please help me</title>
+  <title>Beyond Amazing Maze Game</title>
   <style>
     body {
       margin: 0;
@@ -21,63 +21,78 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Preload enemy images
+    // Preload images.
     const enemyImage = new Image();
-    enemyImage.src = 'omni.png'; 
+    enemyImage.src = 'omni.png';
 
     const enemyImage2 = new Image();
     enemyImage2.src = 'omni2.png';
 
-    // Preload player image
     const playerImage = new Image();
     playerImage.src = 'player.png';
 
     // -------------------------
     // Game Entities & Parameters
     // -------------------------
-
-    // Player setup (size increased to 60)
+    // Player setup.
     const player = {
       x: 50,
       y: 50,
       size: 60,
       color: 'lime',
       speed: 1.5,
-      angle: 0 // player's facing direction in radians
+      angle: 0
     };
 
-    // Goal placement (reaching the goal wins the game)
+    // Goal placement.
     const goal = {
-      x: 750,
-      y: 550,
-      size: 20,
+      x: 730,
+      y: 530,
+      size: 40,
       color: 'yellow'
     };
 
-    // Maze-style Walls (designed for a 60px player and a dark, manhunt vibe)
+    // Advanced Maze-style Walls:
+    // Outer boundaries.
+    // Then an intricate maze with multiple corridors, dead ends, and passageways.
     const walls = [
-      // Outer boundaries
+      // Outer boundaries.
       { x: 0, y: 0, width: 800, height: 20 },
       { x: 0, y: 580, width: 800, height: 20 },
       { x: 0, y: 0, width: 20, height: 600 },
       { x: 780, y: 0, width: 20, height: 600 },
-      // Central vertical divider with a gap in the middle
-      { x: 400, y: 20, width: 20, height: 200 },
-      { x: 400, y: 380, width: 20, height: 200 },
-      // Horizontal walls to add more maze-like corridors
-      { x: 220, y: 220, width: 180, height: 20 },
-      { x: 420, y: 220, width: 180, height: 20 },
-      { x: 220, y: 360, width: 180, height: 20 },
-      { x: 420, y: 360, width: 180, height: 20 }
+      // Maze layout.
+      // Left section corridors.
+      { x: 100, y: 20, width: 20, height: 150 },
+      { x: 100, y: 200, width: 20, height: 150 },
+      { x: 100, y: 170, width: 120, height: 20 },
+      { x: 220, y: 20, width: 20, height: 150 },
+      // Central vertical barrier with gaps.
+      { x: 350, y: 20, width: 20, height: 120 },
+      { x: 350, y: 200, width: 20, height: 150 },
+      { x: 350, y: 170, width: 100, height: 20 },
+      // Right section corridors.
+      { x: 500, y: 20, width: 20, height: 150 },
+      { x: 500, y: 200, width: 20, height: 150 },
+      { x: 520, y: 170, width: 150, height: 20 },
+      // Lower maze details.
+      { x: 220, y: 400, width: 20, height: 150 },
+      { x: 220, y: 400, width: 150, height: 20 },
+      { x: 380, y: 400, width: 20, height: 150 },
+      { x: 400, y: 530, width: 150, height: 20 },
+      { x: 580, y: 400, width: 20, height: 150 },
+      { x: 600, y: 400, width: 150, height: 20 }
     ];
 
     // -------------------------
-    // Lighting: Rectangular Lights in Main Halls
+    // Lighting: Advanced Light Zones
     // -------------------------
-    // Adjust these values to match the corridors exactly.
+    // Multiple light zones to illuminate key corridors.
     const lights = [
-      { x: 35, y: 50, width: 120, height: 500 },
-      { x: 640, y: 50, width: 140, height: 510 }
+      { x: 40, y: 20, width: 120, height: 560 },
+      { x: 660, y: 20, width: 100, height: 560 },
+      { x: 300, y: 140, width: 150, height: 100 },
+      { x: 400, y: 420, width: 200, height: 100 }
     ];
 
     // -------------------------
@@ -88,37 +103,23 @@
         this.path = path; // Array of waypoints { x, y }
         this.speed = speed;
         this.color = color;
-        this.useImage = useImage; // Whether to use an image instead of a rectangle
-        this.image = null; // Optional image property (if set, will be used)
-        // Start at the first waypoint
+        this.useImage = useImage;
+        this.image = null;
         this.x = path[0].x;
         this.y = path[0].y;
         this.size = 50;
         this.currentWaypoint = 1;
-        // Direction vector (normalized) based on current movement
         this.dir = { x: 1, y: 0 };
-        // Angle for image rotation (in radians)
         this.angle = 0;
-        // Pause timer in milliseconds
-        this.pauseTimer = 0;
       }
 
-      update(deltaTime) {
-        // If paused, count down and do nothing else.
-        if (this.pauseTimer > 0) {
-          this.pauseTimer -= deltaTime;
-          return;
-        }
-
+      update() {
         const target = this.path[this.currentWaypoint];
         let dx = target.x - this.x;
         let dy = target.y - this.y;
         const distance = Math.hypot(dx, dy);
-        
         if (distance < 2) {
-          // When reached a waypoint, set a random pause (300-1000 ms)
-          this.pauseTimer = Math.random() * 700 + 300;
-          // Move to the next waypoint after pause.
+          // Immediately switch waypoints.
           this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
         } else {
           dx /= distance;
@@ -126,19 +127,14 @@
           this.dir.x = dx;
           this.dir.y = dy;
           this.angle = Math.atan2(dy, dx);
-          
-          // Proposed new position
           const nextX = this.x + dx * this.speed;
           const nextY = this.y + dy * this.speed;
           const nextPos = { x: nextX, y: nextY, size: this.size };
-          
-          // Check if next position would collide with any walls.
           if (!collidesWithWalls(nextPos)) {
             this.x = nextX;
             this.y = nextY;
           } else {
-            // Collision detected: pause and choose next waypoint.
-            this.pauseTimer = Math.random() * 700 + 300;
+            // On collision, simply change direction.
             this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
           }
         }
@@ -148,7 +144,6 @@
         const imgToUse = this.useImage ? (this.image || enemyImage) : null;
         if (imgToUse && imgToUse.complete) {
           ctx.save();
-          // Translate to the center of the enemy.
           ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
           ctx.rotate(this.angle);
           ctx.drawImage(
@@ -166,26 +161,25 @@
       }
     }
 
-    // Define enemy patrol paths.
+    // Define advanced enemy patrol paths.
     const enemy1Path = [
-      { x: 100, y: 50 },
-      { x: 100, y: 250 },
-      { x: 100, y: 450 },
-      { x: 100, y: 250 }
+      { x: 80, y: 60 },
+      { x: 80, y: 300 },
+      { x: 80, y: 540 },
+      { x: 80, y: 300 }
     ];
     const enemy2Path = [
-      { x: 650, y: 100 },
-      { x: 650, y: 400 },
-      { x: 650, y: 550 },
-      { x: 650, y: 400 }
+      { x: 700, y: 60 },
+      { x: 700, y: 300 },
+      { x: 700, y: 540 },
+      { x: 700, y: 300 }
     ];
 
     // Instantiate enemies.
     const enemies = [
-      new Enemy(enemy1Path, 0.8, 'red', true), // Uses enemyImage (omni.png)
-      new Enemy(enemy2Path, 0.8, 'orange', true) // Uses enemyImage2 (omni2.png)
+      new Enemy(enemy1Path, 1, 'red', true),   // Uses enemyImage (omni.png)
+      new Enemy(enemy2Path, 1, 'orange', true)   // Uses enemyImage2 (omni2.png)
     ];
-    // Set enemy2's image to enemyImage2.
     enemies[1].image = enemyImage2;
 
     // -------------------------
@@ -193,9 +187,8 @@
     // -------------------------
     let gameOver = false;
     let gameWin = false;
-    let bloodSplats = null; // Data for blood effect on detection
+    let bloodSplats = null;
 
-    // Track key presses for player movement.
     const keys = {};
     window.addEventListener('keydown', (e) => { keys[e.key] = true; });
     window.addEventListener('keyup', (e) => { keys[e.key] = false; });
@@ -226,49 +219,28 @@
     function updatePlayer() {
       const prevX = player.x;
       const prevY = player.y;
-
-      // Horizontal movement.
-      if (keys['ArrowLeft'] || keys['a']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d']) {
-        player.x += player.speed;
-      }
-      if (collidesWithWalls(player)) {
-        player.x = prevX;
-      }
-
-      // Vertical movement.
-      if (keys['ArrowUp'] || keys['w']) {
-        player.y -= player.speed;
-      }
-      if (keys['ArrowDown'] || keys['s']) {
-        player.y += player.speed;
-      }
-      if (collidesWithWalls(player)) {
-        player.y = prevY;
-      }
-
-      // Update player angle based on movement.
+      if (keys['ArrowLeft'] || keys['a']) { player.x -= player.speed; }
+      if (keys['ArrowRight'] || keys['d']) { player.x += player.speed; }
+      if (collidesWithWalls(player)) { player.x = prevX; }
+      if (keys['ArrowUp'] || keys['w']) { player.y -= player.speed; }
+      if (keys['ArrowDown'] || keys['s']) { player.y += player.speed; }
+      if (collidesWithWalls(player)) { player.y = prevY; }
       const dx = player.x - prevX;
       const dy = player.y - prevY;
-      if (dx !== 0 || dy !== 0) {
-        player.angle = Math.atan2(dy, dx);
-      }
-
-      // Ensure player stays within the canvas.
+      if (dx !== 0 || dy !== 0) { player.angle = Math.atan2(dy, dx); }
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
     }
 
     // -------------------------
-    // Light System: "Is player in hall light?"
+    // Light System: Check if player is in a lit zone.
     // -------------------------
     function playerIsInLight() {
       const px = player.x + player.size / 2;
       const py = player.y + player.size / 2;
       for (let l of lights) {
-        if (px >= l.x && px <= l.x + l.width && py >= l.y && py <= l.y + l.height) {
+        if (px >= l.x && px <= l.x + l.width &&
+            py >= l.y && py <= l.y + l.height) {
           return true;
         }
       }
@@ -276,7 +248,7 @@
     }
 
     // -------------------------
-    // Line-of-Sight (LOS) & Enemy Detection
+    // Line-of-Sight & Enemy Detection
     // -------------------------
     function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
       const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
@@ -304,39 +276,29 @@
       const px = player.x + player.size / 2;
       const py = player.y + player.size / 2;
       for (let w of walls) {
-        if (lineIntersectsRect(ex, ey, px, py, w)) {
-          return true;
-        }
+        if (lineIntersectsRect(ex, ey, px, py, w)) return true;
       }
       return false;
     }
 
-    // Enemy vision check: returns true if the enemy can see the player.
     function enemyCanSeePlayer(enemy, player) {
       const ex = enemy.x + enemy.size / 2;
       const ey = enemy.y + enemy.size / 2;
       const px = player.x + player.size / 2;
       const py = player.y + player.size / 2;
       const dx = px - ex;
-      const dy = py - ey;  // Fixed: use consistent center coordinates
+      const dy = py - ey;
       const distance = Math.hypot(dx, dy);
-
-      // Adjust detection range based on player lighting.
       if (playerIsInLight()) {
         if (distance > 150) return false;
-        // Field-of-view check.
-        const edx = enemy.dir.x;
-        const edy = enemy.dir.y;
-        const pdx = dx / distance;
-        const pdy = dy / distance;
+        const edx = enemy.dir.x, edy = enemy.dir.y;
+        const pdx = dx / distance, pdy = dy / distance;
         const dot = edx * pdx + edy * pdy;
         const fov = Math.cos(45 * Math.PI / 180);
         if (dot < fov) return false;
       } else {
         if (distance > 50) return false;
       }
-
-      // Check for wall obstruction.
       if (lineOfSightBlocked(enemy, player)) return false;
       return true;
     }
@@ -348,16 +310,11 @@
       for (let enemy of enemies) {
         if (enemyCanSeePlayer(enemy, player)) {
           gameOver = true;
-          if (!bloodSplats) {
-            bloodSplats = generateBloodSplats(25);
-          }
+          if (!bloodSplats) bloodSplats = generateBloodSplats(25);
         }
       }
-      // Check if the player has reached the goal.
       const goalRect = { x: goal.x, y: goal.y, size: goal.size };
-      if (isColliding(player, goalRect)) {
-        gameWin = true;
-      }
+      if (isColliding(player, goalRect)) gameWin = true;
     }
 
     // -------------------------
@@ -393,29 +350,24 @@
     let lastTime = performance.now();
     function gameLoop() {
       const currentTime = performance.now();
-      const deltaTime = currentTime - lastTime;
       lastTime = currentTime;
-
-      update(deltaTime);
+      update();
       draw();
-      if (!gameOver && !gameWin) {
-        requestAnimationFrame(gameLoop);
-      }
+      if (!gameOver && !gameWin) requestAnimationFrame(gameLoop);
     }
 
-    function update(deltaTime) {
+    function update() {
       if (gameOver || gameWin) return;
       updatePlayer();
-      enemies.forEach(enemy => enemy.update(deltaTime));
+      enemies.forEach(enemy => enemy.update());
       checkCollisions();
     }
 
     function draw() {
-      // Clear the canvas.
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
-
-      // Draw maze walls with a gradient fill.
+      
+      // Draw maze walls with gradient fill.
       walls.forEach(w => {
         const grad = ctx.createLinearGradient(w.x, w.y, w.x, w.y + w.height);
         grad.addColorStop(0, "#1c1c1c");
@@ -423,22 +375,20 @@
         ctx.fillStyle = grad;
         ctx.fillRect(w.x, w.y, w.width, w.height);
       });
-
-      // Draw rectangular lights with a bloom effect.
+      
+      // Draw light zones with bloom effect.
       ctx.save();
       ctx.shadowColor = 'rgba(255,255,200,0.8)';
       ctx.shadowBlur = 30;
       ctx.fillStyle = 'rgba(255,255,180,0.15)';
-      lights.forEach(l => {
-        ctx.fillRect(l.x, l.y, l.width, l.height);
-      });
+      lights.forEach(l => ctx.fillRect(l.x, l.y, l.width, l.height));
       ctx.restore();
 
-      // Draw the goal.
+      // Draw goal.
       ctx.fillStyle = goal.color;
       ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
 
-      // Draw the player.
+      // Draw player.
       if (playerImage.complete) {
         ctx.save();
         ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
@@ -449,23 +399,21 @@
         ctx.fillStyle = player.color;
         ctx.fillRect(player.x, player.y, player.size, player.size);
       }
-
-      // Draw the enemies.
+      
+      // Draw enemies.
       enemies.forEach(enemy => enemy.draw());
 
       // Display win/lose messages.
       if (gameWin) {
         ctx.fillStyle = 'white';
         ctx.font = '24px sans-serif';
-        ctx.fillText('wow you won my shitty ass game good on you', canvas.width / 2 - 100, canvas.height / 2);
+        ctx.fillText('You have conquered this maze!', canvas.width / 2 - 130, canvas.height / 2);
       }
       if (gameOver) {
         ctx.fillStyle = 'white';
         ctx.font = '48px sans-serif';
-        ctx.fillText('fucking loser', canvas.width / 2 - 120, canvas.height / 2);
-        if (bloodSplats) {
-          drawBloodEffect();
-        }
+        ctx.fillText('GAME OVER', canvas.width / 2 - 120, canvas.height / 2);
+        if (bloodSplats) drawBloodEffect();
       }
     }
 
@@ -485,14 +433,13 @@
       enemyImage.onload = startIfReady;
       enemyImage2.onload = startIfReady;
       playerImage.onload = startIfReady;
-
       enemyImage.onerror = function() {
         console.error("Failed to load enemy image omni.png. Using fallback rectangle.");
         enemies[0].useImage = false;
         startIfReady();
       };
       enemyImage2.onerror = function() {
-        console.error("Failed to load enemy image omni2.png. Using fallback rectangle for orange enemy.");
+        console.error("Failed to load enemy image omni2.png. Using fallback rectangle.");
         enemies[1].useImage = false;
         startIfReady();
       };
