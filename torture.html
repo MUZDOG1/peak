@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <meta charset="UTF-8" />
     <title>Manhunt-like 3D HTML Game</title>
     <style>
       body {
@@ -17,6 +18,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 1;
       }
       #instructions {
         font-size: 36px;
@@ -30,6 +32,7 @@
         left: 40%;
         font-size: 48px;
         color: red;
+        z-index: 2;
       }
     </style>
   </head>
@@ -38,8 +41,10 @@
       <div id="instructions">Click to play</div>
     </div>
     <div id="gameOver">Game Over</div>
+
+    <!-- The script below requires serving the file over HTTP (e.g., via a local web server) -->
     <script type="module">
-      // Import Three.js and PointerLockControls
+      // Import Three.js and PointerLockControls from CDN
       import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
       import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/PointerLockControls.js';
 
@@ -56,8 +61,10 @@
       animate();
 
       function init() {
-        // Set up camera and scene
+        // Create the camera
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+        
+        // Set up the scene
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0xaaaaaa);
         scene.fog = new THREE.Fog(0xffffff, 0, 750);
@@ -76,45 +83,45 @@
         dirLight.shadow.camera.right = 120;
         scene.add(dirLight);
 
-        // Floor: a simple wireframe plane
+        // Create a wireframe floor
         const floorGeometry = new THREE.PlaneGeometry(2000, 2000, 100, 100);
         const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x999999, wireframe: true });
         const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-        floor.rotation.x = - Math.PI / 2;
+        floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        // Enemy: a red cube that will chase you
+        // Create an enemy: a red cube that will chase you
         const enemyGeometry = new THREE.BoxGeometry(20, 20, 20);
         const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
         enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
         enemy.position.set(50, 10, -50);
         scene.add(enemy);
 
-        // Renderer
+        // Set up the renderer
         renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // PointerLockControls for first-person movement
+        // Set up PointerLockControls for first-person movement
         controls = new PointerLockControls(camera, document.body);
         scene.add(controls.getObject());
 
         const blocker = document.getElementById('blocker');
         const instructions = document.getElementById('instructions');
 
-        instructions.addEventListener('click', function () {
+        instructions.addEventListener('click', () => {
           controls.lock();
-        }, false);
+        });
 
-        controls.addEventListener('lock', function () {
+        controls.addEventListener('lock', () => {
           blocker.style.display = 'none';
         });
 
-        controls.addEventListener('unlock', function () {
+        controls.addEventListener('unlock', () => {
           blocker.style.display = 'flex';
         });
 
-        // Keyboard controls
+        // Keyboard event listeners
         const onKeyDown = function (event) {
           switch (event.code) {
             case 'ArrowUp':
@@ -157,9 +164,9 @@
           }
         };
 
-        document.addEventListener('keydown', onKeyDown, false);
-        document.addEventListener('keyup', onKeyUp, false);
-        window.addEventListener('resize', onWindowResize, false);
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
+        window.addEventListener('resize', onWindowResize);
       }
 
       function onWindowResize() {
@@ -171,31 +178,34 @@
       function animate() {
         requestAnimationFrame(animate);
 
-        if (controls.isLocked === true) {
+        if (controls.isLocked) {
           const time = performance.now();
           const delta = (time - prevTime) / 1000;
 
-          // Update player movement
+          // Apply friction to the velocity
           velocity.x -= velocity.x * 10.0 * delta;
           velocity.z -= velocity.z * 10.0 * delta;
 
+          // Determine movement direction
           direction.z = Number(moveForward) - Number(moveBackward);
           direction.x = Number(moveRight) - Number(moveLeft);
-          direction.normalize(); // ensures consistent movement in all directions
+          direction.normalize();
 
+          // Accelerate in the direction of movement
           if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
           if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
 
-          controls.moveRight(- velocity.x * delta);
-          controls.moveForward(- velocity.z * delta);
+          // Move the player
+          controls.moveRight(-velocity.x * delta);
+          controls.moveForward(-velocity.z * delta);
 
-          // Simple enemy chasing behavior
+          // Enemy chasing behavior
           const playerPosition = controls.getObject().position;
           const enemyDirection = new THREE.Vector3();
           enemyDirection.subVectors(playerPosition, enemy.position).normalize();
           enemy.position.add(enemyDirection.multiplyScalar(50 * delta));
 
-          // Collision detection (if enemy gets too close, game over)
+          // Collision detection: if enemy gets too close, show "Game Over"
           if (enemy.position.distanceTo(playerPosition) < 10) {
             document.getElementById('gameOver').style.display = 'block';
             controls.unlock();
