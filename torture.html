@@ -23,7 +23,7 @@
 
     // Preload enemy image
     const enemyImage = new Image();
-    enemyImage.src = 'omni.png'; // Make sure this file exists in the same directory
+    enemyImage.src = 'omni.png'; 
 
     // -------------------------
     // Game Entities & Parameters
@@ -421,7 +421,7 @@
       // Display win/lose messages.
       if (gameWin) {
         ctx.fillStyle = 'white';
-        ctx.font = '48px sans-serif';
+        ctx.font = '24px sans-serif';
         ctx.fillText('wow you won my shitty ass game good on you', canvas.width / 2 - 100, canvas.height / 2);
       }
       if (gameOver) {
