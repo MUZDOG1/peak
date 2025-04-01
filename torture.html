@@ -1,485 +1,211 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Manhunt: Stealth Escape</title>
-  <style>
-    body {
-      margin: 0;
-      background: #000;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-      background: #111;
-      margin: 0 auto;
-    }
-  </style>
-</head>
-<body>
-  <!-- Optional audio for ambience and tension -->
-  <audio id="ambientSound" src="ambient.mp3" loop></audio>
-  <audio id="alertSound" src="alert.mp3"></audio>
-
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    // Start ambient sound on first user click (bypass autoplay restrictions)
-    window.addEventListener('click', () => {
-      const ambientSound = document.getElementById('ambientSound');
-      if (ambientSound.paused) ambientSound.play();
-    });
-
-    // Preload images (enemy images and player image remain unchanged)
-    const enemyImage = new Image();
-    enemyImage.src = 'omni.png';
-
-    const enemyImage2 = new Image();
-    enemyImage2.src = 'omni2.png';
-
-    const playerImage = new Image();
-    playerImage.src = 'player.png';
-
-    // -----------------------------------------------------
-    // Core Game Objects (Player, Walls, and Goal)
-    // -----------------------------------------------------
-
-    // --- Player (movement code MUST remain unchanged) ---
-    const player = {
-      x: 50,
-      y: 50,
-      size: 60,
-      color: 'lime',
-      speed: 1.5,
-      angle: 0 // facing direction in radians
-    };
-
-    // --- Goal placement (escape point) ---
-    const goal = {
-      x: 750,
-      y: 550,
-      size: 20,
-      color: 'yellow'
-    };
-
-    // --- Maze layout (new, more intricate layout) ---
-    const walls = [
-      // Outer boundaries
-      { x: 0, y: 0, width: 800, height: 20 },
-      { x: 0, y: 580, width: 800, height: 20 },
-      { x: 0, y: 0, width: 20, height: 600 },
-      { x: 780, y: 0, width: 20, height: 600 },
-      // Inner maze corridors
-      { x: 100, y: 100, width: 600, height: 20 },
-      { x: 100, y: 100, width: 20, height: 400 },
-      { x: 100, y: 480, width: 600, height: 20 },
-      { x: 680, y: 100, width: 20, height: 400 },
-      { x: 250, y: 220, width: 320, height: 20 },
-      { x: 250, y: 220, width: 20, height: 160 },
-      { x: 250, y: 360, width: 320, height: 20 },
-      { x: 550, y: 220, width: 20, height: 160 }
-    ];
-
-    // --- Dynamic light zones (to create stealth and shadow areas) ---
-    const lights = [
-      // Stationary lights: corridors or overhead lamps
-      { x: 80, y: 80, width: 150, height: 150 },
-      { x: 600, y: 400, width: 150, height: 150 }
-    ];
-
-    // -----------------------------------------------------
-    // Enemy AI and Patrols (Redesigned for a manhunt vibe)
-    // -----------------------------------------------------
-    class Enemy {
-      constructor(path, patrolSpeed, color, useImage = false) {
-        this.path = path;          // Array of waypoints {x,y}
-        this.patrolSpeed = patrolSpeed;
-        this.chaseSpeed = patrolSpeed * 1.75; // Increase speed during chase
-        this.color = color;
-        this.useImage = useImage;
-        this.image = null;
-        // Start at first waypoint
-        this.x = path[0].x;
-        this.y = path[0].y;
-        this.size = 50;
-        this.currentWaypoint = 1;
-        this.dir = { x: 1, y: 0 };
-        this.angle = 0;
-        // Chase state variables
-        this.isChasing = false;
-        this.chaseTimer = 0;
+<html>
+  <head>
+    <title>Manhunt-like 3D HTML Game</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
       }
-
-      update() {
-        // Check for player visibility with new manhunt criteria
-        if (canSeePlayer(this, player)) {
-          this.isChasing = true;
-          this.chaseTimer = 0;
-          // Play alert sound
-          const alertSound = document.getElementById('alertSound');
-          if (alertSound.paused) alertSound.play();
-        } else if (this.isChasing) {
-          this.chaseTimer++;
-          if (this.chaseTimer > 120) { // 2 seconds timeout
-            this.isChasing = false;
-            this.chaseTimer = 0;
-          }
-        }
-
-        let target;
-        let currentSpeed;
-        if (this.isChasing) {
-          // Target is player's current center
-          target = { x: player.x, y: player.y };
-          currentSpeed = this.chaseSpeed;
-        } else {
-          // Patrol along defined path
-          target = this.path[this.currentWaypoint];
-          currentSpeed = this.patrolSpeed;
-          // When near waypoint, choose the next one
-          let dx = target.x - this.x;
-          let dy = target.y - this.y;
-          if (Math.hypot(dx, dy) < 3) {
-            this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
-            target = this.path[this.currentWaypoint];
-          }
-        }
-        // Move towards target
-        let dx = target.x - this.x;
-        let dy = target.y - this.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist !== 0) {
-          dx /= dist;
-          dy /= dist;
-        }
-        this.dir.x = dx;
-        this.dir.y = dy;
-        this.angle = Math.atan2(dy, dx);
-        this.x += dx * currentSpeed;
-        this.y += dy * currentSpeed;
+      #blocker {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
-
-      draw() {
-        if (this.useImage && (this.image || enemyImage).complete) {
-          const img = this.image || enemyImage;
-          ctx.save();
-          ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
-          ctx.rotate(this.angle);
-          ctx.drawImage(img, -this.size / 2, -this.size / 2, this.size, this.size);
-          ctx.restore();
-        } else {
-          ctx.fillStyle = this.color;
-          ctx.fillRect(this.x, this.y, this.size, this.size);
-        }
+      #instructions {
+        font-size: 36px;
+        color: white;
+        cursor: pointer;
       }
-    }
-
-    // Define new patrol paths for enemies
-    const enemy1Path = [
-      { x: 120, y: 120 },
-      { x: 120, y: 500 },
-      { x: 350, y: 500 },
-      { x: 350, y: 120 }
-    ];
-    const enemy2Path = [
-      { x: 600, y: 120 },
-      { x: 600, y: 500 },
-      { x: 500, y: 500 },
-      { x: 500, y: 120 }
-    ];
-
-    // Instantiate enemies with the given enemy images preserved.
-    const enemies = [
-      new Enemy(enemy1Path, 1.0, 'red', true),
-      new Enemy(enemy2Path, 1.0, 'orange', true)
-    ];
-    // Assign second enemy's image explicitly.
-    enemies[1].image = enemyImage2;
-
-    // -----------------------------------------------------
-    // Collision and Utility Functions
-    // -----------------------------------------------------
-    function isColliding(a, b) {
-      const wA = a.size || a.width;
-      const hA = a.size || a.height;
-      const wB = b.size || b.width;
-      const hB = b.size || b.height;
-      return a.x < b.x + wB &&
-             a.x + wA > b.x &&
-             a.y < b.y + hB &&
-             a.y + hA > b.y;
-    }
-
-    function collidesWithWalls(entity) {
-      for (let wall of walls) {
-        if (isColliding(entity, wall)) {
-          return true;
-        }
+      #gameOver {
+        display: none;
+        position: absolute;
+        top: 40%;
+        left: 40%;
+        font-size: 48px;
+        color: red;
       }
-      return false;
-    }
+    </style>
+  </head>
+  <body>
+    <div id="blocker">
+      <div id="instructions">Click to play</div>
+    </div>
+    <div id="gameOver">Game Over</div>
+    <script type="module">
+      // Import Three.js and PointerLockControls
+      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
+      import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/PointerLockControls.js';
 
-    // ----------------------------
-    // (UNCHANGED) Player Movement Code
-    // ----------------------------
-    const keys = {};
-    window.addEventListener('keydown', (e) => { keys[e.key] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+      let camera, scene, renderer, controls, enemy;
+      let moveForward = false;
+      let moveBackward = false;
+      let moveLeft = false;
+      let moveRight = false;
+      let velocity = new THREE.Vector3();
+      let direction = new THREE.Vector3();
+      let prevTime = performance.now();
 
-    function updatePlayer() {
-      const prevX = player.x;
-      const prevY = player.y;
-      if (keys['ArrowLeft'] || keys['a']) { player.x -= player.speed; }
-      if (keys['ArrowRight'] || keys['d']) { player.x += player.speed; }
-      if (collidesWithWalls(player)) { player.x = prevX; }
-      if (keys['ArrowUp'] || keys['w']) { player.y -= player.speed; }
-      if (keys['ArrowDown'] || keys['s']) { player.y += player.speed; }
-      if (collidesWithWalls(player)) { player.y = prevY; }
-      const dx = player.x - prevX;
-      const dy = player.y - prevY;
-      if (dx !== 0 || dy !== 0) { player.angle = Math.atan2(dy, dx); }
-      player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
-      player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
-    }
+      init();
+      animate();
 
-    // -----------------------------------------------------
-    // Vision and Detection (manhunt criteria)
-    // -----------------------------------------------------
-    function playerInLightZone() {
-      // Returns true if player's center is inside any light zone.
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      for (let l of lights) {
-        if (px >= l.x && px <= l.x + l.width &&
-            py >= l.y && py <= l.y + l.height) {
-          return true;
-        }
-      }
-      return false;
-    }
+      function init() {
+        // Set up camera and scene
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xaaaaaa);
+        scene.fog = new THREE.Fog(0xffffff, 0, 750);
 
-    // Basic line intersection check between two segments.
-    function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
-      const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-      if (denom === 0) return false;
-      const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
-      const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
-      return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
-    }
+        // Lighting
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
+        hemiLight.position.set(0, 200, 0);
+        scene.add(hemiLight);
 
-    function lineIntersectsRect(x1, y1, x2, y2, rect) {
-      const left = rect.x, right = rect.x + rect.width;
-      const top = rect.y, bottom = rect.y + rect.height;
-      return (
-        lineIntersectsLine(x1, y1, x2, y2, left, top, right, top) ||
-        lineIntersectsLine(x1, y1, x2, y2, right, top, right, bottom) ||
-        lineIntersectsLine(x1, y1, x2, y2, left, bottom, right, bottom) ||
-        lineIntersectsLine(x1, y1, x2, y2, left, top, left, bottom)
-      );
-    }
+        const dirLight = new THREE.DirectionalLight(0xffffff);
+        dirLight.position.set(0, 200, 100);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 180;
+        dirLight.shadow.camera.bottom = -100;
+        dirLight.shadow.camera.left = -120;
+        dirLight.shadow.camera.right = 120;
+        scene.add(dirLight);
 
-    function lineOfSightBlocked(enemy, player) {
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      for (let wall of walls) {
-        if (lineIntersectsRect(ex, ey, px, py, wall)) {
-          return true;
-        }
-      }
-      return false;
-    }
+        // Floor: a simple wireframe plane
+        const floorGeometry = new THREE.PlaneGeometry(2000, 2000, 100, 100);
+        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x999999, wireframe: true });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = - Math.PI / 2;
+        scene.add(floor);
 
-    function canSeePlayer(enemy, player) {
-      // Enemy sees player if close enough, in line-of-sight, and if the player isn’t hidden in a light zone.
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      const dx = px - ex;
-      const dy = py - ey;
-      const distance = Math.hypot(dx, dy);
-      // When player is in a dark area, enemies can spot him from farther away.
-      const range = playerInLightZone() ? 100 : 200;
-      if (distance > range) return false;
-      if (lineOfSightBlocked(enemy, player)) return false;
-      return true;
-    }
+        // Enemy: a red cube that will chase you
+        const enemyGeometry = new THREE.BoxGeometry(20, 20, 20);
+        const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+        enemy.position.set(50, 10, -50);
+        scene.add(enemy);
 
-    // -----------------------------------------------------
-    // Game State and Effects
-    // -----------------------------------------------------
-    let gameOver = false;
-    let gameWin = false;
-    let bloodSplats = null;
-    
-    function checkGameState() {
-      // Check if any enemy touches the player
-      for (let enemy of enemies) {
-        if (isColliding(enemy, player)) {
-          gameOver = true;
-          if (!bloodSplats) bloodSplats = generateBloodSplats(30);
-        }
-      }
-      // Check if player reached the goal
-      if (isColliding(player, { x: goal.x, y: goal.y, size: goal.size })) {
-        gameWin = true;
-      }
-    }
+        // Renderer
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-    function generateBloodSplats(num) {
-      const splats = [];
-      for (let i = 0; i < num; i++) {
-        splats.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          radius: Math.random() * 30 + 10
+        // PointerLockControls for first-person movement
+        controls = new PointerLockControls(camera, document.body);
+        scene.add(controls.getObject());
+
+        const blocker = document.getElementById('blocker');
+        const instructions = document.getElementById('instructions');
+
+        instructions.addEventListener('click', function () {
+          controls.lock();
+        }, false);
+
+        controls.addEventListener('lock', function () {
+          blocker.style.display = 'none';
         });
+
+        controls.addEventListener('unlock', function () {
+          blocker.style.display = 'flex';
+        });
+
+        // Keyboard controls
+        const onKeyDown = function (event) {
+          switch (event.code) {
+            case 'ArrowUp':
+            case 'KeyW':
+              moveForward = true;
+              break;
+            case 'ArrowLeft':
+            case 'KeyA':
+              moveLeft = true;
+              break;
+            case 'ArrowDown':
+            case 'KeyS':
+              moveBackward = true;
+              break;
+            case 'ArrowRight':
+            case 'KeyD':
+              moveRight = true;
+              break;
+          }
+        };
+
+        const onKeyUp = function (event) {
+          switch (event.code) {
+            case 'ArrowUp':
+            case 'KeyW':
+              moveForward = false;
+              break;
+            case 'ArrowLeft':
+            case 'KeyA':
+              moveLeft = false;
+              break;
+            case 'ArrowDown':
+            case 'KeyS':
+              moveBackward = false;
+              break;
+            case 'ArrowRight':
+            case 'KeyD':
+              moveRight = false;
+              break;
+          }
+        };
+
+        document.addEventListener('keydown', onKeyDown, false);
+        document.addEventListener('keyup', onKeyUp, false);
+        window.addEventListener('resize', onWindowResize, false);
       }
-      return splats;
-    }
 
-    function drawBloodSplats() {
-      ctx.save();
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = 'red';
-      bloodSplats.forEach(splat => {
-        ctx.beginPath();
-        ctx.arc(splat.x, splat.y, splat.radius, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.restore();
-    }
-
-    // -----------------------------------------------------
-    // Drawing Functions: Walls, Goal, Entities & Lighting
-    // -----------------------------------------------------
-    function drawWalls() {
-      walls.forEach(w => {
-        const grad = ctx.createLinearGradient(w.x, w.y, w.x, w.y + w.height);
-        grad.addColorStop(0, "#222");
-        grad.addColorStop(1, "#555");
-        ctx.fillStyle = grad;
-        ctx.fillRect(w.x, w.y, w.width, w.height);
-      });
-    }
-
-    function drawGoal() {
-      ctx.fillStyle = goal.color;
-      ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
-    }
-
-    function drawEntities() {
-      // Draw player
-      if (playerImage.complete) {
-        ctx.save();
-        ctx.translate(player.x + player.size/2, player.y + player.size/2);
-        ctx.rotate(player.angle);
-        ctx.drawImage(playerImage, -player.size/2, -player.size/2, player.size, player.size);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = player.color;
-        ctx.fillRect(player.x, player.y, player.size, player.size);
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
       }
-      // Draw enemies
-      enemies.forEach(enemy => enemy.draw());
-    }
 
-    // Dynamic dark overlay with illuminated zones (player and fixed lights)
-    function drawLighting() {
-      ctx.fillStyle = 'rgba(0,0,0,0.9)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.globalCompositeOperation = 'destination-out';
-      // Fixed light zones
-      lights.forEach(l => {
-        const grad = ctx.createRadialGradient(l.x + l.width/2, l.y + l.height/2, 30, l.x + l.width/2, l.y + l.height/2, Math.max(l.width, l.height));
-        grad.addColorStop(0, 'rgba(0,0,0,1)');
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(l.x, l.y, l.width, l.height);
-      });
-      // Light around the player
-      const px = player.x + player.size/2;
-      const py = player.y + player.size/2;
-      const playerGrad = ctx.createRadialGradient(px, py, 20, px, py, 150);
-      playerGrad.addColorStop(0, 'rgba(0,0,0,1)');
-      playerGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = playerGrad;
-      ctx.beginPath();
-      ctx.arc(px, py, 150, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalCompositeOperation = 'source-over';
-    }
+      function animate() {
+        requestAnimationFrame(animate);
 
-    // -----------------------------------------------------
-    // Main Game Loop
-    // -----------------------------------------------------
-    function update() {
-      if (gameOver || gameWin) return;
-      updatePlayer();
-      enemies.forEach(enemy => enemy.update());
-      checkGameState();
-    }
+        if (controls.isLocked === true) {
+          const time = performance.now();
+          const delta = (time - prevTime) / 1000;
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawWalls();
-      drawGoal();
-      drawEntities();
-      if (gameWin) {
-        ctx.fillStyle = 'white';
-        ctx.font = '28px sans-serif';
-        ctx.fillText("You've Escaped!", canvas.width/2 - 100, canvas.height/2);
+          // Update player movement
+          velocity.x -= velocity.x * 10.0 * delta;
+          velocity.z -= velocity.z * 10.0 * delta;
+
+          direction.z = Number(moveForward) - Number(moveBackward);
+          direction.x = Number(moveRight) - Number(moveLeft);
+          direction.normalize(); // ensures consistent movement in all directions
+
+          if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+          if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+
+          controls.moveRight(- velocity.x * delta);
+          controls.moveForward(- velocity.z * delta);
+
+          // Simple enemy chasing behavior
+          const playerPosition = controls.getObject().position;
+          const enemyDirection = new THREE.Vector3();
+          enemyDirection.subVectors(playerPosition, enemy.position).normalize();
+          enemy.position.add(enemyDirection.multiplyScalar(50 * delta));
+
+          // Collision detection (if enemy gets too close, game over)
+          if (enemy.position.distanceTo(playerPosition) < 10) {
+            document.getElementById('gameOver').style.display = 'block';
+            controls.unlock();
+          }
+
+          prevTime = time;
+        }
+
+        renderer.render(scene, camera);
       }
-      if (gameOver) {
-        ctx.fillStyle = 'white';
-        ctx.font = '48px sans-serif';
-        ctx.fillText("Game Over", canvas.width/2 - 120, canvas.height/2);
-        if (bloodSplats) drawBloodSplats();
-      }
-      // Apply dynamic lighting last
-      drawLighting();
-    }
-
-    function gameLoop() {
-      update();
-      draw();
-      if (!gameOver && !gameWin) {
-        requestAnimationFrame(gameLoop);
-      }
-    }
-
-    // -----------------------------------------------------
-    // Start the game when all images load
-    // -----------------------------------------------------
-    function startGame() {
-      if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
-        gameLoop();
-      }
-    }
-    if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
-      startGame();
-    } else {
-      enemyImage.onload = startGame;
-      enemyImage2.onload = startGame;
-      playerImage.onload = startGame;
-      
-      enemyImage.onerror = function() {
-        console.error("Error loading enemy image omni.png");
-        startGame();
-      };
-      enemyImage2.onerror = function() {
-        console.error("Error loading enemy image omni2.png");
-        startGame();
-      };
-      playerImage.onerror = function() {
-        console.error("Error loading player image");
-        startGame();
-      };
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>
