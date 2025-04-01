@@ -2,104 +2,109 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>crewsxanlack it please help me</title>
+  <title>Manhunt-inspired Stealth Game</title>
   <style>
-    body {
-      margin: 0;
-      background: #000;
-    }
-    canvas {
-      display: block;
-      background: #333;
-      margin: 0 auto;
-    }
+    * { margin: 0; padding: 0; }
+    canvas { display: block; background: #000; }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <canvas id="gameCanvas"></canvas>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Preload enemy images
+    // Fullscreen setup
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Preload images
     const enemyImage = new Image();
     enemyImage.src = 'omni.png'; 
 
     const enemyImage2 = new Image();
     enemyImage2.src = 'omni2.png';
 
-    // Preload player image
     const playerImage = new Image();
     playerImage.src = 'player.png';
 
     // -------------------------
     // Game Entities & Parameters
     // -------------------------
-
-    // Player setup (size increased to 60)
     const player = {
       x: 50,
       y: 50,
-      size: 60,
-      color: 'lime',
-      speed: 1.5,
-      angle: 0 // player's facing direction in radians
+      size: 40,
+      speed: 2,
+      angle: 0
     };
 
-    // Goal placement (reaching the goal wins the game)
     const goal = {
-      x: 750,
-      y: 550,
-      size: 20,
-      color: 'yellow'
+      x: canvas.width - 70,
+      y: canvas.height - 70,
+      size: 30,
+      color: '#FFD700'
     };
 
-    // New Maze-style Walls (designed for a 60px player and a dark, manhunt vibe)
-    const walls = [
+    // Improved Maze-style Walls with Manhunt aesthetic
+    const walls = createMazeWalls(canvas.width, canvas.height);
+
+    function createMazeWalls(w, h) {
+      const walls = [];
+      const wallThickness = 25;
+      const corridorWidth = 120;
+
       // Outer boundaries
-      { x: 0, y: 0, width: 800, height: 20 },
-      { x: 0, y: 580, width: 800, height: 20 },
-      { x: 0, y: 0, width: 20, height: 600 },
-      { x: 780, y: 0, width: 20, height: 600 },
-      // Central vertical divider with a gap in the middle
-      { x: 400, y: 20, width: 20, height: 200 },
-      { x: 400, y: 380, width: 20, height: 200 },
-      // Horizontal walls to add more maze-like corridors
-      { x: 220, y: 220, width: 180, height: 20 },
-      { x: 420, y: 220, width: 180, height: 20 },
-      { x: 220, y: 360, width: 180, height: 20 },
-      { x: 420, y: 360, width: 180, height: 20 }
-    ];
+      walls.push({x: 0, y: 0, width: w, height: wallThickness});
+      walls.push({x: 0, y: h - wallThickness, width: w, height: wallThickness});
+      walls.push({x: 0, y: 0, width: wallThickness, height: h});
+      walls.push({x: w - wallThickness, y: 0, width: wallThickness, height: h});
 
-    // -------------------------
-    // Lighting: Rectangular Lights in Main Halls
-    // -------------------------
-    // Two rectangular light zones.
+      // Inner maze structure
+      const centerX = w/2 - wallThickness/2;
+      const centerY = h/2 - wallThickness/2;
+      
+      // Vertical center divider with gaps
+      walls.push({x: centerX, y: wallThickness, width: wallThickness, height: h/3});
+      walls.push({x: centerX, y: h - h/3, width: wallThickness, height: h/3});
+
+      // Horizontal barriers
+      walls.push({x: corridorWidth, y: h/4, width: w - corridorWidth*2, height: wallThickness});
+      walls.push({x: corridorWidth, y: h - h/4, width: w - corridorWidth*2, height: wallThickness});
+
+      // Diagonal barriers for visual interest
+      walls.push({x: w/4, y: h/2 - wallThickness, width: w/8, height: wallThickness*2, angle: 45});
+      walls.push({x: w - w/4 - w/8, y: h/2 - wallThickness, width: w/8, height: wallThickness*2, angle: -45});
+
+      return walls;
+    }
+
+    // Dynamic lighting zones
     const lights = [
-      { x: 35,   y: 50,   width: 120, height: 500 },
-      { x: 640, y: 50,   width: 140, height: 510 }
+      { x: canvas.width * 0.1, y: canvas.height * 0.2, width: canvas.width * 0.25, height: canvas.height * 0.6 },
+      { x: canvas.width * 0.65, y: canvas.height * 0.2, width: canvas.width * 0.25, height: canvas.height * 0.6 }
     ];
 
     // -------------------------
-    // Enemy Patrol Class & Setup
+    // Enhanced Enemy Patrol Paths
     // -------------------------
-
     class Enemy {
       constructor(path, speed, color, useImage = false) {
-        this.path = path; // Array of waypoints { x, y }
+        this.path = path;
         this.speed = speed;
         this.color = color;
-        this.useImage = useImage; // Whether to use an image instead of a rectangle
-        this.image = null; // Optional image property (if set, will be used)
-        // Start at the first waypoint
-        this.x = path[0].x;
-        this.y = path[0].y;
+        this.useImage = useImage;
+        this.image = null;
         this.size = 50;
         this.currentWaypoint = 1;
-        // Direction vector (normalized) based on current movement
         this.dir = { x: 1, y: 0 };
-        // Angle for image rotation (in radians)
         this.angle = 0;
+        this.x = path[0].x;
+        this.y = path[0].y;
       }
 
       update() {
@@ -107,38 +112,26 @@
         let dx = target.x - this.x;
         let dy = target.y - this.y;
         const distance = Math.hypot(dx, dy);
+        
         if (distance < 2) {
-          // Arrived at the waypoint; switch to next
           this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
         } else {
           dx /= distance;
           dy /= distance;
           this.dir.x = dx;
           this.dir.y = dy;
-          
-          // Calculate rotation angle based on direction
           this.angle = Math.atan2(dy, dx);
-          
-          // Update enemy position
           this.x += dx * this.speed;
           this.y += dy * this.speed;
         }
       }
 
       draw() {
-        const imgToUse = this.useImage ? (this.image || enemyImage) : null;
-        if (imgToUse && imgToUse.complete) {
+        if (this.useImage && this.image?.complete) {
           ctx.save();
-          // Translate to the center of the enemy
-          ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
+          ctx.translate(this.x + this.size/2, this.y + this.size/2);
           ctx.rotate(this.angle);
-          ctx.drawImage(
-            imgToUse,
-            -this.size / 2,
-            -this.size / 2,
-            this.size,
-            this.size
-          );
+          ctx.drawImage(this.image, -this.size/2, -this.size/2, this.size, this.size);
           ctx.restore();
         } else {
           ctx.fillStyle = this.color;
@@ -147,343 +140,171 @@
       }
     }
 
-    // Define enemy patrol paths that follow the hallways.
-    const enemy1Path = [
-      { x: 100, y: 50 },
-      { x: 100, y: 250 },
-      { x: 100, y: 450 },
-      { x: 100, y: 250 }
-    ];
-    const enemy2Path = [
-      { x: 650, y: 100 },
-      { x: 650, y: 400 },
-      { x: 650, y: 550 },
-      { x: 650, y: 400 }
-    ];
-
-    // Instantiate enemies.
     const enemies = [
-      new Enemy(enemy1Path, 0.8, 'red', true), // Uses enemyImage (omni.png)
-      new Enemy(enemy2Path, 0.8, 'orange', true) // Will use enemyImage2 (omni2.png)
+      new Enemy(
+        [
+          {x: canvas.width * 0.2, y: canvas.height * 0.3},
+          {x: canvas.width * 0.2, y: canvas.height * 0.7}
+        ],
+        1.2, 'maroon', true
+      ),
+      new Enemy(
+        [
+          {x: canvas.width * 0.8, y: canvas.height * 0.3},
+          {x: canvas.width * 0.8, y: canvas.height * 0.7}
+        ],
+        1.2, '#8B0000', true
+      )
     ];
-    // Set enemy2's image to enemyImage2.
+    enemies[0].image = enemyImage;
     enemies[1].image = enemyImage2;
 
     // -------------------------
-    // Game State & Input Handling
+    // Game State & Core Logic
     // -------------------------
-
     let gameOver = false;
     let gameWin = false;
-    let bloodSplats = null; // Data for blood effect on detection
-
-    // Track key presses for player movement.
+    let bloodSplats = null;
     const keys = {};
-    window.addEventListener('keydown', (e) => { keys[e.key] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+
+    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keyup', e => keys[e.key] = false);
 
     // -------------------------
-    // Collision & Movement Helpers
+    // Enhanced Collision & Detection
     // -------------------------
-
     function isColliding(a, b) {
-      const widthA = a.size || a.width;
-      const heightA = a.size || a.height;
-      const widthB = b.size || b.width;
-      const heightB = b.size || b.height;
-      return a.x < b.x + widthB &&
-             a.x + widthA > b.x &&
-             a.y < b.y + heightB &&
-             a.y + heightA > b.y;
+      return a.x < b.x + (b.width || b.size) &&
+             a.x + (a.width || a.size) > b.x &&
+             a.y < b.y + (b.height || b.size) &&
+             a.y + (a.height || a.size) > b.y;
     }
 
     function collidesWithWalls(entity) {
-      for (let w of walls) {
-        if (isColliding(entity, w)) {
-          return true;
-        }
-      }
-      return false;
+      return walls.some(w => {
+        const rot = w.angle ? {
+          x: w.x + Math.cos(w.angle) * w.width/2,
+          y: w.y + Math.sin(w.angle) * w.height/2
+        } : w;
+        return isColliding(entity, rot);
+      });
     }
 
     function updatePlayer() {
-      const prevX = player.x;
-      const prevY = player.y;
+      const prev = {x: player.x, y: player.y};
+      if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+      if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+      if (collidesWithWalls(player)) player.x = prev.x;
+      
+      if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
+      if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
+      if (collidesWithWalls(player)) player.y = prev.y;
 
-      // Horizontal movement.
-      if (keys['ArrowLeft'] || keys['a']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d']) {
-        player.x += player.speed;
-      }
-      if (collidesWithWalls(player)) {
-        player.x = prevX;
-      }
-
-      // Vertical movement.
-      if (keys['ArrowUp'] || keys['w']) {
-        player.y -= player.speed;
-      }
-      if (keys['ArrowDown'] || keys['s']) {
-        player.y += player.speed;
-      }
-      if (collidesWithWalls(player)) {
-        player.y = prevY;
-      }
-
-      // Update player angle based on movement (if any)
-      const dx = player.x - prevX;
-      const dy = player.y - prevY;
-      if (dx !== 0 || dy !== 0) {
-        player.angle = Math.atan2(dy, dx);
-      }
-
-      // Ensure player stays within the canvas.
-      player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
-      player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+      const dx = player.x - prev.x;
+      const dy = player.y - prev.y;
+      if (dx || dy) player.angle = Math.atan2(dy, dx);
     }
 
     // -------------------------
-    // Light System: "Is player in hall light?"
+    // Improved Lighting System
     // -------------------------
-    function playerIsInLight() {
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      for (let l of lights) {
-        if (px >= l.x && px <= l.x + l.width && py >= l.y && py <= l.y + l.height) {
-          return true;
+    function drawEnvironment() {
+      // Draw walls with texture
+      walls.forEach(w => {
+        ctx.save();
+        if (w.angle) {
+          ctx.translate(w.x, w.y);
+          ctx.rotate(w.angle * Math.PI/180);
         }
-      }
-      return false;
-    }
+        
+        const gradient = ctx.createLinearGradient(0, 0, w.width, w.height);
+        gradient.addColorStop(0, '#2a2a2a');
+        gradient.addColorStop(1, '#1a1a1a');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(w.x, w.y, w.width, w.height);
+        ctx.restore();
+      });
 
-    // -------------------------
-    // Line-of-Sight (LOS) & Enemy Detection
-    // -------------------------
-
-    function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
-      const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-      if (denom === 0) return false;
-      const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
-      const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
-      return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
-    }
-
-    function lineIntersectsRect(x1, y1, x2, y2, rect) {
-      const left = rect.x;
-      const right = rect.x + rect.width;
-      const top = rect.y;
-      const bottom = rect.y + rect.height;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, top, right, top)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, right, top, right, bottom)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, bottom, right, bottom)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, top, left, bottom)) return true;
-      return false;
-    }
-
-    function lineOfSightBlocked(enemy, player) {
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      for (let w of walls) {
-        if (lineIntersectsRect(ex, ey, px, py, w)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    // Enemy vision check: returns true if the enemy can see the player.
-    function enemyCanSeePlayer(enemy, player) {
-      // Calculate center points.
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      const dx = px - ex;
-      const dy = py - ey;
-      const distance = Math.hypot(dx, dy);
-
-      // Set detection range based on whether the player is in light.
-      if (playerIsInLight()) {
-        if (distance > 150) return false;
-        // Field-of-view check.
-        const edx = enemy.dir.x;
-        const edy = enemy.dir.y;
-        const pdx = dx / distance;
-        const pdy = dy / distance;
-        const dot = edx * pdx + edy * pdy;
-        const fov = Math.cos(45 * Math.PI / 180);
-        if (dot < fov) return false;
-      } else {
-        // When out of the light, enemy only sees you if very close.
-        if (distance > 50) return false;
-      }
-
-      // Check for wall obstruction.
-      if (lineOfSightBlocked(enemy, player)) return false;
-
-      return true;
-    }
-
-    // -------------------------
-    // Game Collision & State Check
-    // -------------------------
-
-    function checkCollisions() {
-      for (let enemy of enemies) {
-        if (enemyCanSeePlayer(enemy, player)) {
-          gameOver = true;
-          if (!bloodSplats) {
-            bloodSplats = generateBloodSplats(25);
-          }
-        }
-      }
-      // Check if the player has reached the goal.
-      const goalRect = { x: goal.x, y: goal.y, size: goal.size };
-      if (isColliding(player, goalRect)) {
-        gameWin = true;
-      }
-    }
-
-    // -------------------------
-    // Blood Splatter Effect
-    // -------------------------
-
-    function generateBloodSplats(num) {
-      const splats = [];
-      for (let i = 0; i < num; i++) {
-        splats.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          radius: Math.random() * 40 + 10
-        });
-      }
-      return splats;
-    }
-
-    function drawBloodEffect() {
+      // Draw dynamic lighting
       ctx.save();
-      ctx.globalAlpha = 0.6;
-      ctx.fillStyle = 'red';
-      for (let splat of bloodSplats) {
-        ctx.beginPath();
-        ctx.arc(splat.x, splat.y, splat.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      ctx.globalCompositeOperation = 'lighter';
+      lights.forEach(l => {
+        const gradient = ctx.createRadialGradient(
+          l.x + l.width/2, l.y + l.height/2, 0,
+          l.x + l.width/2, l.y + l.height/2, Math.max(l.width, l.height)
+        );
+        gradient.addColorStop(0, 'rgba(255, 255, 200, 0.4)');
+        gradient.addColorStop(1, 'rgba(255, 255, 200, 0)');
+        
+        ctx.shadowColor = 'rgba(255,255,200,0.5)';
+        ctx.shadowBlur = 50;
+        ctx.fillStyle = gradient;
+        ctx.fillRect(l.x, l.y, l.width, l.height);
+      });
       ctx.restore();
     }
 
     // -------------------------
     // Main Game Loop
     // -------------------------
-
     function update() {
       if (gameOver || gameWin) return;
       updatePlayer();
-      enemies.forEach(enemy => enemy.update());
+      enemies.forEach(e => e.update());
       checkCollisions();
     }
 
     function draw() {
-      // Clear the canvas and reset composite operation
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.globalCompositeOperation = 'source-over';
-
-      // Draw maze walls with a gradient fill for a darker, manhunt feel.
-      walls.forEach(w => {
-        const grad = ctx.createLinearGradient(w.x, w.y, w.x, w.y + w.height);
-        grad.addColorStop(0, "#1c1c1c");
-        grad.addColorStop(1, "#3c3c3c");
-        ctx.fillStyle = grad;
-        ctx.fillRect(w.x, w.y, w.width, w.height);
-      });
-
-      // Draw rectangular lights with bloom effect.
-      ctx.save();
-      ctx.shadowColor = 'rgba(255,255,200,0.8)';
-      ctx.shadowBlur = 30;
-      ctx.fillStyle = 'rgba(255,255,180,0.15)';
-      lights.forEach(l => {
-        ctx.fillRect(l.x, l.y, l.width, l.height);
-      });
-      ctx.restore();
-
-      // Draw the goal.
+      
+      drawEnvironment();
+      
+      // Draw goal
       ctx.fillStyle = goal.color;
       ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
 
-      // Draw the player.
-      if (playerImage.complete) {
-        ctx.save();
-        ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
-        ctx.rotate(player.angle);
-        ctx.drawImage(playerImage, -player.size / 2, -player.size / 2, player.size, player.size);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = player.color;
-        ctx.fillRect(player.x, player.y, player.size, player.size);
-      }
+      // Draw player
+      ctx.save();
+      ctx.translate(player.x + player.size/2, player.y + player.size/2);
+      ctx.rotate(player.angle);
+      ctx.drawImage(playerImage, -player.size/2, -player.size/2, player.size, player.size);
+      ctx.restore();
 
-      // Draw the enemies.
-      enemies.forEach(enemy => enemy.draw());
+      // Draw enemies
+      enemies.forEach(e => e.draw());
 
-      // Display win/lose messages.
+      // Game state messages
       if (gameWin) {
-        ctx.fillStyle = 'white';
-        ctx.font = '24px sans-serif';
-        ctx.fillText('wow you won my shitty ass game good on you', canvas.width / 2 - 100, canvas.height / 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(canvas.width/2 - 200, canvas.height/2 - 30, 400, 60);
+        ctx.fillStyle = '#FFD700';
+        ctx.font = '24px Impact';
+        ctx.textAlign = 'center';
+        ctx.fillText('ESCAPE SUCCESSFUL', canvas.width/2, canvas.height/2 + 10);
       }
       if (gameOver) {
-        ctx.fillStyle = 'white';
-        ctx.font = '48px sans-serif';
-        ctx.fillText('fucking loser', canvas.width / 2 - 120, canvas.height / 2);
-        if (bloodSplats) {
-          drawBloodEffect();
-        }
+        ctx.fillStyle = 'rgba(50,0,0,0.8)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'darkred';
+        ctx.font = '48px Impact';
+        ctx.textAlign = 'center';
+        ctx.fillText('TERMINATED', canvas.width/2, canvas.height/2);
       }
     }
 
     function gameLoop() {
       update();
       draw();
-      if (!gameOver && !gameWin) {
-        requestAnimationFrame(gameLoop);
-      }
+      requestAnimationFrame(gameLoop);
     }
 
-    // Start game loop after enemy and player images load
-    if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
-      gameLoop();
-    } else {
-      enemyImage.onload = startIfReady;
-      enemyImage2.onload = startIfReady;
-      playerImage.onload = startIfReady;
-      
-      function startIfReady() {
-        if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
-          gameLoop();
-        }
-      }
-      
-      // Fallbacks in case images fail to load.
-      enemyImage.onerror = function() {
-        console.error("Failed to load enemy image omni.png. Using fallback rectangle.");
-        enemies[0].useImage = false;
-        startIfReady();
-      };
-      enemyImage2.onerror = function() {
-        console.error("Failed to load enemy image omni2.png. Using fallback rectangle for orange enemy.");
-        enemies[1].useImage = false;
-        startIfReady();
-      };
-      playerImage.onerror = function() {
-        console.error("Failed to load player image. Using fallback rectangle.");
-        startIfReady();
-      };
-    }
+    // Start game when images load
+    Promise.all([
+      new Promise(res => enemyImage.onload = res),
+      new Promise(res => enemyImage2.onload = res),
+      new Promise(res => playerImage.onload = res)
+    ]).then(gameLoop);
   </script>
 </body>
 </html>
