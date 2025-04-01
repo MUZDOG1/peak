@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Manhunt Factory Map (Three Enemies)</title>
+  <title>Factory Map with Blocks & Three Enemies</title>
   <style>
     body {
       margin: 0;
@@ -24,8 +24,11 @@
     // -------------------------
     // IMAGES
     // -------------------------
+    const backgroundImage = new Image();
+    backgroundImage.src = 'map.png';  // Your background picture
+
     const enemyImage = new Image();
-    enemyImage.src = 'omni.png'; 
+    enemyImage.src = 'omni.png';
 
     const enemyImage2 = new Image();
     enemyImage2.src = 'omni2.png';
@@ -39,14 +42,14 @@
     const player = {
       x: 50,
       y: 50,
-      size: 60,    // Larger player
+      size: 60,  // 60px as requested
       color: 'lime',
       speed: 1.5,
       angle: 0
     };
 
     // -------------------------
-    // GOAL
+    // GOAL SETUP
     // -------------------------
     const goal = {
       x: 750,
@@ -56,73 +59,43 @@
     };
 
     // -------------------------
-    // FACTORY-STYLE WALLS
+    // FACTORY‑STYLE BLOCK LAYOUT
     // -------------------------
-    // This is the same "factory blueprint" from before, just repeated here.
+    // These blocks are defined to mimic the structure seen in your picture.
+    // They act as invisible walls (here drawn with borders for debugging/visualization)
+    // Adjust the coordinates/sizes to fit your picture perfectly.
     const walls = [
       // Outer boundaries
-      { x: 0, y: 0, width: 800, height: 20 },
-      { x: 0, y: 580, width: 800, height: 20 },
-      { x: 0, y: 0, width: 20, height: 600 },
-      { x: 780, y: 0, width: 20, height: 600 },
+      { x: 0,   y: 0,   width: 800, height: 20 },
+      { x: 0,   y: 580, width: 800, height: 20 },
+      { x: 0,   y: 0,   width: 20,  height: 600 },
+      { x: 780, y: 0,   width: 20,  height: 600 },
 
-      // --- Top-Left Room (Quadrant) ---
-      { x: 20, y: 20, width: 380, height: 20 },
-      { x: 20, y: 20, width: 20, height: 260 },
-      { x: 20, y: 280, width: 180, height: 20 },
-      { x: 240, y: 280, width: 160, height: 20 },
-      { x: 380, y: 20, width: 20, height: 100 },
-      { x: 380, y: 160, width: 20, height: 100 },
+      // Upper area: Two side-by-side rooms
+      { x: 40,  y: 40,  width: 320, height: 120 },
+      { x: 440, y: 40,  width: 320, height: 120 },
 
-      // --- Top-Right Room (Quadrant) ---
-      { x: 420, y: 20, width: 340, height: 20 },
-      { x: 760, y: 20, width: 20, height: 100 },
-      { x: 760, y: 160, width: 20, height: 100 },
-      { x: 420, y: 280, width: 160, height: 20 },
-      { x: 620, y: 280, width: 140, height: 20 },
-      { x: 420, y: 20, width: 20, height: 100 },
-      { x: 420, y: 160, width: 20, height: 100 },
+      // A horizontal corridor between the upper and lower areas
+      { x: 40,  y: 180, width: 720, height: 20 },
 
-      // --- Bottom-Left Room (Quadrant) ---
-      { x: 20, y: 320, width: 380, height: 20 },
-      { x: 20, y: 320, width: 20, height: 240 },
-      { x: 20, y: 540, width: 180, height: 20 },
-      { x: 240, y: 540, width: 160, height: 20 },
-      { x: 380, y: 320, width: 20, height: 80 },
-      { x: 380, y: 440, width: 20, height: 140 },
+      // Lower area: Two larger rooms
+      { x: 40,  y: 200, width: 360, height: 180 },
+      { x: 420, y: 200, width: 340, height: 180 },
 
-      // --- Bottom-Right Room (Quadrant) ---
-      { x: 420, y: 320, width: 340, height: 20 },
-      { x: 760, y: 320, width: 20, height: 80 },
-      { x: 760, y: 440, width: 20, height: 140 },
-      { x: 420, y: 540, width: 160, height: 20 },
-      { x: 620, y: 540, width: 140, height: 20 },
-      { x: 420, y: 320, width: 20, height: 80 },
-      { x: 420, y: 440, width: 20, height: 140 },
-
-      // --- Extra Factory Block ---
-      { x: 320, y: 80, width: 60, height: 60 }
+      // A table block inside the bottom‑left room (for example)
+      { x: 100, y: 240, width: 120, height: 80 }
     ];
 
     // -------------------------
-    // LIGHTS (OPTIONAL)
-    // -------------------------
-    // Same rectangular lights from before.
-    const lights = [
-      { x: 35,   y: 50,   width: 120, height: 500 },
-      { x: 640,  y: 50,   width: 140, height: 510 }
-    ];
-
-    // -------------------------
-    // ENEMIES (3 GUARDS)
+    // ENEMY PATROL PATHS (3 GUARDS)
     // -------------------------
     class Enemy {
       constructor(path, speed, color, useImage = false) {
-        this.path = path;
+        this.path = path;  // Array of waypoints
         this.speed = speed;
         this.color = color;
         this.useImage = useImage;
-        this.image = null;
+        this.image = null;  // Optional image property (if set, will be used)
         this.x = path[0].x;
         this.y = path[0].y;
         this.size = 50;
@@ -136,7 +109,6 @@
         let dx = target.x - this.x;
         let dy = target.y - this.y;
         const dist = Math.hypot(dx, dy);
-
         if (dist < 2) {
           this.currentWaypoint = (this.currentWaypoint + 1) % this.path.length;
         } else {
@@ -154,9 +126,9 @@
         const imgToUse = this.useImage ? (this.image || enemyImage) : null;
         if (imgToUse && imgToUse.complete) {
           ctx.save();
-          ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
+          ctx.translate(this.x + this.size/2, this.y + this.size/2);
           ctx.rotate(this.angle);
-          ctx.drawImage(imgToUse, -this.size / 2, -this.size / 2, this.size, this.size);
+          ctx.drawImage(imgToUse, -this.size/2, -this.size/2, this.size, this.size);
           ctx.restore();
         } else {
           ctx.fillStyle = this.color;
@@ -165,219 +137,153 @@
       }
     }
 
-    // Three enemies, each with a different path:
-    // 1) Enemy #1 (top corridor patrol)
+    // Define patrol paths based on the block layout (adjust these as needed):
+    // Enemy #1: Patrols the top corridor (upper area)
     const enemy1Path = [
-      { x: 100, y: 30 },
-      { x: 700, y: 30 }
+      { x: 60, y: 100 },
+      { x: 740, y: 100 }
     ];
-    // 2) Enemy #2 (right side loop)
+    // Enemy #2: Patrols along the right outer edge (vertical loop)
     const enemy2Path = [
-      { x: 650, y: 100 },
-      { x: 650, y: 250 },
-      { x: 750, y: 250 },
-      { x: 750, y: 450 },
-      { x: 650, y: 450 },
-      { x: 650, y: 100 }
+      { x: 750, y: 60 },
+      { x: 750, y: 540 },
+      { x: 740, y: 540 },
+      { x: 740, y: 60 }
     ];
-    // 3) Enemy #3 (middle corridor patrol)
+    // Enemy #3: Patrols the middle corridor of the lower area (covering both rooms)
     const enemy3Path = [
-      { x: 350, y: 220 },
-      { x: 450, y: 220 },
-      { x: 450, y: 360 },
-      { x: 350, y: 360 }
+      { x: 200, y: 220 },
+      { x: 200, y: 360 },
+      { x: 600, y: 360 },
+      { x: 600, y: 220 }
     ];
 
     const enemies = [
-      new Enemy(enemy1Path, 0.8, 'red',    true),
-      new Enemy(enemy2Path, 0.8, 'orange', true),
-      new Enemy(enemy3Path, 0.8, 'purple', true)
+      new Enemy(enemy1Path, 0.8, 'red',    true),  // uses omni.png
+      new Enemy(enemy2Path, 0.8, 'orange', true),  // uses omni2.png
+      new Enemy(enemy3Path, 0.8, 'purple', true)   // uses omni.png again
     ];
-
-    // Assign images:
-    //   Enemy #1 => omni.png
-    //   Enemy #2 => omni2.png
-    //   Enemy #3 => omni.png again
     enemies[0].image = enemyImage;
     enemies[1].image = enemyImage2;
     enemies[2].image = enemyImage;
 
     // -------------------------
-    // GAME STATE & INPUT
+    // GAME STATE & INPUT HANDLING
     // -------------------------
     let gameOver = false;
     let gameWin = false;
     let bloodSplats = null;
-
     const keys = {};
-    window.addEventListener('keydown', (e) => { keys[e.key] = true; });
-    window.addEventListener('keyup',   (e) => { keys[e.key] = false; });
+    window.addEventListener('keydown', e => { keys[e.key] = true; });
+    window.addEventListener('keyup',   e => { keys[e.key] = false; });
 
     // -------------------------
-    // COLLISION & MOVEMENT
+    // COLLISION & MOVEMENT HELPERS
     // -------------------------
     function isColliding(a, b) {
       const widthA = a.size || a.width;
       const heightA = a.size || a.height;
       const widthB = b.size || b.width;
       const heightB = b.size || b.height;
-      return (
-        a.x < b.x + widthB &&
-        a.x + widthA > b.x &&
-        a.y < b.y + heightB &&
-        a.y + heightA > b.y
-      );
+      return a.x < b.x + widthB &&
+             a.x + widthA > b.x &&
+             a.y < b.y + heightB &&
+             a.y + heightA > b.y;
     }
-
     function collidesWithWalls(entity) {
       for (let w of walls) {
-        if (isColliding(entity, w)) {
-          return true;
-        }
+        if (isColliding(entity, w)) return true;
       }
       return false;
     }
-
     function updatePlayer() {
-      const prevX = player.x;
-      const prevY = player.y;
-
-      // Horizontal
-      if (keys['ArrowLeft'] || keys['a']) {
-        player.x -= player.speed;
-      }
-      if (keys['ArrowRight'] || keys['d']) {
-        player.x += player.speed;
-      }
-      if (collidesWithWalls(player)) {
-        player.x = prevX;
-      }
-
-      // Vertical
-      if (keys['ArrowUp'] || keys['w']) {
-        player.y -= player.speed;
-      }
-      if (keys['ArrowDown'] || keys['s']) {
-        player.y += player.speed;
-      }
-      if (collidesWithWalls(player)) {
-        player.y = prevY;
-      }
-
-      // Update angle if moved
-      const dx = player.x - prevX;
-      const dy = player.y - prevY;
-      if (dx !== 0 || dy !== 0) {
-        player.angle = Math.atan2(dy, dx);
-      }
-
-      // Keep player in canvas
+      const prevX = player.x, prevY = player.y;
+      if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+      if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+      if (collidesWithWalls(player)) player.x = prevX;
+      if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
+      if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
+      if (collidesWithWalls(player)) player.y = prevY;
+      const dx = player.x - prevX, dy = player.y - prevY;
+      if (dx || dy) player.angle = Math.atan2(dy, dx);
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
     }
 
     // -------------------------
-    // LIGHT SYSTEM (OPTIONAL)
+    // (Optional) LIGHTING SYSTEM
     // -------------------------
+    const lights = [
+      { x: 35,  y: 50,  width: 120, height: 500 },
+      { x: 640, y: 50,  width: 140, height: 510 }
+    ];
     function playerIsInLight() {
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
+      const px = player.x + player.size/2, py = player.y + player.size/2;
       for (let l of lights) {
-        if (px >= l.x && px <= l.x + l.width && py >= l.y && py <= l.y + l.height) {
+        if (px >= l.x && px <= l.x+l.width && py >= l.y && py <= l.y+l.height)
           return true;
-        }
       }
       return false;
     }
 
     // -------------------------
-    // ENEMY VISION
+    // ENEMY VISION (Line-of-Sight)
     // -------------------------
-    function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
-      const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
-      if (denom === 0) return false;
-      const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
-      const ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
-      return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
+    function lineIntersectsLine(x1,y1,x2,y2,x3,y3,x4,y4) {
+      const denom = (y4-y3)*(x2-x1) - (x4-x3)*(y2-y1);
+      if (denom===0) return false;
+      const ua = ((x4-x3)*(y1-y3)-(y4-y3)*(x1-x3))/denom;
+      const ub = ((x2-x1)*(y1-y3)-(y2-y1)*(x1-x3))/denom;
+      return ua>=0 && ua<=1 && ub>=0 && ub<=1;
     }
-
-    function lineIntersectsRect(x1, y1, x2, y2, rect) {
-      const left = rect.x;
-      const right = rect.x + rect.width;
-      const top = rect.y;
-      const bottom = rect.y + rect.height;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, top, right, top)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, right, top, right, bottom)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, bottom, right, bottom)) return true;
-      if (lineIntersectsLine(x1, y1, x2, y2, left, top, left, bottom)) return true;
-      return false;
+    function lineIntersectsRect(x1,y1,x2,y2,rect) {
+      const left = rect.x, right = rect.x+rect.width, top = rect.y, bottom = rect.y+rect.height;
+      return (lineIntersectsLine(x1,y1,x2,y2,left,top,right,top) ||
+              lineIntersectsLine(x1,y1,x2,y2,right,top,right,bottom) ||
+              lineIntersectsLine(x1,y1,x2,y2,left,bottom,right,bottom) ||
+              lineIntersectsLine(x1,y1,x2,y2,left,top,left,bottom));
     }
-
     function lineOfSightBlocked(enemy, player) {
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
+      const ex = enemy.x + enemy.size/2, ey = enemy.y + enemy.size/2;
+      const px = player.x + player.size/2, py = player.y + player.size/2;
       for (let w of walls) {
-        if (lineIntersectsRect(ex, ey, px, py, w)) {
-          return true;
-        }
+        if (lineIntersectsRect(ex,ey,px,py,w)) return true;
       }
       return false;
     }
-
     function enemyCanSeePlayer(enemy, player) {
-      // Dist
-      const ex = enemy.x + enemy.size / 2;
-      const ey = enemy.y + enemy.size / 2;
-      const px = player.x + player.size / 2;
-      const py = player.y + player.size / 2;
-      const dx = px - ex;
-      const dy = py - ey;
-      const distance = Math.hypot(dx, dy);
-
-      // If in light => up to 150 px, 90° FOV
-      // If not => up to 50 px, no FOV
+      const ex = enemy.x + enemy.size/2, ey = enemy.y + enemy.size/2;
+      const px = player.x + player.size/2, py = player.y + player.size/2;
+      const dx = px - ex, dy = py - ey;
+      const distance = Math.hypot(dx,dy);
       if (playerIsInLight()) {
-        if (distance > 150) return false;
-        const edx = enemy.dir.x;
-        const edy = enemy.dir.y;
-        const pdx = dx / distance;
-        const pdy = dy / distance;
-        const dot = edx * pdx + edy * pdy;
-        const fov = Math.cos(45 * Math.PI / 180);
-        if (dot < fov) return false;
+        if(distance>150)return false;
+        const pdx = dx/distance, pdy = dy/distance;
+        const dot = enemy.dir.x*pdx + enemy.dir.y*pdy;
+        if(dot < Math.cos(45*Math.PI/180)) return false;
       } else {
-        if (distance > 50) return false;
+        if(distance>50)return false;
       }
-
-      // Check if walls block line of sight
-      if (lineOfSightBlocked(enemy, player)) return false;
-
+      if(lineOfSightBlocked(enemy, player)) return false;
       return true;
     }
 
     // -------------------------
-    // CHECK COLLISIONS
+    // COLLISION & GOAL CHECK
     // -------------------------
     function checkCollisions() {
       for (let enemy of enemies) {
         if (enemyCanSeePlayer(enemy, player)) {
           gameOver = true;
-          if (!bloodSplats) {
-            bloodSplats = generateBloodSplats(25);
-          }
+          if (!bloodSplats) bloodSplats = generateBloodSplats(25);
         }
       }
-      // Check goal
       const goalRect = { x: goal.x, y: goal.y, size: goal.size };
-      if (isColliding(player, goalRect)) {
-        gameWin = true;
-      }
+      if (isColliding(player, goalRect)) gameWin = true;
     }
 
     // -------------------------
-    // BLOOD SPLATTER
+    // BLOOD SPLATTER EFFECT
     // -------------------------
     function generateBloodSplats(num) {
       const splats = [];
@@ -390,7 +296,6 @@
       }
       return splats;
     }
-
     function drawBloodEffect() {
       ctx.save();
       ctx.globalAlpha = 0.6;
@@ -404,7 +309,7 @@
     }
 
     // -------------------------
-    // MAIN LOOP
+    // MAIN GAME LOOP
     // -------------------------
     function update() {
       if (gameOver || gameWin) return;
@@ -412,41 +317,45 @@
       enemies.forEach(enemy => enemy.update());
       checkCollisions();
     }
-
     function draw() {
-      // Clear
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'source-over';
 
-      // Draw walls with a gradient fill for that "factory" vibe
+      // Draw the background image (your picture)
+      if (backgroundImage.complete) {
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+      }
+
+      // Overlay the factory-style blocks (with borders) used for collision.
       walls.forEach(w => {
         const grad = ctx.createLinearGradient(w.x, w.y, w.x, w.y + w.height);
         grad.addColorStop(0, "#1c1c1c");
         grad.addColorStop(1, "#3c3c3c");
         ctx.fillStyle = grad;
         ctx.fillRect(w.x, w.y, w.width, w.height);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(w.x, w.y, w.width, w.height);
       });
 
-      // Draw rectangular lights with bloom effect
+      // (Optional) Draw light zones with bloom effect
       ctx.save();
       ctx.shadowColor = 'rgba(255,255,200,0.8)';
       ctx.shadowBlur = 30;
       ctx.fillStyle = 'rgba(255,255,180,0.15)';
-      lights.forEach(l => {
-        ctx.fillRect(l.x, l.y, l.width, l.height);
-      });
+      lights.forEach(l => ctx.fillRect(l.x, l.y, l.width, l.height));
       ctx.restore();
 
-      // Draw goal
+      // Draw the goal
       ctx.fillStyle = goal.color;
       ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
 
-      // Draw player
+      // Draw the player
       if (playerImage.complete) {
         ctx.save();
-        ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
+        ctx.translate(player.x + player.size/2, player.y + player.size/2);
         ctx.rotate(player.angle);
-        ctx.drawImage(playerImage, -player.size / 2, -player.size / 2, player.size, player.size);
+        ctx.drawImage(playerImage, -player.size/2, -player.size/2, player.size, player.size);
         ctx.restore();
       } else {
         ctx.fillStyle = player.color;
@@ -456,22 +365,19 @@
       // Draw enemies
       enemies.forEach(enemy => enemy.draw());
 
-      // Win/lose messages
+      // Display win/lose messages
       if (gameWin) {
         ctx.fillStyle = 'white';
         ctx.font = '24px sans-serif';
-        ctx.fillText('wow you won my shitty ass game good on you', canvas.width / 2 - 100, canvas.height / 2);
+        ctx.fillText('wow you won my shitty ass game good on you', canvas.width/2 - 100, canvas.height/2);
       }
       if (gameOver) {
         ctx.fillStyle = 'white';
         ctx.font = '48px sans-serif';
-        ctx.fillText('fucking loser', canvas.width / 2 - 120, canvas.height / 2);
-        if (bloodSplats) {
-          drawBloodEffect();
-        }
+        ctx.fillText('fucking loser', canvas.width/2 - 120, canvas.height/2);
+        if (bloodSplats) drawBloodEffect();
       }
     }
-
     function gameLoop() {
       update();
       draw();
@@ -481,22 +387,21 @@
     }
 
     // -------------------------
-    // START AFTER IMAGES LOAD
+    // START WHEN IMAGES ARE LOADED
     // -------------------------
-    let imagesToLoad = 3;
+    let imagesToLoad = 4;
     function onImageLoad() {
       imagesToLoad--;
-      if (imagesToLoad === 0) {
-        gameLoop();
-      }
+      if (imagesToLoad === 0) gameLoop();
     }
-    enemyImage.onload  = onImageLoad;
+    backgroundImage.onload = onImageLoad;
+    enemyImage.onload = onImageLoad;
     enemyImage2.onload = onImageLoad;
     playerImage.onload = onImageLoad;
-
-    enemyImage.onerror = () => { console.error("Failed to load omni.png.");   onImageLoad(); };
-    enemyImage2.onerror= () => { console.error("Failed to load omni2.png."); onImageLoad(); };
-    playerImage.onerror= () => { console.error("Failed to load player.png.");onImageLoad(); };
+    backgroundImage.onerror = () => { console.error("Failed to load map.png"); onImageLoad(); };
+    enemyImage.onerror = () => { console.error("Failed to load omni.png"); onImageLoad(); };
+    enemyImage2.onerror = () => { console.error("Failed to load omni2.png"); onImageLoad(); };
+    playerImage.onerror = () => { console.error("Failed to load player.png"); onImageLoad(); };
   </script>
 </body>
 </html>
