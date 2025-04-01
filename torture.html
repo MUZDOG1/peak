@@ -21,9 +21,16 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Preload enemy image
+    // Preload enemy images
     const enemyImage = new Image();
     enemyImage.src = 'omni.png'; 
+
+    const enemyImage2 = new Image();
+    enemyImage2.src = 'omni2.png';
+
+    // Preload player image
+    const playerImage = new Image();
+    playerImage.src = 'player.png';
 
     // -------------------------
     // Game Entities & Parameters
@@ -35,7 +42,8 @@
       y: 50,
       size: 20,
       color: 'lime',
-      speed: 1.5
+      speed: 1.5,
+      angle: 0 // player's facing direction in radians
     };
 
     // Goal placement (reaching the goal wins the game)
@@ -63,9 +71,7 @@
     // -------------------------
     // Lighting: Rectangular Lights in Main Halls
     // -------------------------
-    // We define two rectangular light zones with a bloom effect.
-    // The left light covers the left corridor (from x=0 to 200) and
-    // the right light covers the right corridor (from x=580 to 800).
+    // Two rectangular light zones.
     const lights = [
       { x: 35,   y: 50,   width: 120, height: 500 },
       { x: 640, y: 50,   width: 140, height: 510 }
@@ -81,6 +87,7 @@
         this.speed = speed;
         this.color = color;
         this.useImage = useImage; // Whether to use an image instead of a rectangle
+        this.image = null; // Optional image property (if set, will be used)
         // Start at the first waypoint
         this.x = path[0].x;
         this.y = path[0].y;
@@ -109,36 +116,28 @@
           // Calculate rotation angle based on direction
           this.angle = Math.atan2(dy, dx);
           
-          // Update enemy position with reduced speed
+          // Update enemy position
           this.x += dx * this.speed;
           this.y += dy * this.speed;
         }
       }
 
       draw() {
-        if (this.useImage && enemyImage.complete) {
-          // Save the current context state
+        const imgToUse = this.useImage ? (this.image || enemyImage) : null;
+        if (imgToUse && imgToUse.complete) {
           ctx.save();
-          
-          // Translate to the center of where the enemy should be
-          ctx.translate(this.x + this.size/2, this.y + this.size/2);
-          
-          // Rotate the context
+          // Translate to the center of the enemy
+          ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
           ctx.rotate(this.angle);
-          
-          // Draw the image centered on the enemy's position
           ctx.drawImage(
-            enemyImage, 
-            -this.size/2, // x offset (centered)
-            -this.size/2, // y offset (centered)
-            this.size,    // width
-            this.size     // height
+            imgToUse,
+            -this.size / 2,
+            -this.size / 2,
+            this.size,
+            this.size
           );
-          
-          // Restore the context to its original state
           ctx.restore();
         } else {
-          // Fall back to rectangle if image not loaded or not using image
           ctx.fillStyle = this.color;
           ctx.fillRect(this.x, this.y, this.size, this.size);
         }
@@ -146,25 +145,26 @@
     }
 
     // Define enemy patrol paths that follow the hallways.
-    // Enemy 1 patrols vertically along the left corridor.
     const enemy1Path = [
       { x: 100, y: 50 },
       { x: 100, y: 250 },
       { x: 100, y: 450 },
       { x: 100, y: 250 }
     ];
-    // Enemy 2 patrols vertically along the right corridor.
     const enemy2Path = [
       { x: 650, y: 100 },
       { x: 650, y: 400 },
       { x: 650, y: 550 },
       { x: 650, y: 400 }
     ];
-    // Slower enemy speed (0.8) for more measured patrols.
+
+    // Instantiate enemies.
     const enemies = [
-      new Enemy(enemy1Path, 0.8, 'red', true), // Use image for first enemy
-      new Enemy(enemy2Path, 0.8, 'orange')
+      new Enemy(enemy1Path, 0.8, 'red', true), // Uses enemyImage (omni.png)
+      new Enemy(enemy2Path, 0.8, 'orange', true) // Will use enemyImage2 (omni2.png)
     ];
+    // Set enemy2's image to enemyImage2.
+    enemies[1].image = enemyImage2;
 
     // -------------------------
     // Game State & Input Handling
@@ -183,7 +183,6 @@
     // Collision & Movement Helpers
     // -------------------------
 
-    // General AABB collision detection.
     function isColliding(a, b) {
       const widthA = a.size || a.width;
       const heightA = a.size || a.height;
@@ -195,7 +194,6 @@
              a.y + heightA > b.y;
     }
 
-    // Check collision between an entity and any wall.
     function collidesWithWalls(entity) {
       for (let w of walls) {
         if (isColliding(entity, w)) {
@@ -205,7 +203,6 @@
       return false;
     }
 
-    // Update player movement and revert movement if a wall is hit.
     function updatePlayer() {
       const prevX = player.x;
       const prevY = player.y;
@@ -232,6 +229,13 @@
         player.y = prevY;
       }
 
+      // Update player angle based on movement (if any)
+      const dx = player.x - prevX;
+      const dy = player.y - prevY;
+      if (dx !== 0 || dy !== 0) {
+        player.angle = Math.atan2(dy, dx);
+      }
+
       // Ensure player stays within the canvas.
       player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
@@ -240,7 +244,6 @@
     // -------------------------
     // Light System: "Is player in hall light?"
     // -------------------------
-    // Checks if the player's center is inside any of the rectangular light zones.
     function playerIsInLight() {
       const px = player.x + player.size / 2;
       const py = player.y + player.size / 2;
@@ -256,7 +259,6 @@
     // Line-of-Sight (LOS) & Enemy Detection
     // -------------------------
 
-    // Check if two line segments (p1 to p2 and p3 to p4) intersect.
     function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
       const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
       if (denom === 0) return false;
@@ -265,7 +267,6 @@
       return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
     }
 
-    // Check if a line segment from (x1,y1) to (x2,y2) intersects a rectangle.
     function lineIntersectsRect(x1, y1, x2, y2, rect) {
       const left = rect.x;
       const right = rect.x + rect.width;
@@ -278,7 +279,6 @@
       return false;
     }
 
-    // Determine if any wall blocks the line of sight between an enemy and the player.
     function lineOfSightBlocked(enemy, player) {
       const ex = enemy.x + enemy.size / 2;
       const ey = enemy.y + enemy.size / 2;
@@ -294,9 +294,6 @@
 
     // Enemy vision check: returns true if the enemy can see the player.
     function enemyCanSeePlayer(enemy, player) {
-      // If the player is NOT in the light, enemies cannot see them.
-      if (!playerIsInLight()) return false;
-
       // Calculate center points.
       const ex = enemy.x + enemy.size / 2;
       const ey = enemy.y + enemy.size / 2;
@@ -305,21 +302,24 @@
       const dx = px - ex;
       const dy = py - ey;
       const distance = Math.hypot(dx, dy);
-      const sightRange = 150; // Maximum sight range.
-      if (distance > sightRange) return false;
 
-      // Determine the enemy's facing direction.
-      let edx = enemy.dir.x;
-      let edy = enemy.dir.y;
-      // Normalize the vector from enemy to player.
-      const pdx = dx / distance;
-      const pdy = dy / distance;
-      // Dot product for angle check (90° FOV => cos(45°))
-      const dot = edx * pdx + edy * pdy;
-      const fov = Math.cos(45 * Math.PI / 180);
-      if (dot < fov) return false;
+      // Set detection range based on whether the player is in light.
+      if (playerIsInLight()) {
+        if (distance > 150) return false;
+        // Field-of-view check.
+        const edx = enemy.dir.x;
+        const edy = enemy.dir.y;
+        const pdx = dx / distance;
+        const pdy = dy / distance;
+        const dot = edx * pdx + edy * pdy;
+        const fov = Math.cos(45 * Math.PI / 180);
+        if (dot < fov) return false;
+      } else {
+        // When out of the light, enemy only sees you if very close.
+        if (distance > 50) return false;
+      }
 
-      // Check if any wall obstructs the view.
+      // Check for wall obstruction.
       if (lineOfSightBlocked(enemy, player)) return false;
 
       return true;
@@ -329,7 +329,6 @@
     // Game Collision & State Check
     // -------------------------
 
-    // Instead of contact, check if an enemy "spots" the player.
     function checkCollisions() {
       for (let enemy of enemies) {
         if (enemyCanSeePlayer(enemy, player)) {
@@ -350,7 +349,6 @@
     // Blood Splatter Effect
     // -------------------------
 
-    // Generate data for blood splatter effect upon detection.
     function generateBloodSplats(num) {
       const splats = [];
       for (let i = 0; i < num; i++) {
@@ -363,7 +361,6 @@
       return splats;
     }
 
-    // Render the blood splatter effect overlay.
     function drawBloodEffect() {
       ctx.save();
       ctx.globalAlpha = 0.6;
@@ -396,8 +393,7 @@
         ctx.fillRect(w.x, w.y, w.width, w.height);
       });
 
-      // Draw rectangular lights with a bloom effect.
-      // We set a shadowBlur and shadowColor to simulate bloom.
+      // Draw rectangular lights with bloom effect.
       ctx.save();
       ctx.shadowColor = 'rgba(255,255,200,0.8)';
       ctx.shadowBlur = 30;
@@ -412,8 +408,16 @@
       ctx.fillRect(goal.x, goal.y, goal.size, goal.size);
 
       // Draw the player.
-      ctx.fillStyle = player.color;
-      ctx.fillRect(player.x, player.y, player.size, player.size);
+      if (playerImage.complete) {
+        ctx.save();
+        ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
+        ctx.rotate(player.angle);
+        ctx.drawImage(playerImage, -player.size / 2, -player.size / 2, player.size, player.size);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.size, player.size);
+      }
 
       // Draw the enemies.
       enemies.forEach(enemy => enemy.draw());
@@ -442,37 +446,36 @@
       }
     }
 
-    // Make sure the enemy image is loaded before starting the game
-    if (enemyImage.complete) {
+    // Start game loop after enemy image load
+    if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
       gameLoop();
     } else {
-      enemyImage.onload = function() {
-        gameLoop();
-      };
+      enemyImage.onload = startIfReady;
+      enemyImage2.onload = startIfReady;
+      playerImage.onload = startIfReady;
       
-      // Fallback in case the image fails to load
+      function startIfReady() {
+        if (enemyImage.complete && enemyImage2.complete && playerImage.complete) {
+          gameLoop();
+        }
+      }
+      
+      // Fallbacks in case images fail to load.
       enemyImage.onerror = function() {
-        console.error("Failed to load enemy image. Using fallback rectangle.");
-        enemies[0].useImage = false; // Fall back to using rectangles
-        gameLoop();
+        console.error("Failed to load enemy image omni.png. Using fallback rectangle.");
+        enemies[0].useImage = false;
+        startIfReady();
+      };
+      enemyImage2.onerror = function() {
+        console.error("Failed to load enemy image omni2.png. Using fallback rectangle for orange enemy.");
+        enemies[1].useImage = false;
+        startIfReady();
+      };
+      playerImage.onerror = function() {
+        console.error("Failed to load player image. Using fallback rectangle.");
+        startIfReady();
       };
     }
-
-    // -------------------------
-    // NOTES 
-    //
-    // 1. Lighting System:
-    //    - Two rectangular light zones (left and right) are defined in the 'lights' array.
-    //    - The function playerIsInLight() checks if the player's center is inside one of these rectangles.
-    //    - In enemyCanSeePlayer(), if the player is not in a light zone, they cannot be detected.
-    //    - The draw() function uses shadowBlur and shadowColor settings to simulate a bloom effect on the light zones.
-    //
-    // 2. Image Rotation:
-    //    - The Enemy class now supports using an image instead of a rectangle.
-    //    - Enemy direction is calculated as before, but now also updates an angle property.
-    //    - The draw() method uses canvas transforms (save, translate, rotate, restore) to rotate the image.
-    //    - A fallback to the original rectangle is provided if the image fails to load.
-    // -------------------------
   </script>
 </body>
 </html>
