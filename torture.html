@@ -54,36 +54,36 @@
       color: 'yellow'
     };
 
-    // New Maze-style Walls (designed for a 60px player and a dark, manhunt vibe)
+    // -------------------------
+    // Maze Walls - New Layout
+    // -------------------------
     const walls = [
       // Outer boundaries
       { x: 0, y: 0, width: 800, height: 20 },
       { x: 0, y: 580, width: 800, height: 20 },
       { x: 0, y: 0, width: 20, height: 600 },
       { x: 780, y: 0, width: 20, height: 600 },
-      // Central vertical divider with a gap in the middle
-      { x: 400, y: 20, width: 20, height: 200 },
-      { x: 400, y: 380, width: 20, height: 200 },
-      // Horizontal walls to add more maze-like corridors
-      { x: 220, y: 220, width: 180, height: 20 },
-      { x: 420, y: 220, width: 180, height: 20 },
-      { x: 220, y: 360, width: 180, height: 20 },
-      { x: 420, y: 360, width: 180, height: 20 }
+      // New inner walls
+      { x: 200, y: 100, width: 20, height: 400 },
+      { x: 400, y: 0,   width: 20, height: 300 },
+      { x: 600, y: 200, width: 20, height: 400 },
+      { x: 200, y: 300, width: 200, height: 20 },
+      { x: 400, y: 400, width: 180, height: 20 }
     ];
 
     // -------------------------
-    // Lighting: Rectangular Lights in Main Halls
+    // Lighting: New Light Zones
     // -------------------------
-    // Two rectangular light zones.
+    // Added three light zones to create interesting illuminated areas.
     const lights = [
-      { x: 35,   y: 50,   width: 120, height: 500 },
-      { x: 640, y: 50,   width: 140, height: 510 }
+      { x: 30,  y: 50,  width: 150, height: 100 },
+      { x: 600, y: 50,  width: 150, height: 100 },
+      { x: 300, y: 400, width: 200, height: 150 }
     ];
 
     // -------------------------
     // Enemy Patrol Class & Setup
     // -------------------------
-
     class Enemy {
       constructor(path, speed, color, useImage = false) {
         this.path = path; // Array of waypoints { x, y }
@@ -147,32 +147,37 @@
       }
     }
 
-    // Define enemy patrol paths that follow the hallways.
+    // Define enemy patrol paths based on the new layout.
     const enemy1Path = [
-      { x: 100, y: 50 },
-      { x: 100, y: 250 },
-      { x: 100, y: 450 },
-      { x: 100, y: 250 }
+      { x: 50,  y: 150 },
+      { x: 50,  y: 450 },
+      { x: 150, y: 450 },
+      { x: 150, y: 150 }
     ];
     const enemy2Path = [
-      { x: 650, y: 100 },
-      { x: 650, y: 400 },
-      { x: 650, y: 550 },
-      { x: 650, y: 400 }
+      { x: 650, y: 150 },
+      { x: 650, y: 450 },
+      { x: 750, y: 450 },
+      { x: 750, y: 150 }
+    ];
+    const enemy3Path = [
+      { x: 350, y: 50 },
+      { x: 350, y: 550 }
     ];
 
     // Instantiate enemies.
     const enemies = [
-      new Enemy(enemy1Path, 0.8, 'red', true), // Uses enemyImage (omni.png)
-      new Enemy(enemy2Path, 0.8, 'orange', true) // Will use enemyImage2 (omni2.png)
+      new Enemy(enemy1Path, 0.8, 'red', true),  // Uses enemyImage (omni.png)
+      new Enemy(enemy2Path, 0.8, 'orange', true), // Uses enemyImage2 (omni2.png)
+      new Enemy(enemy3Path, 0.6, 'purple', true)  // A new enemy with a different color
     ];
-    // Set enemy2's image to enemyImage2.
+    // Set enemy images.
     enemies[1].image = enemyImage2;
+    // Optionally, you can assign a specific image for enemy3 if you have one.
 
     // -------------------------
     // Game State & Input Handling
     // -------------------------
-
     let gameOver = false;
     let gameWin = false;
     let bloodSplats = null; // Data for blood effect on detection
@@ -185,7 +190,6 @@
     // -------------------------
     // Collision & Movement Helpers
     // -------------------------
-
     function isColliding(a, b) {
       const widthA = a.size || a.width;
       const heightA = a.size || a.height;
@@ -245,7 +249,7 @@
     }
 
     // -------------------------
-    // Light System: "Is player in hall light?"
+    // Light System: "Is player in light?"
     // -------------------------
     function playerIsInLight() {
       const px = player.x + player.size / 2;
@@ -261,7 +265,6 @@
     // -------------------------
     // Line-of-Sight (LOS) & Enemy Detection
     // -------------------------
-
     function lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
       const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
       if (denom === 0) return false;
@@ -331,7 +334,6 @@
     // -------------------------
     // Game Collision & State Check
     // -------------------------
-
     function checkCollisions() {
       for (let enemy of enemies) {
         if (enemyCanSeePlayer(enemy, player)) {
@@ -351,7 +353,6 @@
     // -------------------------
     // Blood Splatter Effect
     // -------------------------
-
     function generateBloodSplats(num) {
       const splats = [];
       for (let i = 0; i < num; i++) {
@@ -379,7 +380,6 @@
     // -------------------------
     // Main Game Loop
     // -------------------------
-
     function update() {
       if (gameOver || gameWin) return;
       updatePlayer();
@@ -401,7 +401,7 @@
         ctx.fillRect(w.x, w.y, w.width, w.height);
       });
 
-      // Draw rectangular lights with bloom effect.
+      // Draw light zones with a bloom effect.
       ctx.save();
       ctx.shadowColor = 'rgba(255,255,200,0.8)';
       ctx.shadowBlur = 30;
@@ -487,3 +487,4 @@
   </script>
 </body>
 </html>
+
