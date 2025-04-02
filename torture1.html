@@ -14,38 +14,49 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Load the player image
+    // Load images
     const playerImage = new Image();
     playerImage.src = 'player.png';
 
-    // Player setup with an initial angle of 0 (facing right)
+    const abilityUI = new Image();
+    abilityUI.src = 'beer.png'; // UI image for boost (hand-like)
+
+    const bottleImage = new Image();
+    bottleImage.src = 'beers.png'; // collectible beer bottles
+
+    // Player object setup
     const player = {
       x: 400,
       y: 500,
-      width: 80,
-      height: 80,
-      speed: 3,
-      angle: 0 // in radians
+      width: 20,
+      height: 20,
+      angle: 0, // facing right
+      normalSpeed: 3,
+      boostSpeed: 6
     };
 
-    // Arrays for parade floats and enemy hunters
+    // Arrays for parade floats, enemies, and bottles
     const floats = [];
     const enemies = [];
+    const bottles = [];
 
-    // Initialize level: parade floats & enemy positions
+    // Ability (speed boost) variables
+    let abilityActive = false;
+    let abilityTimer = 0; // in milliseconds
+    let beerCount = 0;    // number of bottles collected
+
+    // Initialize level: floats and enemies
     function initLevel() {
-      // Create parade floats moving along the top
       for (let i = 0; i < 5; i++) {
         floats.push({
           x: -150 * i,
           y: 100,
           width: 100,
           height: 50,
-          speed: 1 + Math.random() * 1,
+          speed: 1 + Math.random(),
           color: '#' + Math.floor(Math.random() * 16777215).toString(16)
         });
       }
-      // Create enemies that chase the player
       for (let i = 0; i < 3; i++) {
         enemies.push({
           x: Math.random() * canvas.width,
@@ -59,42 +70,62 @@
     }
     initLevel();
 
-    // Key input tracking
+    // Input handling
     const keys = {};
-    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      // Activate ability when pressing "e" if not active and if you have a beer available.
+      if (e.key === 'e' && !abilityActive && beerCount > 0) {
+        beerCount--;
+        abilityActive = true;
+        abilityTimer = 3000; // 3 seconds boost
+      }
+    });
     window.addEventListener('keyup', e => keys[e.key] = false);
 
+    // Collision detection
+    function checkCollision(a, b) {
+      return a.x < b.x + b.width &&
+             a.x + a.width > b.x &&
+             a.y < b.y + b.height &&
+             a.y + a.height > b.y;
+    }
+
+    // Time tracking for smooth ability timer decrement
+    let lastTime = performance.now();
+
     // Update game state
-    function update() {
-      // Determine movement vector from input
+    function update(deltaTime) {
+      // Determine effective speed
+      const speed = abilityActive ? player.boostSpeed : player.normalSpeed;
+
+      // Compute movement from arrow/WASD input
       let dx = 0, dy = 0;
       if (keys['ArrowUp'] || keys['w']) dy -= 1;
       if (keys['ArrowDown'] || keys['s']) dy += 1;
       if (keys['ArrowLeft'] || keys['a']) dx -= 1;
       if (keys['ArrowRight'] || keys['d']) dx += 1;
 
-      // Update player position and angle if moving
       if (dx !== 0 || dy !== 0) {
-        // Normalize diagonal movement so speed is consistent
         const len = Math.sqrt(dx * dx + dy * dy);
-        dx = (dx / len) * player.speed;
-        dy = (dy / len) * player.speed;
+        dx = (dx / len) * speed;
+        dy = (dy / len) * speed;
         player.x += dx;
         player.y += dy;
         player.angle = Math.atan2(dy, dx);
       }
 
-      // Keep player within bounds
+      // Constrain player to canvas boundaries
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
 
-      // Update parade floats
+      // Update floats positions
       floats.forEach(f => {
         f.x += f.speed;
         if (f.x > canvas.width) f.x = -f.width;
       });
 
-      // Enemies simple chasing AI
+      // Update enemy positions (simple chasing AI)
       enemies.forEach(enemy => {
         const dx = player.x - enemy.x;
         const dy = player.y - enemy.y;
@@ -104,14 +135,32 @@
           enemy.y += (dy / dist) * enemy.speed;
         }
       });
-    }
 
-    // Collision detection
-    function checkCollision(a, b) {
-      return a.x < b.x + b.width &&
-             a.x + a.width > b.x &&
-             a.y < b.y + b.height &&
-             a.y + a.height > b.y;
+      // Randomly spawn collectible bottles (chance each frame)
+      if (Math.random() < 0.005) {
+        bottles.push({
+          x: Math.random() * (canvas.width - 30),
+          y: Math.random() * (canvas.height - 30),
+          width: 30,
+          height: 30
+        });
+      }
+
+      // Check for bottle collection
+      for (let i = bottles.length - 1; i >= 0; i--) {
+        if (checkCollision(player, bottles[i])) {
+          bottles.splice(i, 1);
+          beerCount++;
+        }
+      }
+
+      // Update ability timer if active
+      if (abilityActive) {
+        abilityTimer -= deltaTime;
+        if (abilityTimer <= 0) {
+          abilityActive = false;
+        }
+      }
     }
 
     // Render game objects
@@ -124,17 +173,19 @@
         ctx.fillRect(f.x, f.y, f.width, f.height);
       });
 
-      // Draw player using the image with rotation
+      // Draw collectible bottles
+      bottles.forEach(bottle => {
+        ctx.drawImage(bottleImage, bottle.x, bottle.y, bottle.width, bottle.height);
+      });
+
+      // Draw player with rotation
       ctx.save();
-      // Move context to center of the player
       ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-      // Rotate context according to player's angle
       ctx.rotate(player.angle);
-      // Draw the image so that it is centered at the origin
       ctx.drawImage(playerImage, -player.width / 2, -player.height / 2, player.width, player.height);
       ctx.restore();
 
-      // Draw enemies and check collision
+      // Draw enemies and collision check (Game Over display)
       enemies.forEach(enemy => {
         ctx.fillStyle = enemy.color;
         ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
@@ -145,16 +196,30 @@
           cancelAnimationFrame(animationId);
         }
       });
+
+      // Draw ability UI (beer hand) if ability is active
+      if (abilityActive) {
+        // Draw at bottom right; adjust size as needed
+        const uiSize = 50;
+        ctx.drawImage(abilityUI, canvas.width - uiSize - 10, canvas.height - uiSize - 10, uiSize, uiSize);
+      }
+
+      // Optionally display collected bottle count
+      ctx.fillStyle = '#fff';
+      ctx.font = '20px sans-serif';
+      ctx.fillText('Beers: ' + beerCount, 10, 30);
     }
 
-    // Main game loop
+    // Main game loop using timestamps for timing
     let animationId;
-    function gameLoop() {
-      update();
+    function gameLoop(timestamp) {
+      const deltaTime = timestamp - lastTime;
+      lastTime = timestamp;
+      update(deltaTime);
       draw();
       animationId = requestAnimationFrame(gameLoop);
     }
-    gameLoop();
+    requestAnimationFrame(gameLoop);
   </script>
 </body>
 </html>
