@@ -266,6 +266,20 @@
         abilityTimer -= deltaTime;
         if (abilityTimer <= 0) abilityActive = false;
       }
+      
+      // Check if all enemies are killed, if so, spawn new enemies.
+      if (enemies.length === 0) {
+        for (let i = 0; i < 3; i++) {
+          enemies.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * (canvas.height / 2) + canvas.height / 2,
+            width: 20,
+            height: 20,
+            speed: 1.5,
+            color: '#f00'
+          });
+        }
+      }
     }
 
     // Render scene.
