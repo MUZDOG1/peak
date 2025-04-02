@@ -5,7 +5,7 @@
   <title>kill me</title>
   <style>
     body { margin: 0; background: #222; }
-    canvas { display: block; margin: auto; background: #555; }
+    canvas { display: block; margin: auto; background: #555; cursor: none; }
   </style>
 </head>
 <body>
@@ -30,7 +30,7 @@
       y: 500,
       width: 80,
       height: 80,
-      angle: 0, // facing right
+      angle: 0, // in radians; facing right initially
       normalSpeed: 3,
       boostSpeed: 10
     };
@@ -50,6 +50,7 @@
     // Pissing fire rate (ms)
     const pFireInterval = 100;
     let pFireTimer = pFireInterval;
+    let mouseDown = false;  // left mouse button firing flag
 
     // Initialize level: floats and enemies
     function initLevel() {
@@ -76,7 +77,7 @@
     }
     initLevel();
 
-    // Input handling
+    // Input handling for keyboard (movement and ability)
     const keys = {};
     window.addEventListener('keydown', e => {
       keys[e.key] = true;
@@ -91,7 +92,31 @@
       keys[e.key] = false;
     });
 
-    // Collision detection for rectangles
+    // Mouse movement controls player direction.
+    canvas.addEventListener('mousemove', e => {
+      // Get canvas position relative to the viewport.
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      // Calculate angle from player's center to mouse.
+      const centerX = player.x + player.width / 2;
+      const centerY = player.y + player.height / 2;
+      player.angle = Math.atan2(mouseY - centerY, mouseX - centerX);
+    });
+
+    // Mouse button events for firing.
+    canvas.addEventListener('mousedown', e => {
+      if (e.button === 0) { // left mouse button
+        mouseDown = true;
+      }
+    });
+    canvas.addEventListener('mouseup', e => {
+      if (e.button === 0) {
+        mouseDown = false;
+      }
+    });
+
+    // Collision detection for rectangles.
     function checkCollision(a, b) {
       return a.x < b.x + b.width &&
              a.x + a.width > b.x &&
@@ -104,7 +129,7 @@
              y >= rect.y && y <= rect.y + rect.height;
     }
 
-    // Draw a Postal-like effect when beer mode is active.
+    // Postal-like effect when beer mode is active.
     function drawPostalEffect() {
       ctx.save();
       const pulse = 0.2 + 0.1 * Math.sin(performance.now() / 200);
@@ -120,15 +145,15 @@
       ctx.restore();
     }
 
-    // Time tracking
+    // Time tracking.
     let lastTime = performance.now();
 
-    // Update game state
+    // Update game state.
     function update(deltaTime) {
-      // Determine effective speed
+      // Determine effective speed.
       const speed = abilityActive ? player.boostSpeed : player.normalSpeed;
 
-      // Compute movement from WASD/arrow input.
+      // Compute movement from WASD/arrow keys.
       let dx = 0, dy = 0;
       if (keys['ArrowUp'] || keys['w']) dy -= 1;
       if (keys['ArrowDown'] || keys['s']) dy += 1;
@@ -140,7 +165,6 @@
         dy = (dy / len) * speed;
         player.x += dx;
         player.y += dy;
-        player.angle = Math.atan2(dy, dx);
       }
 
       // Constrain player within canvas.
@@ -181,8 +205,8 @@
         }
       }
 
-      // Handle p key for continuous pissing.
-      if (keys['p']) {
+      // Handle left mouse firing for continuous pissing.
+      if (mouseDown) {
         pFireTimer += deltaTime;
         if (pFireTimer >= pFireInterval) {
           // Spawn projectile from the front of the player.
@@ -223,7 +247,7 @@
             });
             // Remove the enemy.
             enemies.splice(j, 1);
-            // Remove the projectile.
+            // End projectile lifetime.
             proj.lifetime = 0;
             break;
           }
@@ -265,7 +289,7 @@
         ctx.drawImage(bottleImage, bottle.x, bottle.y, bottle.width, bottle.height);
       });
 
-      // Draw splat effects (as red, fading circles).
+      // Draw splat effects (red fading circles).
       splats.forEach(splat => {
         const alpha = Math.max(splat.lifetime / 500, 0);
         ctx.save();
