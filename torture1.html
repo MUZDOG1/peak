@@ -8,20 +8,48 @@
       margin: 0;
       padding: 0;
       background: #222;
+      font-family: sans-serif;
+      color: #fff;
+    }
+    .container {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px;
     }
     canvas {
-      display: block;
-      margin: 20px auto;
       background: #555;
       cursor: none;
+    }
+    #controlPanel {
+      margin-left: 20px;
+      background: #333;
+      padding: 10px;
+      border-radius: 5px;
+      width: 200px;
+    }
+    #controlPanel h2 {
+      margin-top: 0;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="1024" height="768"></canvas>
+  <div class="container">
+    <canvas id="gameCanvas" width="1024" height="768"></canvas>
+    <div id="controlPanel">
+      <h2>Controls</h2>
+      <p>W / A / S / D or Arrow Keys: Move</p>
+      <p>Left Mouse Button: Shoot</p>
+      <p>E: Activate Ability (when beer available)</p>
+      <p>Example: [Your text here]</p>
+    </div>
+  </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+
+    // Global pointer lock flag.
+    let pointerLocked = false;
 
     // Request pointer lock when canvas is clicked.
     canvas.addEventListener('click', () => {
@@ -29,21 +57,34 @@
       canvas.requestPointerLock();
     });
 
-    // Virtual mouse position, initially set to the canvas center.
+    // Virtual mouse position for when pointer lock is not active.
     let mousePos = { x: canvas.width / 2, y: canvas.height / 2 };
 
-    // When pointer lock is active, update virtual mouse position with relative movement.
+    // Update mouse position or player's angle based on pointer lock state.
     function updateMousePosition(e) {
-      mousePos.x += e.movementX;
-      mousePos.y += e.movementY;
+      if (document.pointerLockElement === canvas || document.mozPointerLockElement === canvas) {
+        // Pointer is locked: update player angle using relative movement.
+        const sensitivity = 0.005;
+        player.angle += e.movementX * sensitivity;
+      } else {
+        // Pointer is not locked: update mousePos from event.
+        const rect = canvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+        const centerX = player.x + player.width / 2;
+        const centerY = player.y + player.height / 2;
+        player.angle = Math.atan2(mousePos.y - centerY, mousePos.x - centerX);
+      }
     }
+    document.addEventListener("mousemove", updateMousePosition, false);
+
     document.addEventListener('pointerlockchange', lockChangeAlert, false);
     document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
     function lockChangeAlert() {
       if (document.pointerLockElement === canvas || document.mozPointerLockElement === canvas) {
-        document.addEventListener("mousemove", updateMousePosition, false);
+        pointerLocked = true;
       } else {
-        document.removeEventListener("mousemove", updateMousePosition, false);
+        pointerLocked = false;
       }
     }
 
@@ -180,10 +221,12 @@
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
 
-      // Player faces the virtual mouse position.
-      const centerX = player.x + player.width / 2;
-      const centerY = player.y + player.height / 2;
-      player.angle = Math.atan2(mousePos.y - centerY, mousePos.x - centerX);
+      // When pointer lock is off, update angle based on mousePos.
+      if (!(document.pointerLockElement === canvas || document.mozPointerLockElement === canvas)) {
+        const centerX = player.x + player.width / 2;
+        const centerY = player.y + player.height / 2;
+        player.angle = Math.atan2(mousePos.y - centerY, mousePos.x - centerX);
+      }
 
       floats.forEach(f => {
         f.x += f.speed;
