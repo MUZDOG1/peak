@@ -14,14 +14,18 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Player setup
+    // Load the player image
+    const playerImage = new Image();
+    playerImage.src = 'player.png';
+
+    // Player setup with an initial angle of 0 (facing right)
     const player = {
       x: 400,
       y: 500,
       width: 20,
       height: 20,
       speed: 3,
-      color: '#0f0'
+      angle: 0 // in radians
     };
 
     // Arrays for parade floats and enemy hunters
@@ -62,11 +66,23 @@
 
     // Update game state
     function update() {
-      // Basic player movement (WASD or arrow keys)
-      if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
-      if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
-      if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
-      if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+      // Determine movement vector from input
+      let dx = 0, dy = 0;
+      if (keys['ArrowUp'] || keys['w']) dy -= 1;
+      if (keys['ArrowDown'] || keys['s']) dy += 1;
+      if (keys['ArrowLeft'] || keys['a']) dx -= 1;
+      if (keys['ArrowRight'] || keys['d']) dx += 1;
+
+      // Update player position and angle if moving
+      if (dx !== 0 || dy !== 0) {
+        // Normalize diagonal movement so speed is consistent
+        const len = Math.sqrt(dx * dx + dy * dy);
+        dx = (dx / len) * player.speed;
+        dy = (dy / len) * player.speed;
+        player.x += dx;
+        player.y += dy;
+        player.angle = Math.atan2(dy, dx);
+      }
 
       // Keep player within bounds
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
@@ -108,9 +124,15 @@
         ctx.fillRect(f.x, f.y, f.width, f.height);
       });
 
-      // Draw player
-      ctx.fillStyle = player.color;
-      ctx.fillRect(player.x, player.y, player.width, player.height);
+      // Draw player using the image with rotation
+      ctx.save();
+      // Move context to center of the player
+      ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+      // Rotate context according to player's angle
+      ctx.rotate(player.angle);
+      // Draw the image so that it is centered at the origin
+      ctx.drawImage(playerImage, -player.width / 2, -player.height / 2, player.width, player.height);
+      ctx.restore();
 
       // Draw enemies and check collision
       enemies.forEach(enemy => {
