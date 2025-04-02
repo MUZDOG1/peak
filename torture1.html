@@ -41,7 +41,7 @@
       <p>W / A / S / D or Arrow Keys: Move</p>
       <p>Left Mouse Button: Shoot</p>
       <p>E: Activate Ability (when beer available)</p>
-      <p>piss on them all xd</p>
+      <p>Example: [Your text here]</p>
     </div>
   </div>
   <script>
@@ -105,7 +105,8 @@
     let mouseDown = false;
 
     // Hotline Miami–style: update player angle using relative mouse movement.
-    const sensitivity = 0.01; // Adjust this value to change turning sensitivity.
+    // Reduced sensitivity for smoother movement.
+    const sensitivity = 0.005; // Adjust this value to change turning sensitivity.
     document.addEventListener('mousemove', (e) => {
       if (pointerLocked) {
         player.angle += e.movementX * sensitivity;
