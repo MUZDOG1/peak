@@ -1,1 +1,138 @@
-<meta http-equiv="refresh" content="0; URL='uc.html'" />
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Manhunt-Postal Mix Game</title>
+  <style>
+    body { margin: 0; background: #222; }
+    canvas { display: block; margin: auto; background: #555; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Player setup
+    const player = {
+      x: 400,
+      y: 500,
+      width: 20,
+      height: 20,
+      speed: 3,
+      color: '#0f0'
+    };
+
+    // Arrays for parade floats and enemy hunters
+    const floats = [];
+    const enemies = [];
+
+    // Initialize level: parade floats & enemy positions
+    function initLevel() {
+      // Create parade floats moving along the top
+      for (let i = 0; i < 5; i++) {
+        floats.push({
+          x: -150 * i,
+          y: 100,
+          width: 100,
+          height: 50,
+          speed: 1 + Math.random() * 1,
+          color: '#' + Math.floor(Math.random() * 16777215).toString(16)
+        });
+      }
+      // Create enemies that chase the player
+      for (let i = 0; i < 3; i++) {
+        enemies.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * (canvas.height / 2) + canvas.height / 2,
+          width: 20,
+          height: 20,
+          speed: 1.5,
+          color: '#f00'
+        });
+      }
+    }
+    initLevel();
+
+    // Key input tracking
+    const keys = {};
+    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keyup', e => keys[e.key] = false);
+
+    // Update game state
+    function update() {
+      // Basic player movement (WASD or arrow keys)
+      if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
+      if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
+      if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+      if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+
+      // Keep player within bounds
+      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+      player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+
+      // Update parade floats
+      floats.forEach(f => {
+        f.x += f.speed;
+        if (f.x > canvas.width) f.x = -f.width;
+      });
+
+      // Enemies simple chasing AI
+      enemies.forEach(enemy => {
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          enemy.x += (dx / dist) * enemy.speed;
+          enemy.y += (dy / dist) * enemy.speed;
+        }
+      });
+    }
+
+    // Collision detection
+    function checkCollision(a, b) {
+      return a.x < b.x + b.width &&
+             a.x + a.width > b.x &&
+             a.y < b.y + b.height &&
+             a.y + a.height > b.y;
+    }
+
+    // Render game objects
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw parade floats
+      floats.forEach(f => {
+        ctx.fillStyle = f.color;
+        ctx.fillRect(f.x, f.y, f.width, f.height);
+      });
+
+      // Draw player
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // Draw enemies and check collision
+      enemies.forEach(enemy => {
+        ctx.fillStyle = enemy.color;
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        if (checkCollision(player, enemy)) {
+          ctx.fillStyle = '#fff';
+          ctx.font = '30px sans-serif';
+          ctx.fillText('Game Over!', canvas.width / 2 - 70, canvas.height / 2);
+          cancelAnimationFrame(animationId);
+        }
+      });
+    }
+
+    // Main game loop
+    let animationId;
+    function gameLoop() {
+      update();
+      draw();
+      animationId = requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+  </script>
+</body>
+</html>
