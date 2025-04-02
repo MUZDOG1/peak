@@ -48,38 +48,16 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Global pointer lock flag.
-    let pointerLocked = false;
-
-    // Request pointer lock when canvas is clicked.
+    // Set up pointer lock on the canvas.
     canvas.addEventListener('click', () => {
       canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
       canvas.requestPointerLock();
     });
 
-    // Virtual mouse position for when pointer lock is not active.
-    let mousePos = { x: canvas.width / 2, y: canvas.height / 2 };
+    // Global flag for pointer lock.
+    let pointerLocked = false;
 
-    // Update mouse position or player's angle based on pointer lock state.
-    function updateMousePosition(e) {
-      if (document.pointerLockElement === canvas || document.mozPointerLockElement === canvas) {
-        // Pointer is locked: update player angle using relative movement.
-        const sensitivity = 0.005;
-        player.angle += e.movementX * sensitivity;
-      } else {
-        // Pointer is not locked: update mousePos from event.
-        const rect = canvas.getBoundingClientRect();
-        mousePos.x = e.clientX - rect.left;
-        mousePos.y = e.clientY - rect.top;
-        const centerX = player.x + player.width / 2;
-        const centerY = player.y + player.height / 2;
-        player.angle = Math.atan2(mousePos.y - centerY, mousePos.x - centerX);
-      }
-    }
-    document.addEventListener("mousemove", updateMousePosition, false);
-
-    document.addEventListener('pointerlockchange', lockChangeAlert, false);
-    document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
+    // Update pointer lock state.
     function lockChangeAlert() {
       if (document.pointerLockElement === canvas || document.mozPointerLockElement === canvas) {
         pointerLocked = true;
@@ -87,6 +65,8 @@
         pointerLocked = false;
       }
     }
+    document.addEventListener('pointerlockchange', lockChangeAlert, false);
+    document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
 
     // Load images.
     const playerImage = new Image();
@@ -119,10 +99,18 @@
     let abilityTimer = 0;
     let beerCount = 0;
 
-    // Pissing fire rate variables.
+    // Firing variables.
     const pFireInterval = 100;
     let pFireTimer = pFireInterval;
     let mouseDown = false;
+
+    // Hotline Miami–style: update player angle using relative mouse movement.
+    const sensitivity = 0.01; // Adjust this value to change turning sensitivity.
+    document.addEventListener('mousemove', (e) => {
+      if (pointerLocked) {
+        player.angle += e.movementX * sensitivity;
+      }
+    }, false);
 
     // Initialize level elements.
     function initLevel() {
@@ -221,17 +209,12 @@
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
 
-      // When pointer lock is off, update angle based on mousePos.
-      if (!(document.pointerLockElement === canvas || document.mozPointerLockElement === canvas)) {
-        const centerX = player.x + player.width / 2;
-        const centerY = player.y + player.height / 2;
-        player.angle = Math.atan2(mousePos.y - centerY, mousePos.x - centerX);
-      }
-
+      // Update floats.
       floats.forEach(f => {
         f.x += f.speed;
         if (f.x > canvas.width) f.x = -f.width;
       });
+      // Update enemy positions.
       enemies.forEach(enemy => {
         const dx = player.x - enemy.x;
         const dy = player.y - enemy.y;
@@ -259,6 +242,7 @@
         }
       }
 
+      // Firing projectiles.
       if (mouseDown) {
         pFireTimer += deltaTime;
         if (pFireTimer >= pFireInterval) {
