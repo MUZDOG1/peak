@@ -198,7 +198,9 @@
           enemy.y += (dy / dist) * enemy.speed;
         }
       });
-      if (Math.random() < 0.002) {
+      
+      // Only add a new bottle if there are none currently.
+      if (Math.random() < 0.002 && bottles.length === 0) {
         bottles.push({
           x: Math.random() * (canvas.width - 30),
           y: Math.random() * (canvas.height - 30),
@@ -206,6 +208,7 @@
           height: 30
         });
       }
+      
       for (let i = bottles.length - 1; i >= 0; i--) {
         if (checkCollision(player, bottles[i])) {
           bottles.splice(i, 1);
