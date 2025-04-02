@@ -4,55 +4,105 @@
   <meta charset="UTF-8">
   <title>kill me</title>
   <style>
-    body { margin: 0; background: #222; }
-    canvas { display: block; margin: auto; background: #555; cursor: none; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #222;
+      height: 100%;
+      width: 100%;
+    }
+    canvas {
+      display: block;
+      background: #555;
+      cursor: none;
+    }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <canvas id="gameCanvas"></canvas>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Load images
+    // Make canvas full screen.
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      // Reset virtual mouse to center when resized.
+      mousePos.x = canvas.width / 2;
+      mousePos.y = canvas.height / 2;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Request pointer lock when canvas is clicked.
+    canvas.addEventListener('click', () => {
+      canvas.requestPointerLock =
+        canvas.requestPointerLock ||
+        canvas.mozRequestPointerLock ||
+        canvas.webkitRequestPointerLock;
+      canvas.requestPointerLock();
+    });
+
+    // Virtual mouse position (used when pointer is locked).
+    let mousePos = { x: canvas.width / 2, y: canvas.height / 2 };
+
+    // When pointer lock is active, update virtual mouse position with relative movement.
+    function updateMousePosition(e) {
+      mousePos.x += e.movementX;
+      mousePos.y += e.movementY;
+    }
+    document.addEventListener('pointerlockchange', lockChangeAlert, false);
+    document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
+    function lockChangeAlert() {
+      if (document.pointerLockElement === canvas ||
+          document.mozPointerLockElement === canvas) {
+        document.addEventListener("mousemove", updateMousePosition, false);
+      } else {
+        document.removeEventListener("mousemove", updateMousePosition, false);
+      }
+    }
+
+    // Load images.
     const playerImage = new Image();
     playerImage.src = 'player.png';
 
     const abilityUI = new Image();
-    abilityUI.src = 'beer1.png'; // UI image for boost
+    abilityUI.src = 'beer1.png'; // UI image for boost.
 
     const bottleImage = new Image();
-    bottleImage.src = 'beers1.png'; // collectible beer bottles
+    bottleImage.src = 'beers1.png'; // collectible beer bottles.
 
-    // Player setup
+    // Player setup.
     const player = {
-      x: 400,
-      y: 500,
+      x: canvas.width / 2 - 40,
+      y: canvas.height / 2 - 40,
       width: 80,
       height: 80,
-      angle: 0, // in radians; facing right initially
+      angle: 0, // in radians; facing right initially.
       normalSpeed: 3,
       boostSpeed: 10
     };
 
-    // Arrays for floats, enemies, bottles, piss projectiles, and splats
+    // Arrays for floats, enemies, bottles, piss projectiles, and splats.
     const floats = [];
     const enemies = [];
     const bottles = [];
     const pissProjectiles = [];
     const splats = [];
 
-    // Ability (speed boost) variables
+    // Ability (speed boost) variables.
     let abilityActive = false;
-    let abilityTimer = 0; // milliseconds
+    let abilityTimer = 0; // milliseconds.
     let beerCount = 0;
 
-    // Pissing fire rate (ms)
+    // Pissing fire rate (ms).
     const pFireInterval = 100;
     let pFireTimer = pFireInterval;
-    let mouseDown = false;  // left mouse button firing flag
+    let mouseDown = false;  // left mouse button firing flag.
 
-    // Initialize level: floats and enemies
+    // Initialize level: floats and enemies.
     function initLevel() {
       for (let i = 0; i < 5; i++) {
         floats.push({
@@ -77,7 +127,7 @@
     }
     initLevel();
 
-    // Input handling for keyboard (movement and ability)
+    // Input handling for keyboard (movement and ability).
     const keys = {};
     window.addEventListener('keydown', e => {
       keys[e.key] = true;
@@ -92,21 +142,9 @@
       keys[e.key] = false;
     });
 
-    // Mouse movement controls player direction.
-    canvas.addEventListener('mousemove', e => {
-      // Get canvas position relative to the viewport.
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      // Calculate angle from player's center to mouse.
-      const centerX = player.x + player.width / 2;
-      const centerY = player.y + player.height / 2;
-      player.angle = Math.atan2(mouseY - centerY, mouseX - centerX);
-    });
-
     // Mouse button events for firing.
     canvas.addEventListener('mousedown', e => {
-      if (e.button === 0) { // left mouse button
+      if (e.button === 0) { // left mouse button.
         mouseDown = true;
       }
     });
@@ -171,6 +209,11 @@
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
 
+      // Update player's facing direction based on virtual mouse position.
+      const centerX = player.x + player.width / 2;
+      const centerY = player.y + player.height / 2;
+      player.angle = Math.atan2(mousePos.y - centerY, mousePos.x - centerX);
+
       // Update floats.
       floats.forEach(f => {
         f.x += f.speed;
@@ -213,14 +256,14 @@
           const offset = player.width / 2;
           const spawnX = player.x + player.width / 2 + Math.cos(player.angle) * offset;
           const spawnY = player.y + player.height / 2 + Math.sin(player.angle) * offset;
-          const pSpeed = 400; // pixels per second
+          const pSpeed = 400; // pixels per second.
           pissProjectiles.push({
             x: spawnX,
             y: spawnY,
             radius: 3,
             dx: Math.cos(player.angle) * pSpeed,
             dy: Math.sin(player.angle) * pSpeed,
-            lifetime: 1000 // ms
+            lifetime: 1000 // ms.
           });
           pFireTimer = 0;
         }
@@ -243,7 +286,7 @@
             splats.push({
               x: enemies[j].x + enemies[j].width / 2,
               y: enemies[j].y + enemies[j].height / 2,
-              lifetime: 500 // ms
+              lifetime: 500 // ms.
             });
             // Remove the enemy.
             enemies.splice(j, 1);
