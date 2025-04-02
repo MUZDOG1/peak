@@ -35,10 +35,11 @@
       boostSpeed: 10
     };
 
-    // Arrays for parade floats, enemies, and bottles
+    // Arrays for parade floats, enemies, bottles, and piss projectiles
     const floats = [];
     const enemies = [];
     const bottles = [];
+    const pissProjectiles = [];
 
     // Ability (speed boost) variables
     let abilityActive = false;
@@ -80,28 +81,46 @@
         abilityActive = true;
         abilityTimer = 3000; // 3 seconds boost
       }
+      // Pissing feature: press "p" to spawn a projectile that kills enemies.
+      if (e.key === 'p') {
+        const speed = 8;
+        // Create a new projectile from the center of the player.
+        pissProjectiles.push({
+          x: player.x + player.width / 2,
+          y: player.y + player.height / 2,
+          radius: 5,
+          dx: Math.cos(player.angle) * speed,
+          dy: Math.sin(player.angle) * speed,
+          lifetime: 1000 // lifetime in ms
+        });
+      }
     });
     window.addEventListener('keyup', e => keys[e.key] = false);
 
-    // Collision detection
+    // Collision detection for rectangles and points
     function checkCollision(a, b) {
       return a.x < b.x + b.width &&
              a.x + a.width > b.x &&
              a.y < b.y + b.height &&
              a.y + a.height > b.y;
     }
+    // Collision for a point (projectile) with a rectangle (enemy)
+    function pointInRect(x, y, rect) {
+      return x >= rect.x && x <= rect.x + rect.width &&
+             y >= rect.y && y <= rect.y + rect.height;
+    }
 
     // Draw Postal-style effect when beer mode is active
     function drawPostalEffect() {
       ctx.save();
-      // Create a subtle tinted overlay that pulsates
+      // Pulsating tinted overlay
       const pulse = 0.2 + 0.1 * Math.sin(performance.now() / 200);
       ctx.globalAlpha = pulse;
       ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
 
-      // Draw bold text in the center
+      // Bold text overlay
       ctx.save();
       ctx.font = "bold 60px sans-serif";
       ctx.fillStyle = "rgba(255,255,0,0.7)";
@@ -110,7 +129,7 @@
       ctx.restore();
     }
 
-    // Time tracking for smooth ability timer decrement
+    // Time tracking for smooth timing
     let lastTime = performance.now();
 
     // Update game state
@@ -173,6 +192,26 @@
         }
       }
 
+      // Update piss projectiles
+      for (let i = pissProjectiles.length - 1; i >= 0; i--) {
+        const proj = pissProjectiles[i];
+        const dt = deltaTime / 1000;
+        proj.x += proj.dx * dt;
+        proj.y += proj.dy * dt;
+        proj.lifetime -= deltaTime;
+        // Check collision with each enemy
+        for (let j = enemies.length - 1; j >= 0; j--) {
+          if (pointInRect(proj.x, proj.y, enemies[j])) {
+            // Remove enemy hit by the piss projectile
+            enemies.splice(j, 1);
+          }
+        }
+        // Remove projectile if its lifetime is expired
+        if (proj.lifetime <= 0) {
+          pissProjectiles.splice(i, 1);
+        }
+      }
+
       // Update ability timer if active
       if (abilityActive) {
         abilityTimer -= deltaTime;
@@ -197,6 +236,14 @@
         ctx.drawImage(bottleImage, bottle.x, bottle.y, bottle.width, bottle.height);
       });
 
+      // Draw piss projectiles (as yellow circles)
+      pissProjectiles.forEach(proj => {
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'yellow';
+        ctx.fill();
+      });
+
       // Draw player with rotation
       ctx.save();
       ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
@@ -216,21 +263,18 @@
         }
       });
 
-      // Draw ability UI (larger beer image) if ability is active
+      // Draw ability UI (beer hand) if ability is active with 400x400 size
       if (abilityActive) {
-        const uiSize = 80; // Increased size
+        const uiSize = 400;
         ctx.drawImage(abilityUI, canvas.width - uiSize - 10, canvas.height - uiSize - 10, uiSize, uiSize);
+        // Draw Postal-style effect on top
+        drawPostalEffect();
       }
 
       // Optionally display collected bottle count
       ctx.fillStyle = '#fff';
       ctx.font = '20px sans-serif';
       ctx.fillText('Beers: ' + beerCount, 10, 30);
-
-      // Draw cool Postal-like effect if beer mode is active
-      if (abilityActive) {
-        drawPostalEffect();
-      }
     }
 
     // Main game loop using timestamps for timing
