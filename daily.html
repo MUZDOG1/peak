@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WORD</title>
   <style>
-    /* Importing a grotesque, dripping font */
     @import url('https://fonts.googleapis.com/css2?family=Butcherman&display=swap');
+    /* Importing a grotesque, dripping font */
 
     body {
       background-image: url('flesh.png');
@@ -16,39 +16,47 @@
       margin: 0;
       padding: 0;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      flex-direction: column;
-      color: #8B0000; /* Dark, fleshy blood-red */
-      font-family: 'Butcherman', cursive; /* Unsettling, decayed font */
-      text-shadow: 
-        4px 4px 0px black, 
-        -4px -4px 0px black, 
-        4px -4px 0px black, 
-        -4px 4px 0px black, 
-        0px 0px 10px black; /* Gross, thick outline */
       text-align: center;
+      color: #8B0000; /* Fallback color */
     }
 
     .main-word {
+      font-family: 'Butcherman', cursive;
       font-size: 8rem;
       margin: 0;
       letter-spacing: 3px;
+      background: url('bloodtexture.jpg') repeat;
+      background-size: contain;
+      /* For WebKit browsers */
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      /* For non-WebKit browsers (may require experimental support) */
+      background-clip: text;
+      color: transparent;
+      /* Creating a bold outline using text shadows */
+      text-shadow:
+        4px 4px 0px black,
+        -4px -4px 0px black,
+        4px -4px 0px black,
+        -4px 4px 0px black,
+        0px 0px 10px black;
     }
 
     .small-text {
+      font-family: 'Butcherman', cursive;
       font-size: 1.2rem;
-      opacity: 0.9;
-      text-transform: lowercase;
+      margin-top: 20px;
+      color: #8B0000; /* Clear dark blood-red text */
+      /* No text-shadow to ensure clarity */
     }
   </style>
 </head>
 <body>
-    <!--WORD HERE!!!!-->
-  <h1 class="main-word">Deranged</h1>
-  <p class="small-text">people who are deranged are considered evil, they are seen as a creature below the average
-    human being. Deranged indivduals are not infact insane, they have bit off the shackles constraining their mind.
-  </p>
+  <h1 class="main-word">WORD</h1>
+  <p class="small-text">it festers beneath</p>
 </body>
 </html>
