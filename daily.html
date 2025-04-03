@@ -6,10 +6,9 @@
   <title>WORD</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Butcherman&display=swap');
-    /* Importing a grotesque, dripping font */
     
     body {
-      background-image: url('flesh.png');
+      background-image: url('https://img.freepik.com/free-photo/dark-red-marble-texture-background_1258-170.jpg');
       background-size: cover;
       background-repeat: no-repeat;
       background-attachment: fixed;
@@ -21,7 +20,7 @@
       justify-content: center;
       height: 100vh;
       text-align: center;
-      color: #8B0000; /* Fallback color */
+      color: #8B0000;
     }
     
     .main-word {
@@ -29,28 +28,27 @@
       font-size: 8rem;
       margin: 0;
       letter-spacing: 3px;
-      background: url('bloodtexture.jpg') repeat;
-      background-size: cover;       /* Changed from contain to cover */
-      background-position: center;  /* Centers the texture */
+      background: linear-gradient(45deg, #8B0000, #470000), url('https://img.freepik.com/free-photo/grunge-blood-texture_1048-3771.jpg') repeat;
+      background-blend-mode: multiply;
+      background-size: cover;
+      background-position: center;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      color: transparent;
-      /* Bold outline with text shadows */
       text-shadow:
         4px 4px 0px black,
         -4px -4px 0px black,
         4px -4px 0px black,
         -4px 4px 0px black,
-        0px 0px 10px black;
+        0px 0px 10px rgba(0,0,0,0.5);
     }
     
     .small-text {
       font-family: 'Butcherman', cursive;
       font-size: 1.2rem;
       margin-top: 20px;
-      color: #8B0000; /* Clear dark blood-red text */
-      /* No text-shadow for clarity */
+      color: #8B0000;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }
   </style>
 </head>
