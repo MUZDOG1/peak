@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WORD</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Nosifer&display=swap');
+    /* Importing a grotesque, dripping font */
+    @import url('https://fonts.googleapis.com/css2?family=Butcherman&display=swap');
 
     body {
       background-image: url('flesh.png');
@@ -19,25 +20,33 @@
       justify-content: center;
       height: 100vh;
       flex-direction: column;
-      color: #8B0000; /* Dark blood red */
-      font-family: 'Nosifer', cursive; /* Dripping horror font */
-      text-shadow: 2px 2px 5px black;
+      color: #8B0000; /* Dark, fleshy blood-red */
+      font-family: 'Butcherman', cursive; /* Unsettling, decayed font */
+      text-shadow: 
+        4px 4px 0px black, 
+        -4px -4px 0px black, 
+        4px -4px 0px black, 
+        -4px 4px 0px black, 
+        0px 0px 10px black; /* Gross, thick outline */
       text-align: center;
     }
 
     .main-word {
-      font-size: 6rem;
+      font-size: 8rem;
       margin: 0;
+      letter-spacing: 3px;
     }
 
     .small-text {
-      font-size: 1rem;
-      opacity: 0.8;
+      font-size: 1.2rem;
+      opacity: 0.9;
+      text-transform: lowercase;
     }
   </style>
 </head>
 <body>
+    <!--WORD HERE!!!!-->
   <h1 class="main-word">WORD</h1>
-  <p class="small-text">it watches</p>
+  <p class="small-text">it festers beneath</p>
 </body>
 </html>
