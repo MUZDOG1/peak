@@ -7,7 +7,7 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Butcherman&display=swap');
     /* Importing a grotesque, dripping font */
-
+    
     body {
       background-image: url('flesh.png');
       background-size: cover;
@@ -23,21 +23,20 @@
       text-align: center;
       color: #8B0000; /* Fallback color */
     }
-
+    
     .main-word {
       font-family: 'Butcherman', cursive;
       font-size: 8rem;
       margin: 0;
       letter-spacing: 3px;
       background: url('bloodtexture.jpg') repeat;
-      background-size: contain;
-      /* For WebKit browsers */
+      background-size: cover;       /* Changed from contain to cover */
+      background-position: center;  /* Centers the texture */
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      /* For non-WebKit browsers (may require experimental support) */
       background-clip: text;
       color: transparent;
-      /* Creating a bold outline using text shadows */
+      /* Bold outline with text shadows */
       text-shadow:
         4px 4px 0px black,
         -4px -4px 0px black,
@@ -45,13 +44,13 @@
         -4px 4px 0px black,
         0px 0px 10px black;
     }
-
+    
     .small-text {
       font-family: 'Butcherman', cursive;
       font-size: 1.2rem;
       margin-top: 20px;
       color: #8B0000; /* Clear dark blood-red text */
-      /* No text-shadow to ensure clarity */
+      /* No text-shadow for clarity */
     }
   </style>
 </head>
