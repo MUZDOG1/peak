@@ -12,3 +12,7 @@ a {
     font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
+hr {
+    border: 10px solid black;
+  border-radius: 5px;
+}
