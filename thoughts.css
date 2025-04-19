@@ -3,12 +3,13 @@ h1 {
     font-size: 500px;
     text-shadow: 2px 2px 2px #000000;   
     font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    text-align: center;
 }
 
 p{
     color: black;
     font-size: 25px;
-    
+
 
 
 
