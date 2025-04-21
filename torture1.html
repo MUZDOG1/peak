@@ -4,31 +4,10 @@
   <meta charset="UTF-8">
   <title>Muzdog Chatroom Game</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #222;
-      font-family: sans-serif;
-      color: #fff;
-    }
-    .container {
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 20px;
-    }
-    canvas {
-      background: #555;
-      cursor: none; /* hide system cursor */
-      display: block;
-    }
-    #controlPanel {
-      margin-left: 20px;
-      background: #333;
-      padding: 10px;
-      border-radius: 5px;
-      width: 200px;
-    }
+    html, body { margin: 0; padding: 0; background: #222; font-family: sans-serif; color: #fff; }
+    .container { display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
+    canvas { background: #555; cursor: none; display: block; }
+    #controlPanel { margin-left: 20px; background: #333; padding: 10px; border-radius: 5px; width: 200px; }
     #controlPanel h2 { margin-top: 0; }
   </style>
 </head>
@@ -48,36 +27,28 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Track mouse for aiming and crosshair
-    let mouseX = canvas.width/2, mouseY = canvas.height/2;
+    // Mouse tracking
+    let mouseX = canvas.width / 2, mouseY = canvas.height / 2;
     canvas.addEventListener('mousemove', e => {
       const rect = canvas.getBoundingClientRect();
       mouseX = e.clientX - rect.left;
       mouseY = e.clientY - rect.top;
     });
 
-    // Game variables
-    let killCount = 0;
+    // Game state
     let beerCount = 0;
     let isGameOver = false;
+    let startTime = performance.now();
+    let lastTime = startTime;
     let animId;
 
-    // Load images
+    // Load assets
     const playerImage = new Image(); playerImage.src = 'player.png';
     const abilityUI    = new Image(); abilityUI.src    = 'beer1.png';
     const bottleImage  = new Image(); bottleImage.src  = 'beers1.png';
 
-    // Player
-    const player = {
-      x: canvas.width/2 - 40,
-      y: canvas.height/2 - 40,
-      width: 80,
-      height: 80,
-      angle: 0,
-      displayAngle: 0,
-      normalSpeed: 3,
-      boostSpeed: 10
-    };
+    // Player setup
+    const player = { x: 0, y: 0, width: 80, height: 80, angle: 0, displayAngle: 0, normalSpeed: 3, boostSpeed: 10 };
 
     // Entities
     const floats = [], enemies = [], bottles = [], projectiles = [], splats = [];
@@ -87,43 +58,51 @@
     const fireInterval = 100;
     let fireTimer = fireInterval;
 
-    function initLevel() {
-      floats.length = 0;
+    // Minimum distance for spawning
+    const MIN_SPAWN_DIST = 150;
+
+    // Spawn enemies ensuring they're not too close to player
+    function spawnEnemies(count) {
       enemies.length = 0;
-      bottles.length = 0;
-      projectiles.length = 0;
-      splats.length = 0;
-      killCount = 0;
+      for (let i = 0; i < count; i++) {
+        let ex, ey, dist;
+        do {
+          ex = Math.random() * (canvas.width - 20);
+          ey = Math.random() * (canvas.height - 20);
+          dist = Math.hypot(ex - (player.x + player.width/2), ey - (player.y + player.height/2));
+        } while (dist < MIN_SPAWN_DIST);
+        enemies.push({ x: ex, y: ey, width: 20, height: 20, speed: 1.0, color: '#f00' });
+      }
+    }
+
+    // Initialize or restart game
+    function initLevel() {
+      floats.length = bottles.length = projectiles.length = splats.length = 0;
+      enemies.length = 0;
       beerCount = 0;
       isGameOver = false;
-      // Floating backdrops
-      for (let i = 0; i < 5; i++) floats.push({
-        x: -150 * i,
-        y: 100,
-        width: 100,
-        height: 50,
-        speed: 1 + Math.random(),
-        color: '#' + Math.floor(Math.random() * 16777215).toString(16)
-      });
-      // Slower enemies
-      for (let i = 0; i < 3; i++) enemies.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * (canvas.height / 2) + canvas.height / 2,
-        width: 20,
-        height: 20,
-        speed: 1.0, // slowed down
-        color: '#f00'
-      });
-      // Reset player
-      player.x = canvas.width/2 - 40;
-      player.y = canvas.height/2 - 40;
+      // Center player
+      player.x = canvas.width/2 - player.width/2;
+      player.y = canvas.height/2 - player.height/2;
+      // Backdrop floats
+      for (let i = 0; i < 5; i++) floats.push({ x: -150 * i, y: 100, width: 100, height: 50, speed: 1 + Math.random(), color: '#' + Math.floor(Math.random() * 16777215).toString(16) });
+      // Initial enemies
+      spawnEnemies(3);
+      // Reset timers
+      startTime = performance.now();
+      lastTime = startTime;
     }
+
     initLevel();
 
     // Input handling
     const keys = {};
     window.addEventListener('keydown', e => {
-      if (e.key === 'r' && isGameOver) return initLevel();
+      if (e.key === 'r' && isGameOver) {
+        initLevel();
+        animId = requestAnimationFrame(loop);
+        return;
+      }
       keys[e.key] = true;
       if (e.key === 'e' && !abilityActive && beerCount > 0 && !isGameOver) {
         beerCount--; abilityActive = true; abilityTimer = 3000;
@@ -141,10 +120,10 @@
       return x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height;
     }
 
-    // Main update
+    // Game update
     function update(dt) {
       if (isGameOver) return;
-      // Aim smoothing
+      // Update aim
       player.angle = Math.atan2(
         mouseY - (player.y + player.height/2),
         mouseX - (player.x + player.width/2)
@@ -154,10 +133,10 @@
       // Movement
       const speed = abilityActive ? player.boostSpeed : player.normalSpeed;
       let dx = 0, dy = 0;
-      if (keys['w'] || keys['ArrowUp']) dy -= 1;
-      if (keys['s'] || keys['ArrowDown']) dy += 1;
-      if (keys['a'] || keys['ArrowLeft']) dx -= 1;
-      if (keys['d'] || keys['ArrowRight']) dx += 1;
+      if (keys['w'] || keys['ArrowUp']) dy--;
+      if (keys['s'] || keys['ArrowDown']) dy++;
+      if (keys['a'] || keys['ArrowLeft']) dx--;
+      if (keys['d'] || keys['ArrowRight']) dx++;
       if (dx || dy) {
         const len = Math.hypot(dx, dy);
         player.x += dx/len * speed;
@@ -167,181 +146,96 @@
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
 
       // Floats
-      floats.forEach(f => {
-        f.x += f.speed;
-        if (f.x > canvas.width) f.x = -f.width;
-      });
-      // Enemies follow
+      floats.forEach(f => { f.x += f.speed; if (f.x > canvas.width) f.x = -f.width; });
+      // Enemies
       enemies.forEach(e => {
-        const vx = player.x - e.x;
-        const vy = player.y - e.y;
+        const vx = player.x - e.x, vy = player.y - e.y;
         const d = Math.hypot(vx, vy);
-        e.x += vx/d * e.speed;
-        e.y += vy/d * e.speed;
+        e.x += vx/d * e.speed; e.y += vy/d * e.speed;
         if (checkCollision(player, e)) {
           isGameOver = true;
           cancelAnimationFrame(animId);
         }
       });
 
-      // Bottles spawning
-      if (Math.random() < 0.002 && bottles.length === 0) {
-        bottles.push({
-          x: Math.random() * (canvas.width - 30),
-          y: Math.random() * (canvas.height - 30),
-          width: 30,
-          height: 30
-        });
-      }
-      bottles.forEach((b, i) => {
-        if (checkCollision(player, b)) {
-          bottles.splice(i, 1);
-          beerCount++;
-        }
-      });
+      // Bottles
+      if (Math.random() < 0.002 && bottles.length === 0) bottles.push({ x: Math.random()*(canvas.width-30), y: Math.random()*(canvas.height-30), width:30, height:30 });
+      bottles.forEach((b,i) => { if (checkCollision(player, b)) { bottles.splice(i,1); beerCount++; }});
 
-      // Shooting projectiles
-      if (!isGameOver) {
-        fireTimer += dt;
-        if (fireTimer >= fireInterval) {
-          const off = player.width/2;
-          projectiles.push({
-            x: player.x + off + Math.cos(player.angle)*off,
-            y: player.y + off + Math.sin(player.angle)*off,
-            radius: 3,
-            dx: Math.cos(player.angle)*400,
-            dy: Math.sin(player.angle)*400,
-            lifetime: 1000
-          });
-          fireTimer = 0;
-        }
+      // Shooting
+      fireTimer += dt;
+      if (fireTimer >= fireInterval && !isGameOver) {
+        const off = player.width/2;
+        projectiles.push({ x: player.x+off+Math.cos(player.angle)*off, y: player.y+off+Math.sin(player.angle)*off, radius:3, dx:Math.cos(player.angle)*400, dy:Math.sin(player.angle)*400, lifetime:1000 });
+        fireTimer = 0;
       }
 
       // Projectiles & splats
-      projectiles.forEach((p, i) => {
+      projectiles.forEach((p,i) => {
         const step = dt/1000;
-        p.x += p.dx * step;
-        p.y += p.dy * step;
-        p.lifetime -= dt;
-        enemies.forEach((en, j) => {
-          if (pointInRect(p.x, p.y, en)) {
-            splats.push({ x: en.x + en.width/2, y: en.y + en.height/2, lifetime: 500 });
-            enemies.splice(j, 1);
-            killCount++;  // increment score
-            p.lifetime = 0;
-          }
+        p.x += p.dx*step; p.y += p.dy*step; p.lifetime -= dt;
+        enemies.forEach((en,j) => {
+          if (pointInRect(p.x,p.y,en)) { splats.push({ x:en.x+en.width/2, y:en.y+en.height/2, lifetime:500 }); enemies.splice(j,1); p.lifetime=0; }
         });
-        if (p.lifetime <= 0) projectiles.splice(i, 1);
+        if (p.lifetime <= 0) projectiles.splice(i,1);
       });
-      splats.forEach((s, i) => {
-        s.lifetime -= dt;
-        if (s.lifetime <= 0) splats.splice(i, 1);
-      });
+      splats.forEach((s,i) => { s.lifetime -= dt; if (s.lifetime <= 0) splats.splice(i,1); });
 
-      // Ability duration
-      if (abilityActive) {
-        abilityTimer -= dt;
-        if (abilityTimer <= 0) abilityActive = false;
-      }
+      // Ability timer
+      if (abilityActive) { abilityTimer -= dt; if (abilityTimer <= 0) abilityActive = false; }
 
-      // Respawn enemies
-      if (!enemies.length && !isGameOver) initLevel();
+      // Respawn enemies wave
+      if (!enemies.length && !isGameOver) spawnEnemies(3);
     }
 
-    // Main draw
+    // Game draw
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Draw floats
-      floats.forEach(f => {
-        ctx.fillStyle = f.color;
-        ctx.fillRect(f.x, f.y, f.width, f.height);
-      });
-      // Draw bottles
-      bottles.forEach(b => ctx.drawImage(bottleImage, b.x, b.y, b.width, b.height));
-      // Draw splats
-      splats.forEach(s => {
-        ctx.save();
-        ctx.globalAlpha = Math.max(s.lifetime / 500, 0);
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, 20, 0, Math.PI*2);
-        ctx.fill();
-        ctx.restore();
-      });
-      // Draw projectiles
-      projectiles.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
-        ctx.fillStyle = 'yellow';
-        ctx.fill();
-      });
-      // Draw player
-      ctx.save();
-      ctx.translate(player.x + player.width/2, player.y + player.height/2);
-      ctx.rotate(player.displayAngle);
-      ctx.drawImage(playerImage, -player.width/2, -player.height/2, player.width, player.height);
-      ctx.restore();
-      // Draw enemies
-      enemies.forEach(e => {
-        ctx.fillStyle = e.color;
-        ctx.fillRect(e.x, e.y, e.width, e.height);
-      });
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // Floats
+      floats.forEach(f => { ctx.fillStyle = f.color; ctx.fillRect(f.x,f.y,f.width,f.height); });
+      // Bottles
+      bottles.forEach(b => ctx.drawImage(bottleImage,b.x,b.y,b.width,b.height));
+      // Splats
+      splats.forEach(s => { ctx.save(); ctx.globalAlpha=Math.max(s.lifetime/500,0); ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(s.x,s.y,20,0,Math.PI*2); ctx.fill(); ctx.restore(); });
+      // Projectiles
+      projectiles.forEach(p => { ctx.beginPath(); ctx.arc(p.x,p.y,p.radius,0,Math.PI*2); ctx.fillStyle='yellow'; ctx.fill(); });
+      // Player
+      ctx.save(); ctx.translate(player.x+player.width/2,player.y+player.height/2); ctx.rotate(player.displayAngle); ctx.drawImage(playerImage,-player.width/2,-player.height/2,player.width,player.height); ctx.restore();
+      // Enemies
+      enemies.forEach(e => { ctx.fillStyle=e.color; ctx.fillRect(e.x,e.y,e.width,e.height); });
 
-      // Draw UI
-      ctx.fillStyle = '#fff';
-      ctx.font = '20px sans-serif';
-      ctx.fillText('Beers: ' + beerCount, 10, 30);
-      ctx.fillText('Score: ' + killCount, 10, 60);
+      // UI: beer count and time alive
+      const timeAlive = Math.floor((performance.now() - startTime) / 1000);
+      ctx.fillStyle='#fff'; ctx.font='20px sans-serif'; ctx.fillText('Beers: '+beerCount,10,30); ctx.fillText('Time: '+timeAlive+'s',10,60);
 
-      // Ability effect overlay
-      if (abilityActive) {
-        ctx.drawImage(abilityUI, canvas.width-410, canvas.height-410, 400, 400);
-        const pulse = 0.2 + 0.1*Math.sin(performance.now()/200);
-        ctx.save();
-        ctx.globalAlpha = pulse;
-        ctx.fillStyle = 'rgba(255,0,0,0.5)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.restore();
-      }
+      // Ability effect
+      if (abilityActive) { ctx.drawImage(abilityUI,canvas.width-410,canvas.height-410,400,400); const pulse=0.2+0.1*Math.sin(performance.now()/200); ctx.save(); ctx.globalAlpha=pulse; ctx.fillStyle='rgba(255,0,0,0.5)'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore(); }
 
-      // Custom crosshair
-      ctx.save();
-      ctx.translate(mouseX, mouseY);
-      ctx.strokeStyle = 'hotpink';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-10, 0);
-      ctx.lineTo(10, 0);
-      ctx.moveTo(0, -10);
-      ctx.lineTo(0, 10);
-      ctx.stroke();
-      ctx.restore();
+      // Crosshair
+      ctx.save(); ctx.translate(mouseX,mouseY); ctx.strokeStyle='hotpink'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-10,0); ctx.lineTo(10,0); ctx.moveTo(0,-10); ctx.lineTo(0,10); ctx.stroke(); ctx.restore();
 
       // Game over screen
       if (isGameOver) {
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#ff4444';
-        ctx.font = 'bold 48px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('You' + "'" + 're Dead!', canvas.width/2, canvas.height/2 - 60);
-        ctx.font = '24px sans-serif';
-        ctx.fillText('Screenshot your score: ' + killCount, canvas.width/2, canvas.height/2);
-        ctx.fillText('Email it to muzdog to get on the leaderboard', canvas.width/2, canvas.height/2 + 30);
-        ctx.fillText('Press R to Restart', canvas.width/2, canvas.height/2 + 60);
+        ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        const finalTime = Math.floor((performance.now() - startTime) / 1000);
+        ctx.fillStyle='#ff4444'; ctx.font='bold 48px sans-serif'; ctx.textAlign='center'; ctx.fillText("You\'re Dead!",canvas.width/2,canvas.height/2 - 60);
+        ctx.font='24px sans-serif'; ctx.fillText('Time Alive: '+finalTime+' seconds',canvas.width/2,canvas.height/2);
+        ctx.fillText('Email it to muzdog for leaderboard',canvas.width/2,canvas.height/2 + 30);
+        ctx.fillText('Press R to Restart',canvas.width/2,canvas.height/2 + 60);
       }
     }
 
-    // Game loop
-    let lastTime = performance.now();
-    function loop(timestamp) {
-      const dt = timestamp - lastTime;
-      lastTime = timestamp;
+    // Main loop
+    function loop(ts) {
+      const dt = ts - lastTime;
+      lastTime = ts;
       update(dt);
       draw();
       if (!isGameOver) animId = requestAnimationFrame(loop);
     }
-    requestAnimationFrame(loop);
+
+    // Start
+    animId = requestAnimationFrame(loop);
   </script>
 </body>
 </html>
