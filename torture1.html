@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>kill me</title>
+  <title>Muzdog Chatroom Game</title>
   <style>
     html, body {
       margin: 0;
@@ -19,7 +19,7 @@
     }
     canvas {
       background: #555;
-      cursor: none;
+      cursor: crosshair;
     }
     #controlPanel {
       margin-left: 20px;
@@ -39,44 +39,23 @@
     <div id="controlPanel">
       <h2>Controls</h2>
       <p>W / A / S / D or Arrow Keys: Move</p>
-      <p>Left Mouse Button: Shoot</p>
-      <p>E: Activate Ability (when beer available)</p>
-      <p>kill them all.</p>
+      <p>Mouse: Aim</p>
+      <p>Left Click: Shoot</p>
+      <p>E: Activate Ability</p>
+      <p>Be accurate and fast!</p>
     </div>
   </div>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    canvas.style.cursor = 'crosshair';
 
-    // Set up pointer lock on the canvas.
-    canvas.addEventListener('click', () => {
-      canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
-      canvas.requestPointerLock();
-    });
+    // Load images
+    const playerImage = new Image(); playerImage.src = 'player.png';
+    const abilityUI = new Image();   abilityUI.src = 'beer1.png';
+    const bottleImage = new Image(); bottleImage.src = 'beers1.png';
 
-    // Global flag for pointer lock.
-    let pointerLocked = false;
-
-    // Update pointer lock state.
-    function lockChangeAlert() {
-      if (document.pointerLockElement === canvas || document.mozPointerLockElement === canvas) {
-        pointerLocked = true;
-      } else {
-        pointerLocked = false;
-      }
-    }
-    document.addEventListener('pointerlockchange', lockChangeAlert, false);
-    document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
-
-    // Load images.
-    const playerImage = new Image();
-    playerImage.src = 'player.png';
-    const abilityUI = new Image();
-    abilityUI.src = 'beer1.png';
-    const bottleImage = new Image();
-    bottleImage.src = 'beers1.png';
-
-    // Player setup.
+    // Player setup
     const player = {
       x: canvas.width / 2 - 40,
       y: canvas.height / 2 - 40,
@@ -87,92 +66,50 @@
       boostSpeed: 10
     };
 
-    // Arrays for floats, enemies, bottles, projectiles, and splats.
-    const floats = [];
-    const enemies = [];
-    const bottles = [];
-    const pissProjectiles = [];
-    const splats = [];
+    // Entities
+    const floats = [], enemies = [], bottles = [], pissProjectiles = [], splats = [];
 
-    // Ability variables.
-    let abilityActive = false;
-    let abilityTimer = 0;
-    let beerCount = 0;
-
-    // Firing variables.
+    // Ability & firing
+    let abilityActive = false, abilityTimer = 0, beerCount = 0;
     const pFireInterval = 100;
-    let pFireTimer = pFireInterval;
-    let mouseDown = false;
+    let pFireTimer = pFireInterval, mouseDown = false;
 
-    // Hotline Miami–style: update player angle using relative mouse movement.
-    // Reduced sensitivity for smoother movement.
-    const sensitivity = 0.005; // Adjust this value to change turning sensitivity.
-    document.addEventListener('mousemove', (e) => {
-      if (pointerLocked) {
-        player.angle += e.movementX * sensitivity;
-      }
-    }, false);
-
-    // Initialize level elements.
+    // Initialize level
     function initLevel() {
-      for (let i = 0; i < 5; i++) {
-        floats.push({
-          x: -150 * i,
-          y: 100,
-          width: 100,
-          height: 50,
-          speed: 1 + Math.random(),
-          color: '#' + Math.floor(Math.random() * 16777215).toString(16)
-        });
-      }
-      for (let i = 0; i < 3; i++) {
-        enemies.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * (canvas.height / 2) + canvas.height / 2,
-          width: 20,
-          height: 20,
-          speed: 1.5,
-          color: '#f00'
-        });
-      }
+      for (let i = 0; i < 5; i++) floats.push({ x: -150 * i, y: 100, width: 100, height: 50, speed: 1 + Math.random(), color: '#' + Math.floor(Math.random() * 16777215).toString(16) });
+      for (let i = 0; i < 3; i++) enemies.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height / 2 + canvas.height / 2, width: 20, height: 20, speed: 1.5, color: '#f00' });
     }
     initLevel();
 
-    // Keyboard input handling.
+    // Input handling
     const keys = {};
-    window.addEventListener('keydown', e => {
-      keys[e.key] = true;
+    window.addEventListener('keydown', e => { keys[e.key] = true;
       if (e.key === 'e' && !abilityActive && beerCount > 0) {
-        beerCount--;
-        abilityActive = true;
-        abilityTimer = 3000;
+        beerCount--; abilityActive = true; abilityTimer = 3000;
       }
     });
-    window.addEventListener('keyup', e => {
-      keys[e.key] = false;
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
+    canvas.addEventListener('mousedown', e => { if (e.button === 0) mouseDown = true; });
+    canvas.addEventListener('mouseup',   e => { if (e.button === 0) mouseDown = false; });
+
+    // Aim with mouse position (Hotline Miami style)
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      player.angle = Math.atan2(
+        my - (player.y + player.height / 2),
+        mx - (player.x + player.width / 2)
+      );
     });
 
-    // Mouse button handling for firing.
-    canvas.addEventListener('mousedown', e => {
-      if (e.button === 0) mouseDown = true;
-    });
-    canvas.addEventListener('mouseup', e => {
-      if (e.button === 0) mouseDown = false;
-    });
-
-    // Collision detection helpers.
+    // Collision helpers
     function checkCollision(a, b) {
-      return a.x < b.x + b.width &&
-             a.x + a.width > b.x &&
-             a.y < b.y + b.height &&
-             a.y + a.height > b.y;
+      return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
     }
-    function pointInRect(x, y, rect) {
-      return x >= rect.x && x <= rect.x + rect.width &&
-             y >= rect.y && y <= rect.y + rect.height;
-    }
+    function pointInRect(x, y, r) { return x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height; }
 
-    // Postal-like effect when ability is active.
+    // Postal "drunk" effect
     function drawPostalEffect() {
       ctx.save();
       const pulse = 0.2 + 0.1 * Math.sin(performance.now() / 200);
@@ -181,194 +118,93 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
       ctx.save();
-      ctx.font = "bold 60px sans-serif";
-      ctx.fillStyle = "rgba(255,255,0,0.7)";
-      ctx.textAlign = "center";
-      ctx.fillText("DRUNK MODE", canvas.width / 2, canvas.height / 2);
+      ctx.font = 'bold 60px sans-serif';
+      ctx.fillStyle = 'rgba(255,255,0,0.7)';
+      ctx.textAlign = 'center';
+      ctx.fillText('DRUNK MODE', canvas.width / 2, canvas.height / 2);
       ctx.restore();
     }
 
-    // Time tracking.
-    let lastTime = performance.now();
-    let animationId;
-    
-    // Update game state.
+    let lastTime = performance.now(), animationId;
+
+    // Game update
     function update(deltaTime) {
       const speed = abilityActive ? player.boostSpeed : player.normalSpeed;
       let dx = 0, dy = 0;
-      if (keys['ArrowUp'] || keys['w']) dy -= 1;
-      if (keys['ArrowDown'] || keys['s']) dy += 1;
-      if (keys['ArrowLeft'] || keys['a']) dx -= 1;
-      if (keys['ArrowRight'] || keys['d']) dx += 1;
+      if (keys['ArrowUp']   || keys['w']) dy--; 
+      if (keys['ArrowDown'] || keys['s']) dy++;
+      if (keys['ArrowLeft'] || keys['a']) dx--;
+      if (keys['ArrowRight']|| keys['d']) dx++;
       if (dx || dy) {
-        const len = Math.sqrt(dx * dx + dy * dy);
-        dx = (dx / len) * speed;
-        dy = (dy / len) * speed;
-        player.x += dx;
-        player.y += dy;
+        const len = Math.hypot(dx, dy);
+        player.x += (dx / len) * speed;
+        player.y += (dy / len) * speed;
       }
       player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
       player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
 
-      // Update floats.
-      floats.forEach(f => {
-        f.x += f.speed;
-        if (f.x > canvas.width) f.x = -f.width;
+      // Floats & enemies & bottles
+      floats.forEach(f => { f.x += f.speed; if (f.x > canvas.width) f.x = -f.width; });
+      enemies.forEach(e => {
+        const vx = player.x - e.x, vy = player.y - e.y;
+        const dist = Math.hypot(vx, vy);
+        e.x += (vx / dist) * e.speed;
+        e.y += (vy / dist) * e.speed;
       });
-      // Update enemy positions.
-      enemies.forEach(enemy => {
-        const dx = player.x - enemy.x;
-        const dy = player.y - enemy.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 0) {
-          enemy.x += (dx / dist) * enemy.speed;
-          enemy.y += (dy / dist) * enemy.speed;
-        }
-      });
-      
-      // Only add a new bottle if there are none currently.
-      if (Math.random() < 0.002 && bottles.length === 0) {
-        bottles.push({
-          x: Math.random() * (canvas.width - 30),
-          y: Math.random() * (canvas.height - 30),
-          width: 30,
-          height: 30
-        });
-      }
-      
-      for (let i = bottles.length - 1; i >= 0; i--) {
-        if (checkCollision(player, bottles[i])) {
-          bottles.splice(i, 1);
-          beerCount++;
-        }
-      }
+      if (Math.random() < 0.002 && bottles.length === 0) bottles.push({ x: Math.random() * (canvas.width-30), y: Math.random()*(canvas.height-30), width: 30, height: 30 });
+      bottles.forEach((b,i) => { if (checkCollision(player,b)) { bottles.splice(i,1); beerCount++; }});
 
-      // Firing projectiles.
+      // Shooting
       if (mouseDown) {
         pFireTimer += deltaTime;
         if (pFireTimer >= pFireInterval) {
           const offset = player.width / 2;
-          const spawnX = player.x + player.width / 2 + Math.cos(player.angle) * offset;
-          const spawnY = player.y + player.height / 2 + Math.sin(player.angle) * offset;
-          const pSpeed = 400;
-          pissProjectiles.push({
-            x: spawnX,
-            y: spawnY,
-            radius: 3,
-            dx: Math.cos(player.angle) * pSpeed,
-            dy: Math.sin(player.angle) * pSpeed,
-            lifetime: 1000
-          });
+          const sx = player.x + offset + Math.cos(player.angle)*offset;
+          const sy = player.y + offset + Math.sin(player.angle)*offset;
+          pissProjectiles.push({ x: sx, y: sy, radius:3, dx:Math.cos(player.angle)*400, dy:Math.sin(player.angle)*400, lifetime:1000 });
           pFireTimer = 0;
         }
-      } else {
-        pFireTimer = pFireInterval;
-      }
+      } else pFireTimer = pFireInterval;
 
-      for (let i = pissProjectiles.length - 1; i >= 0; i--) {
-        const proj = pissProjectiles[i];
-        const dt = deltaTime / 1000;
-        proj.x += proj.dx * dt;
-        proj.y += proj.dy * dt;
-        proj.lifetime -= deltaTime;
-        for (let j = enemies.length - 1; j >= 0; j--) {
-          if (pointInRect(proj.x, proj.y, enemies[j])) {
-            splats.push({
-              x: enemies[j].x + enemies[j].width / 2,
-              y: enemies[j].y + enemies[j].height / 2,
-              lifetime: 500
-            });
-            enemies.splice(j, 1);
-            proj.lifetime = 0;
-            break;
+      // Projectiles & splats
+      pissProjectiles.forEach((p,i) => {
+        const dt = deltaTime/1000;
+        p.x += p.dx*dt; p.y += p.dy*dt; p.lifetime -= deltaTime;
+        enemies.forEach((en,j) => {
+          if (pointInRect(p.x,p.y,en)) {
+            splats.push({ x: en.x+en.width/2, y: en.y+en.height/2, lifetime:500 });
+            enemies.splice(j,1); p.lifetime = 0;
           }
-        }
-        if (proj.lifetime <= 0) {
-          pissProjectiles.splice(i, 1);
-        }
-      }
-      for (let i = splats.length - 1; i >= 0; i--) {
-        splats[i].lifetime -= deltaTime;
-        if (splats[i].lifetime <= 0) {
-          splats.splice(i, 1);
-        }
-      }
-      if (abilityActive) {
-        abilityTimer -= deltaTime;
-        if (abilityTimer <= 0) abilityActive = false;
-      }
-      
-      // Check if all enemies are killed, if so, spawn new enemies.
-      if (enemies.length === 0) {
-        for (let i = 0; i < 3; i++) {
-          enemies.push({
-            x: Math.random() * canvas.width,
-            y: Math.random() * (canvas.height / 2) + canvas.height / 2,
-            width: 20,
-            height: 20,
-            speed: 1.5,
-            color: '#f00'
-          });
-        }
-      }
+        });
+        if (p.lifetime<=0) pissProjectiles.splice(i,1);
+      });
+      splats.forEach((s,i) => { s.lifetime-=deltaTime; if(s.lifetime<=0) splats.splice(i,1); });
+      if (abilityActive) { abilityTimer -= deltaTime; if (abilityTimer<=0) abilityActive=false; }
+      if (enemies.length===0) initLevel();
     }
 
-    // Render scene.
+    // Rendering
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      floats.forEach(f => {
-        ctx.fillStyle = f.color;
-        ctx.fillRect(f.x, f.y, f.width, f.height);
-      });
-      bottles.forEach(bottle => {
-        ctx.drawImage(bottleImage, bottle.x, bottle.y, bottle.width, bottle.height);
-      });
-      splats.forEach(splat => {
-        const alpha = Math.max(splat.lifetime / 500, 0);
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(splat.x, splat.y, 20, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
-      pissProjectiles.forEach(proj => {
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'yellow';
-        ctx.fill();
-      });
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      floats.forEach(f => { ctx.fillStyle=f.color; ctx.fillRect(f.x,f.y,f.width,f.height); });
+      bottles.forEach(b => ctx.drawImage(bottleImage, b.x, b.y, b.width, b.height));
+      splats.forEach(s => { ctx.save(); ctx.globalAlpha=Math.max(s.lifetime/500,0); ctx.fillStyle='red'; ctx.beginPath(); ctx.arc(s.x,s.y,20,0,Math.PI*2); ctx.fill(); ctx.restore(); });
+      pissProjectiles.forEach(p => { ctx.beginPath(); ctx.arc(p.x,p.y,p.radius,0,Math.PI*2); ctx.fillStyle='yellow'; ctx.fill(); });
       ctx.save();
-      ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+      ctx.translate(player.x+player.width/2, player.y+player.height/2);
       ctx.rotate(player.angle);
-      ctx.drawImage(playerImage, -player.width / 2, -player.height / 2, player.width, player.height);
+      ctx.drawImage(playerImage, -player.width/2, -player.height/2, player.width, player.height);
       ctx.restore();
-      enemies.forEach(enemy => {
-        ctx.fillStyle = enemy.color;
-        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-        if (checkCollision(player, enemy)) {
-          ctx.fillStyle = '#fff';
-          ctx.font = '30px sans-serif';
-          ctx.fillText('Game Over!', canvas.width / 2 - 70, canvas.height / 2);
-          cancelAnimationFrame(animationId);
-        }
-      });
-      if (abilityActive) {
-        const uiSize = 400;
-        ctx.drawImage(abilityUI, canvas.width - uiSize - 10, canvas.height - uiSize - 10, uiSize, uiSize);
-        drawPostalEffect();
-      }
-      ctx.fillStyle = '#fff';
-      ctx.font = '20px sans-serif';
-      ctx.fillText('Beers: ' + beerCount, 10, 30);
+      enemies.forEach(e => { ctx.fillStyle=e.color; ctx.fillRect(e.x,e.y,e.width,e.height); if (checkCollision(player,e)) { ctx.fillStyle='#fff'; ctx.font='30px sans-serif'; ctx.fillText('Game Over!', canvas.width/2-70, canvas.height/2); cancelAnimationFrame(animationId);} });
+      if (abilityActive) { ctx.drawImage(abilityUI, canvas.width-410, canvas.height-410, 400,400); drawPostalEffect(); }
+      ctx.fillStyle='#fff'; ctx.font='20px sans-serif'; ctx.fillText('Beers: '+beerCount, 10,30);
     }
 
-    // Main game loop.
-    function gameLoop(timestamp) {
-      const deltaTime = timestamp - lastTime;
-      lastTime = timestamp;
-      update(deltaTime);
+    // Main loop
+    function gameLoop(ts) {
+      const dt = ts - lastTime;
+      lastTime = ts;
+      update(dt);
       draw();
       animationId = requestAnimationFrame(gameLoop);
     }
