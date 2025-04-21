@@ -1,0 +1,26 @@
+h1{
+    color: red;
+    text-align: center;
+    font-size: 45px;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-stretch: ultra-expanded;
+    font-weight: bold;
+    text-shadow: 4px; color: black;
+    
+
+}
+
+p{
+    text-shadow: 6px 0 0 #000, 0 -6px 0 #000, 0 6px 0 #000, -6px 0 0 #000;
+    color: whitesmoke;
+    font-size: 25px;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-stretch: condensed;
+
+}
+
+body{
+    color: chartreuse;
+    
+
+}
