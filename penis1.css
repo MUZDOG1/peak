@@ -5,7 +5,6 @@ h1{
     font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
     font-stretch: ultra-expanded;
     font-weight: bold;
-    text-shadow: 4px; color: black;
     
 
 }
@@ -20,7 +19,7 @@ p{
 }
 
 body{
-    color: chartreuse;
+    background-color: chartreuse;
     
 
 }
