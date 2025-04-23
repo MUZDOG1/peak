@@ -4,528 +4,341 @@
   <meta charset="UTF-8">
   <title>Muzdog Chat Room</title>
   <script type="module">
-    import { 
-      db, 
-      storage, 
-      auth, 
-      updateUserStatus, 
-      incrementSiteVisits, 
-      getSiteVisits, 
-      signUp, 
-      logout,
-      banUser,
-      unbanUser  
-    } from "./firebase.js";
-    import { 
-      collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, 
-      updateDoc, doc, increment, getDoc, getDocs, where, limit, deleteDoc 
-    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-    import { 
-      onAuthStateChanged,
-      signInWithEmailAndPassword 
-    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+  import { 
+    db, storage, auth, updateUserStatus, incrementSiteVisits, getSiteVisits,
+    signUp, logout, banUser, unbanUser  
+  } from "./firebase.js";
+  import {
+    collection, addDoc, serverTimestamp, query, orderBy, onSnapshot,
+    updateDoc, doc, increment, getDoc, getDocs, where, limit, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+  import {
+    onAuthStateChanged,
+    signInWithEmailAndPassword
+  } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    // -------------------------------
-    // Global Variables
-    // -------------------------------
-    let isAdmin = false;
-    let bannedWords = [];
-    let bannedAlertShown = false;
-    let matrixInterval;
+  // -------------------------------
+  // Global Variables
+  // -------------------------------
+  let isAdmin = false;
+  let bannedWords = [];
+  let bannedAlertShown = false;
+  let matrixInterval;
 
-    // -------------------------------
-    // DOM Elements
-    // -------------------------------
-    const chatMessages = document.getElementById("chatMessages");
-    const chatInput = document.getElementById("chatInput");
-    const sendBtn = document.getElementById("sendBtn");
+  // -------------------------------
+  // DOM Elements
+  // -------------------------------
+  const chatMessages    = document.getElementById("chatMessages");
+  const chatInput       = document.getElementById("chatInput");
+  const sendBtn         = document.getElementById("sendBtn");
+  const signupEmail     = document.getElementById("signupEmail");
+  const signupPassword  = document.getElementById("signupPassword");
+  const signupUsername  = document.getElementById("signupUsername");
+  const signupBtn       = document.getElementById("signupBtn");
+  const tosCheckbox     = document.getElementById("tosCheckbox");
+  const loginEmail      = document.getElementById("loginEmail");
+  const loginPassword   = document.getElementById("loginPassword");
+  const loginBtn        = document.getElementById("loginBtn");
+  const logoutBtn       = document.getElementById("logoutBtn");
+  const settingsBtn     = document.getElementById("settingsBtn");
+  const settingsPanel   = document.getElementById("settingsPanel");
+  const themeRadios     = document.querySelectorAll('input[name="theme"]');
 
-    // Authentication DOM Elements
-    const signupEmail = document.getElementById("signupEmail");
-    const signupPassword = document.getElementById("signupPassword");
-    const signupUsername = document.getElementById("signupUsername");
-    const signupBtn = document.getElementById("signupBtn");
-
-    // TOS checkbox
-    const tosCheckbox = document.getElementById("tosCheckbox");
-    signupBtn.disabled = true;
-    tosCheckbox.addEventListener("change", () => {
-      signupBtn.disabled = !tosCheckbox.checked;
-    });
-
-    const loginEmail = document.getElementById("loginEmail");
-    const loginPassword = document.getElementById("loginPassword");
-    const loginBtn = document.getElementById("loginBtn");
-
-    const logoutBtn = document.getElementById("logoutBtn");
-
-    // Settings elements
-    const settingsBtn = document.getElementById("settingsBtn");
-    const settingsPanel = document.getElementById("settingsPanel");
-    const themeRadios = document.querySelectorAll('input[name="theme"]');
-
-    // -------------------------------
-    // Matrix Effect
-    // -------------------------------
-    function startMatrixEffect() {
-      const chars = "01";
-      const canvas = document.createElement("div");
-      canvas.className = "matrix-canvas";
-      document.body.appendChild(canvas);
-      
-      const fontSize = 14;
-      const columns = Math.floor(window.innerWidth / fontSize);
-      
-      for (let i = 0; i < columns; i++) {
-        const column = document.createElement("div");
-        column.className = "matrix-column";
-        column.style.left = (i * fontSize) + "px";
-        column.style.setProperty('--duration', Math.random() * 5 + 3);
-        canvas.appendChild(column);
-        animateColumn(column);
-      }
-      
-      matrixInterval = setInterval(() => {
-        const columns = document.querySelectorAll(".matrix-column");
-        columns.forEach(col => {
-          if (Math.random() > 0.9) {
-            animateColumn(col);
-          }
-        });
-      }, 100);
+  // -------------------------------
+  // Request Desktop Notification Permission
+  // -------------------------------
+  document.addEventListener("DOMContentLoaded", async () => {
+    if ("Notification" in window) {
+      await Notification.requestPermission();
     }
+    // Existing init tasks
+    await incrementSiteVisits();
+    const visits = await getSiteVisits();
+    document.getElementById("visitsCount").textContent = visits;
+    updateRegisteredUsersCount();
+    loadTheme();
+  });
 
-    function animateColumn(column) {
-      const chars = "01";
-      const length = Math.floor(Math.random() * 15) + 5;
-      let html = "";
-      
-      for (let i = 0; i < length; i++) {
-        const char = chars[Math.floor(Math.random() * chars.length)];
-        const opacity = (length - i) / length;
-        const delay = i * 100;
-        html += `<span style="animation-delay:${delay}ms;opacity:${opacity}">${char}</span>`;
-      }
-      
-      column.innerHTML = html;
+  // TOS checkbox enables sign up
+  signupBtn.disabled = true;
+  tosCheckbox.addEventListener("change", () => {
+    signupBtn.disabled = !tosCheckbox.checked;
+  });
+
+  // -------------------------------
+  // Matrix Effect
+  // -------------------------------
+  function startMatrixEffect() {
+    const chars = "01";
+    const canvas = document.createElement("div");
+    canvas.className = "matrix-canvas";
+    document.body.appendChild(canvas);
+    const fontSize = 14;
+    const columns = Math.floor(window.innerWidth / fontSize);
+    for (let i = 0; i < columns; i++) {
+      const column = document.createElement("div");
+      column.className = "matrix-column";
+      column.style.left = (i * fontSize) + "px";
+      column.style.setProperty('--duration', Math.random() * 5 + 3);
+      canvas.appendChild(column);
+      animateColumn(column);
     }
-
-    function stopMatrixEffect() {
-      clearInterval(matrixInterval);
-      const canvas = document.querySelector(".matrix-canvas");
-      if (canvas) canvas.remove();
+    matrixInterval = setInterval(() => {
+      document.querySelectorAll(".matrix-column").forEach(col => {
+        if (Math.random() > 0.9) animateColumn(col);
+      });
+    }, 100);
+  }
+  function animateColumn(column) {
+    const chars = "01";
+    const length = Math.floor(Math.random() * 15) + 5;
+    let html = "";
+    for (let i = 0; i < length; i++) {
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      const opacity = (length - i) / length;
+      const delay = i * 100;
+      html += `<span style="animation-delay:${delay}ms;opacity:${opacity}">${char}</span>`;
     }
+    column.innerHTML = html;
+  }
+  function stopMatrixEffect() {
+    clearInterval(matrixInterval);
+    const canvas = document.querySelector(".matrix-canvas");
+    if (canvas) canvas.remove();
+  }
 
-    // -------------------------------
-    // Theme Management
-    // -------------------------------
-    function loadTheme() {
-      const theme = localStorage.getItem("theme") || "light";
+  // -------------------------------
+  // Theme Management
+  // -------------------------------
+  function loadTheme() {
+    const theme = localStorage.getItem("theme") || "light";
+    document.body.className = theme + "-mode";
+    document.getElementById(theme + "ModeRadio").checked = true;
+    if (theme === "hacker") startMatrixEffect();
+  }
+  themeRadios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      const theme = radio.value;
       document.body.className = theme + "-mode";
-      document.getElementById(theme + "ModeRadio").checked = true;
-      
-      if (theme === "hacker") {
-        startMatrixEffect();
-      }
-    }
+      localStorage.setItem("theme", theme);
+      stopMatrixEffect();
+      if (theme === "hacker") startMatrixEffect();
+    });
+  });
+  settingsBtn.addEventListener("click", () => {
+    settingsPanel.classList.toggle("open");
+  });
 
-    themeRadios.forEach(radio => {
-      radio.addEventListener("change", () => {
-        const theme = radio.value;
-        document.body.className = theme + "-mode";
-        localStorage.setItem("theme", theme);
-        
-        stopMatrixEffect();
-        
-        if (theme === "hacker") {
-          startMatrixEffect();
-        }
+  // -------------------------------
+  // Banned Words Loader & Filtering
+  // -------------------------------
+  async function loadBannedWords() {
+    try {
+      const response = await fetch("banned_words.txt");
+      const text     = await response.text();
+      bannedWords     = text.split("\n").map(w => w.trim()).filter(w => w);
+    } catch (e) {
+      console.error("Failed to load banned words:", e);
+    }
+  }
+  async function filterMessage(msg) {
+    bannedWords.forEach(word => {
+      const re = new RegExp(`\\b${word}\\b`, "gi");
+      msg = msg.replace(re, m => "*".repeat(m.length));
+    });
+    return msg;
+  }
+
+  // -------------------------------
+  // Authentication
+  // -------------------------------
+  signupBtn.addEventListener("click", async () => {
+    const email = signupEmail.value;
+    const pw    = signupPassword.value;
+    const user  = signupUsername.value;
+    if (!email||!pw||!user) { alert("Please fill out all sign up fields.");return; }
+    if (user.length>15){alert("Username max is 15 chars.");return;}
+    if (!bannedWords.length) await loadBannedWords();
+    for (const w of bannedWords) if (new RegExp(`\\b${w}\\b`,`i`).test(user)){
+      alert("Username contains banned language.");return;
+    }
+    const uq = query(collection(db,"users"),where("email","==",email),limit(1));
+    const us = await getDocs(uq);
+    if(!us.empty && us.docs[0].data().banned){alert("This email is banned.");return;}
+    signUp(email,pw,user);
+  });
+
+  loginBtn.addEventListener("click",async()=>{
+    const email=loginEmail.value,pw=loginPassword.value;
+    if(!email||!pw){alert("Please fill out login fields.");return;}
+    try{
+      const cred=await signInWithEmailAndPassword(auth,email,pw);
+      const ud=await getDoc(doc(db,"users",cred.user.uid));
+      if(ud.exists()&&ud.data().banned){
+        if(!bannedAlertShown){alert("You are banned, logging out.");bannedAlertShown=true;}
+        await logout();return;
+      }
+    }catch(e){alert("Login failed: "+e.message);}
+  });
+  logoutBtn.addEventListener("click",()=>logout());
+
+  onAuthStateChanged(auth,async user=>{
+    if(user) {
+      logoutBtn.style.display="block";
+      chatInput.disabled=false; sendBtn.disabled=false;
+      updateUserStatus(true);
+      document.getElementById("authContainer").style.display="none";
+      const uref=doc(db,"users",user.uid);
+      onSnapshot(uref,docSnap=>{
+        if(docSnap.exists()&&docSnap.data().banned&&!bannedAlertShown){
+          alert("You are banned, logging out.");bannedAlertShown=true;logout();}
       });
-    });
-
-    settingsBtn.addEventListener("click", () => {
-      settingsPanel.classList.toggle("open");
-    });
-
-    // -------------------------------
-    // Banned Words Loader & Filtering
-    // -------------------------------
-    async function loadBannedWords() {
-      try {
-        const response = await fetch("banned_words.txt");
-        const text = await response.text();
-        bannedWords = text.split("\n").map(word => word.trim()).filter(word => word);
-      } catch (error) {
-        console.error("Failed to load banned words:", error);
-      }
-    }
-
-    async function filterMessage(message) {
-      bannedWords.forEach(word => {
-        const regex = new RegExp(`\\b${word}\\b`, "gi");
-        message = message.replace(regex, (match) => "*".repeat(match.length));
-      });
-      return message;
-    }
-
-    // -------------------------------
-    // Authentication
-    // -------------------------------
-    signupBtn.addEventListener("click", async () => {
-      const email = signupEmail.value;
-      const password = signupPassword.value;
-      const username = signupUsername.value;
-      if (!email || !password || !username) {
-        alert("Please fill out all sign up fields.");
-        return;
-      }
-      if (username.length > 15) {
-        alert("Your username cannot be longer than 15 characters.");
-        return;
-      }
-      if (bannedWords.length === 0) {
-        await loadBannedWords();
-      }
-      for (const word of bannedWords) {
-        const regex = new RegExp(`\\b${word}\\b`, "i");
-        if (regex.test(username)) {
-          alert("Your username contains inappropriate language.");
-          return;
-        }
-      }
-      const usersQuery = query(collection(db, "users"), where("email", "==", email), limit(1));
-      const usersSnapshot = await getDocs(usersQuery);
-      if (!usersSnapshot.empty) {
-        const userDoc = usersSnapshot.docs[0];
-        if (userDoc.data().banned) {
-          alert("This email is banned. You cannot create a new account with it.");
-          return;
-        }
-      }
-      signUp(email, password, username);
-    });
-
-    loginBtn.addEventListener("click", async () => {
-      const email = loginEmail.value;
-      const password = loginPassword.value;
-      if (!email || !password) {
-        alert("Please fill out both login fields.");
-        return;
-      }
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const userDocRef = doc(db, "users", userCredential.user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists() && userDocSnap.data().banned) {
-          if (!bannedAlertShown) {
-            alert("You are banned, logging out.");
-            bannedAlertShown = true;
-          }
-          await logout();
-          return;
-        }
-      } catch (error) {
-        alert("Login failed: " + error.message);
-      }
-    });
-
-    logoutBtn.addEventListener("click", () => {
-      logout();
-    });
-
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        logoutBtn.style.display = "block";
-        chatInput.disabled = false;
-        sendBtn.disabled = false;
-        updateUserStatus(true);
-        document.getElementById("authContainer").style.display = "none";
-
-        const userDocRef = doc(db, "users", user.uid);
-
-        onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists() && docSnap.data().banned && !bannedAlertShown) {
-            alert("You are banned, logging out.");
-            bannedAlertShown = true;
-            logout();
-          }
-        });
-
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists() && userDocSnap.data().banned && !bannedAlertShown) {
-          alert("You are banned, logging out.");
-          bannedAlertShown = true;
-          logout();
-          return;
-        }
-
-        if (userDocSnap.exists() && userDocSnap.data().isAdmin) {
-          isAdmin = true;
-          document.getElementById("adminPanel").style.display = "block";
-          loadUsersForAdmin();
-        } else {
-          isAdmin = false;
-          document.getElementById("adminPanel").style.display = "none";
-        }
-      } else {
-        logoutBtn.style.display = "none";
-        chatInput.disabled = true;
-        sendBtn.disabled = true;
-        updateUserStatus(false);
-        document.getElementById("authContainer").style.display = "block";
-        document.getElementById("adminPanel").style.display = "none";
-      }
-    });
-
-    // -------------------------------
-    // Chat Functionality
-    // -------------------------------
-    const q = query(
-      collection(db, "chatrooms/general/messages"),
-      orderBy("timestamp", "desc"),
-      limit(100)
-    );
-    onSnapshot(q, async (snapshot) => {
-      await loadBannedWords();
-      const messagesHtmlArray = await Promise.all(snapshot.docs.map(async (docSnap) => {
-        const message = docSnap.data();
-        let timestamp = message.timestamp && typeof message.timestamp.toDate === 'function'
-          ? message.timestamp.toDate()
-          : new Date();
-        const formattedTime = timestamp.toLocaleString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-          second: "numeric",
-          hour12: true
-        });
-        let filteredText = message.text ? await filterMessage(message.text) : "";
-        let username = "Unknown User";
-        if (message.senderId) {
-          const userDoc = await getDoc(doc(db, "users", message.senderId));
-          if (userDoc.exists()) {
-            username = userDoc.data().username;
-          }
-        }
-        const deleteButton = isAdmin 
-          ? `<button class="delete-btn" onclick="deleteMessage('${docSnap.id}')">Delete</button>` 
-          : "";
-        return `
-          <div class="message">
-            <div class="message-content">
-              <span class="author">${username}:</span>
-              ${filteredText ? `<span class="text">${filteredText}</span>` : ""}
-              ${message.image ? `<img src="${message.image}" alt="Uploaded image">` : ""}
-            </div>
-            <div class="message-actions">
-              <span class="timestamp">${formattedTime}</span>
-              ${deleteButton}
-            </div>
-          </div>
-        `;
-      }));
-
-      chatMessages.innerHTML = messagesHtmlArray.join('');
-      chatMessages.scrollTop = 0;
-    });
-
-    window.deleteMessage = async function(messageId) {
-      if (!isAdmin) {
-        alert("You are not authorized to delete messages.");
-        return;
-      }
-      try {
-        await deleteDoc(doc(db, "chatrooms/general/messages", messageId));
-      } catch (error) {
-        console.error("Error deleting message:", error);
-        alert("Failed to delete message. Check the console for details.");
-      }
-    };
-
-    sendBtn.addEventListener("click", async () => {
-      if (!auth.currentUser) {
-        alert("You must be logged in to send messages.");
-        return;
-      }
-      
-      const text = chatInput.value.trim();
-      
-      if (text.toLowerCase() === "xanlack") {
-        window.location.href = "truth.html";
-        chatInput.value = "";
-        return;
-      }
-      
-      if (text.toLowerCase() === "death") {
-        applyDeathTheme();
-        chatInput.value = "";
-        return;
-      }
-
-      if (text.toLowerCase() === "encode") {
-        window.location.href = "encode.html";
-        chatInput.value = "";
-       return;
-      }
-
-
-      if (text.toLowerCase() === "endtimes") {
-        window.location.href = "end.html";
-        chatInput.value = "";
-       return;
-      }
-
-      if (text.toLowerCase() === "html") {
-        window.location.href = "test.html";
-        chatInput.value = "";
-       return;
-      }
-
-      if (text.toLowerCase() === "wishlist") {
-        window.location.href = "wishlist.html";
-        chatInput.value = "";
-       return;
-      }
-
-      if (text.toLowerCase() === "stats") {
-        window.location.href = "stats.html";
-        chatInput.value = "";
-       return;
-      }
-
-      if (text.toLowerCase() === "kills") {
-        window.location.href = "torture1.html";
-        chatInput.value = "";
-       return;
-      }
-
-      if (text.toLowerCase() === "musak") {
-        window.location.href = "secret.html";
-        chatInput.value = "";
-       return;
-      }
-
-    
-
-      
-      
-      
-      
-      if (text) {
-        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-        const username = userDoc.exists() ? userDoc.data().username : "Unknown User";
-        await addDoc(collection(db, "chatrooms/general/messages"), {
-          senderId: auth.currentUser.uid,
-          nickname: username,
-          text: text,
-          timestamp: serverTimestamp(),
-          likes: 0
-        });
-        chatInput.value = "";
-        chatInput.focus();
-      }
-    });
-
-    chatInput.addEventListener("keypress", async (event) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        sendBtn.click();
-      }
-    });
-
-    // -------------------------------
-    // Admin Functions
-    // -------------------------------
-    async function loadUsersForAdmin() {
-      try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const adminUserList = document.getElementById("adminUserList");
-        adminUserList.innerHTML = "";
-        usersSnapshot.forEach(userDoc => {
-          const userData = userDoc.data();
-          const userId = userDoc.id;
-          if (userData.isAdmin) return;
-          const userItem = document.createElement("div");
-          const actionButton = document.createElement("button");
-          if (userData.banned) {
-            actionButton.textContent = "Unban";
-            actionButton.onclick = () => { unbanUserFromUI(userId); };
-          } else {
-            actionButton.textContent = "Ban";
-            actionButton.onclick = () => { banUserFromUI(userId); };
-          }
-          userItem.innerHTML = `<span>${userData.username} (${userData.email})</span>`;
-          userItem.appendChild(actionButton);
-          adminUserList.appendChild(userItem);
-        });
-      } catch (error) {
-        console.error("Error loading users for admin:", error);
-      }
-    }
-
-    window.banUserFromUI = async (userId) => {
-      if (confirm("Are you sure you want to ban this user?")) {
-        try {
-          await banUser(userId);
-          alert("User banned successfully!");
-          loadUsersForAdmin();
-        } catch (error) {
-          console.error("Error banning user:", error);
-          alert("Failed to ban user. Check the console for details.");
-        }
-      }
-    };
-
-    window.unbanUserFromUI = async (userId) => {
-      if (confirm("Are you sure you want to unban this user?")) {
-        try {
-          await unbanUser(userId);
-          alert("User unbanned successfully!");
-          loadUsersForAdmin();
-        } catch (error) {
-          console.error("Error unbanning user:", error);
-          alert("Failed to unban user. Check the console for details.");
-        }
-      }
-    };
-
-    // -------------------------------
-    // Utilities
-    // -------------------------------
-    document.addEventListener("DOMContentLoaded", async () => {
-      await incrementSiteVisits();
-      const visits = await getSiteVisits();
-      const visitsCountEl = document.getElementById("visitsCount");
-      if (visitsCountEl) {
-        visitsCountEl.textContent = visits;
-      }
-      updateRegisteredUsersCount();
-      loadTheme();
-    });
-
-    async function updateRegisteredUsersCount() {
-      try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const userCount = usersSnapshot.size;
-        const userCountEl = document.getElementById("userCount");
-        if (userCountEl) {
-          userCountEl.textContent = userCount;
-        }
-      } catch (error) {
-        console.error("Error getting registered users count:", error);
-      }
-    }
-
-    window.addEventListener("beforeunload", () => {
+      const ud=await getDoc(uref);
+      if(ud.exists()&&ud.data().banned&&!bannedAlertShown){alert("You are banned, logging out.");bannedAlertShown=true;logout();return;}
+      if(ud.exists()&&ud.data().isAdmin){isAdmin=true;document.getElementById("adminPanel").style.display="block";loadUsersForAdmin();}
+      else{isAdmin=false;document.getElementById("adminPanel").style.display="none";}
+    } else {
+      logoutBtn.style.display="none";
+      chatInput.disabled=true; sendBtn.disabled=true;
       updateUserStatus(false);
-    });
-
-    function applyDeathTheme() {
-      document.body.classList.add("death-theme");
-      console.log("Death theme activated.");
+      document.getElementById("authContainer").style.display="block";
+      document.getElementById("adminPanel").style.display="none";
     }
+  });
+
+  // -------------------------------
+  // Chat Functionality + Notifications
+  // -------------------------------
+  const q = query(
+    collection(db, "chatrooms/general/messages"),
+    orderBy("timestamp", "desc"),
+    limit(100)
+  );
+
+  onSnapshot(q, async snapshot => {
+    // Desktop notification for newest message
+    const latest = snapshot.docs[0];
+    if (
+      document.hidden &&
+      Notification.permission === "granted" &&
+      auth.currentUser &&
+      latest.data().senderId !== auth.currentUser.uid
+    ) {
+      const m = latest.data();
+      const u = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
+      new Notification(u, { body: m.text || "[image]" });
+    }
+
+    // Rebuild chat UI
+    await loadBannedWords();
+    const html = await Promise.all(snapshot.docs.map(async d => {
+      const m = d.data();
+      const ts = m.timestamp?.toDate()||new Date();
+      const tstr = ts.toLocaleString("en-US",{
+        year:"numeric",month:"short",day:"numeric",
+        hour:"numeric",minute:"numeric",second:"numeric",hour12:true
+      });
+      const txt = m.text? await filterMessage(m.text):"";
+      let usr="Unknown User";
+      if(m.senderId){const ud=await getDoc(doc(db,"users",m.senderId));if(ud.exists())usr=ud.data().username;}
+      const del = isAdmin
+        ? `<button class="delete-btn" onclick="deleteMessage('${d.id}')">Delete</button>`
+        : "";
+      return `
+        <div class="message">
+          <div class="message-content">
+            <span class="author">${usr}:</span>
+            ${txt?`<span class="text">${txt}</span>`:""}
+            ${m.image?`<img src="${m.image}" alt="Uploaded image">`:""}
+          </div>
+          <div class="message-actions">
+            <span class="timestamp">${tstr}</span>
+            ${del}
+          </div>
+        </div>`;
+    }));
+    chatMessages.innerHTML = html.join('');
+    chatMessages.scrollTop = 0;
+  });
+
+  window.deleteMessage = async id => {
+    if(!isAdmin){alert("Not authorized to delete.");return;}
+    try{ await deleteDoc(doc(db,"chatrooms/general/messages",id)); }
+    catch(e){console.error(e);alert("Delete failed.");}
+  };
+
+  // Send Button & Special Commands
+  sendBtn.addEventListener("click", async () => {
+    if(!auth.currentUser){alert("Log in to chat.");return;}
+    const text = chatInput.value.trim();
+    // Special redirects
+    const cmds = { xanlack:"truth.html", death:null, encode:"encode.html",
+                   endtimes:"end.html", html:"test.html",
+                   wishlist:"wishlist.html", stats:"stats.html",
+                   kills:"torture1.html", musak:"secret.html" };
+    const cmd = text.toLowerCase();
+    if(cmds.hasOwnProperty(cmd)){
+      if(cmds[cmd]) window.location.href = cmds[cmd];
+      else applyDeathTheme();
+      chatInput.value=""; return;
+    }
+    if(text){
+      const ud = await getDoc(doc(db,"users",auth.currentUser.uid));
+      const name = ud.exists()?ud.data().username:"Unknown User";
+      await addDoc(collection(db,"chatrooms/general/messages"),{
+        senderId:auth.currentUser.uid,
+        nickname:name,
+        text:text,
+        timestamp:serverTimestamp(),
+        likes:0
+      });
+      chatInput.value="";chatInput.focus();
+    }
+  });
+  chatInput.addEventListener("keypress",e=>{
+    if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendBtn.click();}
+  });
+
+  // -------------------------------
+  // Admin Panel Functions
+  // -------------------------------
+  async function loadUsersForAdmin() {
+    try {
+      const us = await getDocs(collection(db, "users"));
+      const list = document.getElementById("adminUserList");
+      list.innerHTML = "";
+      us.forEach(u => {
+        const d = u.data(); if(d.isAdmin) return;
+        const item = document.createElement("div");
+        const btn  = document.createElement("button");
+        if(d.banned){ btn.textContent = "Unban"; btn.onclick = () => unbanUserFromUI(u.id); }
+        else       { btn.textContent = "Ban";   btn.onclick = () => banUserFromUI(u.id); }
+        item.innerHTML = `<span>${d.username} (${d.email})</span>`;
+        item.appendChild(btn);
+        list.appendChild(item);
+      });
+    } catch (e) { console.error(e); }
+  }
+  window.banUserFromUI = async id => {
+    if(confirm("Ban this user?")){ try{ await banUser(id); alert("Banned."); loadUsersForAdmin(); }catch(e){alert("Failed to ban.");} }
+  };
+  window.unbanUserFromUI = async id => {
+    if(confirm("Unban this user?")){ try{ await unbanUser(id); alert("Unbanned."); loadUsersForAdmin(); }catch(e){alert("Failed to unban.");} }
+  };
+
+  // -------------------------------
+  // Utilities
+  // -------------------------------
+  async function updateRegisteredUsersCount() {
+    try {
+      const us = await getDocs(collection(db, "users"));
+      document.getElementById("userCount").textContent = us.size;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  window.addEventListener("beforeunload", () => updateUserStatus(false));
+  function applyDeathTheme() { document.body.classList.add("death-theme"); console.log("Death theme activated."); }
   </script>
   
   <style>
