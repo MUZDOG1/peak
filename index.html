@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script type="text/javascript">
-    window.location.assign("https://muzdog1.github.io/peak/index.html")
-   </script>
   <meta charset="UTF-8">
   <title>Muzdog Chat</title>
   <script type="module">
@@ -20,13 +17,17 @@
     signInWithEmailAndPassword
   } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-
+  // -------------------------------
+  // Global Variables
+  // -------------------------------
   let isAdmin = false;
   let bannedWords = [];
   let bannedAlertShown = false;
   let matrixInterval;
 
-
+  // -------------------------------
+  // DOM Elements
+  // -------------------------------
   const chatMessages    = document.getElementById("chatMessages");
   const chatInput       = document.getElementById("chatInput");
   const sendBtn         = document.getElementById("sendBtn");
@@ -43,11 +44,14 @@
   const settingsPanel   = document.getElementById("settingsPanel");
   const themeRadios     = document.querySelectorAll('input[name="theme"]');
 
-
+  // -------------------------------
+  // Request Desktop Notification Permission
+  // -------------------------------
   document.addEventListener("DOMContentLoaded", async () => {
     if ("Notification" in window) {
       await Notification.requestPermission();
     }
+    // Existing init tasks
     await incrementSiteVisits();
     const visits = await getSiteVisits();
     document.getElementById("visitsCount").textContent = visits;
@@ -55,13 +59,15 @@
     loadTheme();
   });
 
-
+  // TOS checkbox enables sign up
   signupBtn.disabled = true;
   tosCheckbox.addEventListener("change", () => {
     signupBtn.disabled = !tosCheckbox.checked;
   });
 
-
+  // -------------------------------
+  // Matrix Effect
+  // -------------------------------
   function startMatrixEffect() {
     const chars = "01";
     const canvas = document.createElement("div");
@@ -101,7 +107,9 @@
     if (canvas) canvas.remove();
   }
 
-
+  // -------------------------------
+  // Theme Management
+  // -------------------------------
   function loadTheme() {
     const theme = localStorage.getItem("theme") || "light";
     document.body.className = theme + "-mode";
@@ -121,6 +129,9 @@
     settingsPanel.classList.toggle("open");
   });
 
+  // -------------------------------
+  // Banned Words Loader & Filtering
+  // -------------------------------
   async function loadBannedWords() {
     try {
       const response = await fetch("banned_words.txt");
@@ -138,7 +149,9 @@
     return msg;
   }
 
-
+  // -------------------------------
+  // Authentication
+  // -------------------------------
   signupBtn.addEventListener("click", async () => {
     const email = signupEmail.value;
     const pw    = signupPassword.value;
@@ -193,7 +206,9 @@
     }
   });
 
-
+  // -------------------------------
+  // Chat Functionality + Notifications
+  // -------------------------------
   const q = query(
     collection(db, "chatrooms/general/messages"),
     orderBy("timestamp", "desc"),
@@ -201,6 +216,7 @@
   );
 
   onSnapshot(q, async snapshot => {
+    // Desktop notification for newest message
     const latest = snapshot.docs[0];
     if (
       document.hidden &&
@@ -213,6 +229,7 @@
       new Notification(u, { body: m.text || "[image]" });
     }
 
+    // Rebuild chat UI
     await loadBannedWords();
     const html = await Promise.all(snapshot.docs.map(async d => {
       const m = d.data();
@@ -250,11 +267,11 @@
     catch(e){console.error(e);alert("Delete failed.");}
   };
 
-
+  // Send Button & Special Commands
   sendBtn.addEventListener("click", async () => {
     if(!auth.currentUser){alert("Log in to chat.");return;}
     const text = chatInput.value.trim();
-
+    // Special redirects
     const cmds = { xanlack:"truth.html", death:null, encode:"encode.html",
                    endtimes:"end.html", html:"test.html",
                    wishlist:"wishlist.html", stats:"stats.html",
@@ -282,7 +299,9 @@
     if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendBtn.click();}
   });
 
-
+  // -------------------------------
+  // Admin Panel Functions
+  // -------------------------------
   async function loadUsersForAdmin() {
     try {
       const us = await getDocs(collection(db, "users"));
@@ -307,7 +326,9 @@
     if(confirm("Unban this user?")){ try{ await unbanUser(id); alert("Unbanned."); loadUsersForAdmin(); }catch(e){alert("Failed to unban.");} }
   };
 
-
+  // -------------------------------
+  // Utilities
+  // -------------------------------
   async function updateRegisteredUsersCount() {
     try {
       const us = await getDocs(collection(db, "users"));
@@ -321,7 +342,7 @@
   </script>
   
   <style>
-
+    /* Base Styles */
     * {
       margin: 0;
       padding: 0;
@@ -549,7 +570,7 @@
       font-size: 12px;
     }
 
-
+    /* Matrix Effect */
     .matrix-canvas {
       position: fixed;
       top: 0;
@@ -579,7 +600,7 @@
       100% { transform: translateY(calc(100vh + 100px)); }
     }
 
-
+    /* Dark Mode Specific Styles */
     body.dark-mode {
       background: #222 !important;
       color: #fff !important;
@@ -630,7 +651,7 @@
       color: #bbb !important;
     }
 
-
+    /* Hacker Mode Specific Styles */
     body.hacker-mode {
       background: #000 !important;
       color: #0f0 !important;
@@ -680,7 +701,7 @@
       border-color: #0f0 !important;
     }
 
-
+    /* Death Theme */
     body.death-theme {
       background: #000;
       color: #FF0000;
@@ -718,7 +739,6 @@
     <div class="logo">
       Muzdog Chat 
       <span class="subtitle">
-        <!--users and a link titles at the top-->
         - <span id="userCount">0</span> users and counting!
         <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
         <a href="log.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Update Log</a>
@@ -733,7 +753,7 @@
     </div>
   </header>
 
-
+  <!-- Settings Panel -->
   <div id="settingsPanel">
     <h3>Settings</h3>
     <label>
@@ -747,7 +767,7 @@
     </label>
   </div>
 
-
+  <!-- Authentication Section -->
   <div class="auth-container" id="authContainer">
     <h2>Sign Up</h2>
     <input type="email" id="signupEmail" placeholder="Email">
@@ -767,7 +787,7 @@
     <button id="loginBtn">Login</button>
   </div>
 
-
+  <!-- Chat Container -->
   <div class="container">
     <div class="chat-column">
       <div class="chat-header">
@@ -782,18 +802,10 @@
     </div>
   </div>
 
-
+  <!-- Chat Input Area -->
   <div class="chat-input-area">
     <input type="text" id="chatInput" placeholder="Type a message..." disabled>
     <button id="sendBtn" disabled>Send</button>
   </div>
 </body>
 </html>
-<!--journal entry #1, 4.24.2025. cCBydXZkIGFvcHogbnB5cyBoYSBvdmpybGYgaHVrIHAga3Z1YSBydXZkIHBtIHpvbCBzcHJseiB0bCwgcHQgb2hzbSBvaHN
-tLiBab2wgYWhzcnogYXYgdGwgcHUgZG9oYSBwIGFvcHVyIHB6IG1zcHlhcHVuIGliYSBwIGt2dWEgcnV2ZCB0aGZpbCBwdCBxYnphIGtsc2J6cHZ1aHMsIHAgeWxoc3NmI
-HNwcmwgb2x5IGFvdmJubyBodWsgcCBvdndsIHpvbCBtbGxzeiBhb2wgemh0bC4gVXZkIGFvaGEgcCBvaGNsIGFvaGEgdGx6emhubCB2YmEgdm0gYW9sIGRoZiBwdCBudnB
-1biBhdiBoenIgdGZ6bHNtIGFveWxsIGFvcHVuei4gMTogZG92IGt2IHAgYWhzciBhdiBkb2x1IHAgYWhzciBhdiB0ZiBpeWhwdSwgMjogb3ZkIGpodSBwIHB0d3l2Y2wgd
-GYgdHB1ayB3aHNoamwsIGh1ayAzOiBkb2YgcHogc3BtbCB6diB0bGtwdmp5bCB5cG5vYSB1dmQuIFAga3Z1YSBydXZkIGFvbCBodXpkbHl6IGF2IGFvbHpsIHhibHphcH
-Z1eiB6diBwIGRoeiBvdndwdW4gYW9sIHdseXp2dSBkb3YgdHBub2EgaWwgdGwgcHUgdGYgaXlocHUgYXYgaHV6ZGx5IGFvbHQsIHp3bGhyLiAxOiBwIGh0IGZ2YiB6cHVq
-bCBmdmIgaHlsIGFvcHVycHVuIHRsLCBwYXogenZ5YSB2bSBoIHdoeWhrdmUuIDI6IGpoeWNsIHZiYSB0dnlsIHl2dnR6LiAzOiBmdmJ5IHV2YSBheWZwdW4gb2h5ayBsdX
-Zibm8uIFAgZHB6byBwIGp2YnNrIHR2Y2wgYXYgaHNoenJoLCBwIHNwcmwgYW9sIHR2YnVhaHB1eiBodWsgenV2ZC4g-->
