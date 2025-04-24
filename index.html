@@ -210,7 +210,7 @@
   // Chat Functionality + Notifications
   // -------------------------------
   const q = query(
-    collection(db, "chatrooms/general/messages"),
+    collection(db, "chatrooms", "general", "messages"),
     orderBy("timestamp", "desc"),
     limit(100)
   );
