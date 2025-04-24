@@ -142,11 +142,20 @@
     }
   }
   async function filterMessage(msg) {
-    bannedWords.forEach(word => {
-      msg = msg.replace(re, m => "*".repeat(m.length));
-    });
-    return msg;
+  if (!bannedWords.length) await loadBannedWords();  
+
+  // use a for-of so you can await loadBannedWords once
+  for (const word of bannedWords) {
+    // escape any special regex chars in word, then build your regex
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re      = new RegExp(`\\b${escaped}\\b`, 'gi');
+
+    msg = msg.replace(re, match => '*'.repeat(match.length));
   }
+
+  return msg;
+}
+
 
   // -------------------------------
   // Authentication
