@@ -21,3 +21,7 @@ p {
 img {
     text-align: center;
 }
+.warning {
+    border: darkred;
+    border-radius: 200px;
+}
