@@ -1634,3 +1634,5 @@ shower
 hygiene
 job 
 employment
+.zip 
+.com 
