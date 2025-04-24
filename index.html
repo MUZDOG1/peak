@@ -226,16 +226,15 @@
   onSnapshot(q, async snapshot => {
     // Desktop notification for newest message
     const latest = snapshot.docs[0];
-    if (
-      document.hidden &&
-      Notification.permission === "granted" &&
-      auth.currentUser &&
-      latest.data().senderId !== auth.currentUser.uid
-    ) {
-      const m = latest.data();
-      const u = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
-      new Notification(u, { body: m.text || "[image]" });
+    if (document.hidden && Notification.permission === "granted" /*…*/ ) {
+    const m    = latest.data();
+    const u    = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
+    const text = m.text || "[image]";
+    // run your censor
+    const safe = m.text ? await filterMessage(text) : text;
+    new Notification(u, { body: safe });
     }
+
 
     // Rebuild chat UI
     await loadBannedWords();
