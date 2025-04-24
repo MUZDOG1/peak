@@ -199,11 +199,17 @@
 
   onSnapshot(q, async snapshot => {
     const latest = snapshot.docs[0];
+    const m              = latest.data();
+    const raw            = m.text || "[image]";
+    const containsBanned = bannedWords.some(w =>
+      new RegExp(`\\b${w}\\b`, "i").test(raw)
+);
     if (
       document.hidden &&
       Notification.permission === "granted" &&
       auth.currentUser &&
-      latest.data().senderId !== auth.currentUser.uid
+      latest.data().senderId !== auth.currentUser.uid &&
+      !containsBanned
     ) {
       const m = latest.data();
       const u = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
