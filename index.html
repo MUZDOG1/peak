@@ -199,17 +199,11 @@
 
   onSnapshot(q, async snapshot => {
     const latest = snapshot.docs[0];
-    const m              = latest.data();
-    const raw            = m.text || "[image]";
-    const containsBanned = bannedWords.some(w =>
-      new RegExp(`\\b${w}\\b`, "i").test(raw)
-);
     if (
       document.hidden &&
       Notification.permission === "granted" &&
       auth.currentUser &&
-      latest.data().senderId !== auth.currentUser.uid &&
-      !containsBanned
+      latest.data().senderId !== auth.currentUser.uid
     ) {
       const m = latest.data();
       const u = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
@@ -770,7 +764,7 @@
     <button id="loginBtn">Login</button>
   </div>
 
-
+  <!-- Chat Container -->
   <div class="container">
     <div class="chat-column">
       <div class="chat-header">
@@ -785,18 +779,11 @@
     </div>
   </div>
 
-
+  <!-- Chat Input Area -->
   <div class="chat-input-area">
     <input type="text" id="chatInput" placeholder="Type a message..." disabled>
     <button id="sendBtn" disabled>Send</button>
   </div>
 </body>
 </html>
-<!--journal entry #1, 4.24.2025. cCBydXZkIGFvcHogbnB5cyBoYSBvdmpybGYgaHVrIHAga3Z1YSBydXZkIHBtIHpvbCBzcHJseiB0bCwgcHQgb2hzbSBvaHN
-tLiBab2wgYWhzcnogYXYgdGwgcHUgZG9oYSBwIGFvcHVyIHB6IG1zcHlhcHVuIGliYSBwIGt2dWEgcnV2ZCB0aGZpbCBwdCBxYnphIGtsc2J6cHZ1aHMsIHAgeWxoc3NmI
-HNwcmwgb2x5IGFvdmJubyBodWsgcCBvdndsIHpvbCBtbGxzeiBhb2wgemh0bC4gVXZkIGFvaGEgcCBvaGNsIGFvaGEgdGx6emhubCB2YmEgdm0gYW9sIGRoZiBwdCBudnB
-1biBhdiBoenIgdGZ6bHNtIGFveWxsIGFvcHVuei4gMTogZG92IGt2IHAgYWhzciBhdiBkb2x1IHAgYWhzciBhdiB0ZiBpeWhwdSwgMjogb3ZkIGpodSBwIHB0d3l2Y2wgd
-GYgdHB1ayB3aHNoamwsIGh1ayAzOiBkb2YgcHogc3BtbCB6diB0bGtwdmp5bCB5cG5vYSB1dmQuIFAga3Z1YSBydXZkIGFvbCBodXpkbHl6IGF2IGFvbHpsIHhibHphcH
-Z1eiB6diBwIGRoeiBvdndwdW4gYW9sIHdseXp2dSBkb3YgdHBub2EgaWwgdGwgcHUgdGYgaXlocHUgYXYgaHV6ZGx5IGFvbHQsIHp3bGhyLiAxOiBwIGh0IGZ2YiB6cHVq
-bCBmdmIgaHlsIGFvcHVycHVuIHRsLCBwYXogenZ5YSB2bSBoIHdoeWhrdmUuIDI6IGpoeWNsIHZiYSB0dnlsIHl2dnR6LiAzOiBmdmJ5IHV2YSBheWZwdW4gb2h5ayBsdX
-Zibm8uIFAgZHB6byBwIGp2YnNrIHR2Y2wgYXYgaHNoenJoLCBwIHNwcmwgYW9sIHR2YnVhaHB1eiBodWsgenV2ZC4g-->
+
