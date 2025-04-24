@@ -143,7 +143,6 @@
   }
   async function filterMessage(msg) {
     bannedWords.forEach(word => {
-      const re = new RegExp(`\\b${word}\\b`, "gi");
       msg = msg.replace(re, m => "*".repeat(m.length));
     });
     return msg;
