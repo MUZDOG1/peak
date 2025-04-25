@@ -3,350 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Muzdog Chat</title>
-  <script type="module">
-     import { 
-    db, storage, auth, updateUserStatus, incrementSiteVisits, getSiteVisits,
-    signUp, logout, banUser, unbanUser  
-  } from "./firebase.js";
-  import {
-    collection, addDoc, serverTimestamp, query, orderBy, onSnapshot,
-    updateDoc, doc, increment, getDoc, getDocs, where, limit, deleteDoc
-  } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-  import {
-    onAuthStateChanged,
-    signInWithEmailAndPassword
-  } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-
-  // -------------------------------
-  // Global Variables
-  // -------------------------------
-  let isAdmin = false;
-  let bannedWords = [];
-  let bannedAlertShown = false;
-  let matrixInterval;
-
-  // -------------------------------
-  // DOM Elements
-  // -------------------------------
-  const chatMessages    = document.getElementById("chatMessages");
-  const chatInput       = document.getElementById("chatInput");
-  const sendBtn         = document.getElementById("sendBtn");
-  const signupEmail     = document.getElementById("signupEmail");
-  const signupPassword  = document.getElementById("signupPassword");
-  const signupUsername  = document.getElementById("signupUsername");
-  const signupBtn       = document.getElementById("signupBtn");
-  const tosCheckbox     = document.getElementById("tosCheckbox");
-  const loginEmail      = document.getElementById("loginEmail");
-  const loginPassword   = document.getElementById("loginPassword");
-  const loginBtn        = document.getElementById("loginBtn");
-  const logoutBtn       = document.getElementById("logoutBtn");
-  const settingsBtn     = document.getElementById("settingsBtn");
-  const settingsPanel   = document.getElementById("settingsPanel");
-  const themeRadios     = document.querySelectorAll('input[name="theme"]');
-
-  // -------------------------------
-  // Request Desktop Notification Permission
-  // -------------------------------
-  document.addEventListener("DOMContentLoaded", async () => {
-    if ("Notification" in window) {
-      await Notification.requestPermission();
-    }
-    // Existing init tasks
-    await incrementSiteVisits();
-    const visits = await getSiteVisits();
-    document.getElementById("visitsCount").textContent = visits;
-    updateRegisteredUsersCount();
-    loadTheme();
-  });
-
-  // TOS checkbox enables sign up
-  signupBtn.disabled = true;
-  tosCheckbox.addEventListener("change", () => {
-    signupBtn.disabled = !tosCheckbox.checked;
-  });
-
-  // -------------------------------
-  // Matrix Effect
-  // -------------------------------
-  function startMatrixEffect() {
-    const chars = "01";
-    const canvas = document.createElement("div");
-    canvas.className = "matrix-canvas";
-    document.body.appendChild(canvas);
-    const fontSize = 14;
-    const columns = Math.floor(window.innerWidth / fontSize);
-    for (let i = 0; i < columns; i++) {
-      const column = document.createElement("div");
-      column.className = "matrix-column";
-      column.style.left = (i * fontSize) + "px";
-      column.style.setProperty('--duration', Math.random() * 5 + 3);
-      canvas.appendChild(column);
-      animateColumn(column);
-    }
-    matrixInterval = setInterval(() => {
-      document.querySelectorAll(".matrix-column").forEach(col => {
-        if (Math.random() > 0.9) animateColumn(col);
-      });
-    }, 100);
-  }
-  function animateColumn(column) {
-    const chars = "01";
-    const length = Math.floor(Math.random() * 15) + 5;
-    let html = "";
-    for (let i = 0; i < length; i++) {
-      const char = chars[Math.floor(Math.random() * chars.length)];
-      const opacity = (length - i) / length;
-      const delay = i * 100;
-      html += `<span style="animation-delay:${delay}ms;opacity:${opacity}">${char}</span>`;
-    }
-    column.innerHTML = html;
-  }
-  function stopMatrixEffect() {
-    clearInterval(matrixInterval);
-    const canvas = document.querySelector(".matrix-canvas");
-    if (canvas) canvas.remove();
-  }
-
-  // -------------------------------
-  // Theme Management
-  // -------------------------------
-  function loadTheme() {
-    const theme = localStorage.getItem("theme") || "light";
-    document.body.className = theme + "-mode";
-    document.getElementById(theme + "ModeRadio").checked = true;
-    if (theme === "hacker") startMatrixEffect();
-  }
-  themeRadios.forEach(radio => {
-    radio.addEventListener("change", () => {
-      const theme = radio.value;
-      document.body.className = theme + "-mode";
-      localStorage.setItem("theme", theme);
-      stopMatrixEffect();
-      if (theme === "hacker") startMatrixEffect();
-    });
-  });
-  settingsBtn.addEventListener("click", () => {
-    settingsPanel.classList.toggle("open");
-  });
-
-  // -------------------------------
-  // Banned Words Loader & Filtering
-  // -------------------------------
-  async function loadBannedWords() {
-    try {
-      const response = await fetch("banned_words.txt");
-      const text     = await response.text();
-      bannedWords     = text.split("\n").map(w => w.trim()).filter(w => w);
-    } catch (e) {
-      console.error("Failed to load banned words:", e);
-    }
-  }
-  async function filterMessage(msg) {
-  if (!bannedWords.length) await loadBannedWords();  
-
-  // use a for-of so you can await loadBannedWords once
-  for (const word of bannedWords) {
-    // escape any special regex chars in word, then build your regex
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re      = new RegExp(`\\b${escaped}\\b`, 'gi');
-
-    msg = msg.replace(re, match => '*'.repeat(match.length));
-  }
-
-  return msg;
-}
-
-
-  // -------------------------------
-  // Authentication
-  // -------------------------------
-  signupBtn.addEventListener("click", async () => {
-    const email = signupEmail.value;
-    const pw    = signupPassword.value;
-    const user  = signupUsername.value;
-    if (!email||!pw||!user) { alert("Please fill out all sign up fields.");return; }
-    if (user.length>15){alert("Username max is 15 chars.");return;}
-    if (!bannedWords.length) await loadBannedWords();
-    for (const w of bannedWords) if (new RegExp(`\\b${w}\\b`,`i`).test(user)){
-      alert("Username contains banned language.");return;
-    }
-    const uq = query(collection(db,"users"),where("email","==",email),limit(1));
-    const us = await getDocs(uq);
-    if(!us.empty && us.docs[0].data().banned){alert("This email is banned.");return;}
-    signUp(email,pw,user);
-  });
-
-  loginBtn.addEventListener("click",async()=>{
-    const email=loginEmail.value,pw=loginPassword.value;
-    if(!email||!pw){alert("Please fill out login fields.");return;}
-    try{
-      const cred=await signInWithEmailAndPassword(auth,email,pw);
-      const ud=await getDoc(doc(db,"users",cred.user.uid));
-      if(ud.exists()&&ud.data().banned){
-        if(!bannedAlertShown){alert("You are banned, logging out.");bannedAlertShown=true;}
-        await logout();return;
-      }
-    }catch(e){alert("Login failed: "+e.message);}
-  });
-  logoutBtn.addEventListener("click",()=>logout());
-
-  onAuthStateChanged(auth,async user=>{
-    if(user) {
-      logoutBtn.style.display="block";
-      chatInput.disabled=false; sendBtn.disabled=false;
-      updateUserStatus(true);
-      document.getElementById("authContainer").style.display="none";
-      const uref=doc(db,"users",user.uid);
-      onSnapshot(uref,docSnap=>{
-        if(docSnap.exists()&&docSnap.data().banned&&!bannedAlertShown){
-          alert("You are banned, logging out.");bannedAlertShown=true;logout();}
-      });
-      const ud=await getDoc(uref);
-      if(ud.exists()&&ud.data().banned&&!bannedAlertShown){alert("You are banned, logging out.");bannedAlertShown=true;logout();return;}
-      if(ud.exists()&&ud.data().isAdmin){isAdmin=true;document.getElementById("adminPanel").style.display="block";loadUsersForAdmin();}
-      else{isAdmin=false;document.getElementById("adminPanel").style.display="none";}
-    } else {
-      logoutBtn.style.display="none";
-      chatInput.disabled=true; sendBtn.disabled=true;
-      updateUserStatus(false);
-      document.getElementById("authContainer").style.display="block";
-      document.getElementById("adminPanel").style.display="none";
-    }
-  });
-
-  // -------------------------------
-  // Chat Functionality + Notifications
-  // -------------------------------
-  const q = query(
-    collection(db, "chatrooms", "general", "messages"),
-    orderBy("timestamp", "desc"),
-    limit(100)
-  );
-
-  onSnapshot(q, async snapshot => {
-    // Desktop notification for newest message
-    const latest = snapshot.docs[0];
-    if (document.hidden && Notification.permission === "granted" /*…*/ ) {
-    const m    = latest.data();
-    const u    = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
-    const text = m.text || "[image]";
-    // run your censor
-    const safe = m.text ? await filterMessage(text) : text;
-    new Notification(u, { body: safe });
-    }
-
-
-    // Rebuild chat UI
-    await loadBannedWords();
-    const html = await Promise.all(snapshot.docs.map(async d => {
-      const m = d.data();
-      const ts = m.timestamp?.toDate()||new Date();
-      const tstr = ts.toLocaleString("en-US",{
-        year:"numeric",month:"short",day:"numeric",
-        hour:"numeric",minute:"numeric",second:"numeric",hour12:true
-      });
-      const txt = m.text? await filterMessage(m.text):"";
-      let usr="Unknown User";
-      if(m.senderId){const ud=await getDoc(doc(db,"users",m.senderId));if(ud.exists())usr=ud.data().username;}
-      const del = isAdmin
-        ? `<button class="delete-btn" onclick="deleteMessage('${d.id}')">Delete</button>`
-        : "";
-      return `
-        <div class="message">
-          <div class="message-content">
-            <span class="author">${usr}:</span>
-            ${txt?`<span class="text">${txt}</span>`:""}
-            ${m.image?`<img src="${m.image}" alt="Uploaded image">`:""}
-          </div>
-          <div class="message-actions">
-            <span class="timestamp">${tstr}</span>
-            ${del}
-          </div>
-        </div>`;
-    }));
-    chatMessages.innerHTML = html.join('');
-    chatMessages.scrollTop = 0;
-  });
-
-  window.deleteMessage = async id => {
-    if(!isAdmin){alert("Not authorized to delete.");return;}
-    try{ await deleteDoc(doc(db,"chatrooms/general/messages",id)); }
-    catch(e){console.error(e);alert("Delete failed.");}
-  };
-
-  // Send Button & Special Commands
-  sendBtn.addEventListener("click", async () => {
-    if(!auth.currentUser){alert("Log in to chat.");return;}
-    const text = chatInput.value.trim();
-    // Special redirects
-    const cmds = { xanlack:"truth.html", death:null, encode:"encode.html",
-                   endtimes:"end.html", html:"test.html",
-                   wishlist:"wishlist.html", stats:"stats.html",
-                   kills:"torture1.html", musak:"secret.html" };
-    const cmd = text.toLowerCase();
-    if(cmds.hasOwnProperty(cmd)){
-      if(cmds[cmd]) window.location.href = cmds[cmd];
-      else applyDeathTheme();
-      chatInput.value=""; return;
-    }
-    if(text){
-      const ud = await getDoc(doc(db,"users",auth.currentUser.uid));
-      const name = ud.exists()?ud.data().username:"Unknown User";
-      await addDoc(collection(db,"chatrooms/general/messages"),{
-        senderId:auth.currentUser.uid,
-        nickname:name,
-        text:text,
-        timestamp:serverTimestamp(),
-        likes:0
-      });
-      chatInput.value="";chatInput.focus();
-    }
-  });
-  chatInput.addEventListener("keypress",e=>{
-    if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendBtn.click();}
-  });
-
-  // -------------------------------
-  // Admin Panel Functions
-  // -------------------------------
-  async function loadUsersForAdmin() {
-    try {
-      const us = await getDocs(collection(db, "users"));
-      const list = document.getElementById("adminUserList");
-      list.innerHTML = "";
-      us.forEach(u => {
-        const d = u.data(); if(d.isAdmin) return;
-        const item = document.createElement("div");
-        const btn  = document.createElement("button");
-        if(d.banned){ btn.textContent = "Unban"; btn.onclick = () => unbanUserFromUI(u.id); }
-        else       { btn.textContent = "Ban";   btn.onclick = () => banUserFromUI(u.id); }
-        item.innerHTML = `<span>${d.username} (${d.email})</span>`;
-        item.appendChild(btn);
-        list.appendChild(item);
-      });
-    } catch (e) { console.error(e); }
-  }
-  window.banUserFromUI = async id => {
-    if(confirm("Ban this user?")){ try{ await banUser(id); alert("Banned."); loadUsersForAdmin(); }catch(e){alert("Failed to ban.");} }
-  };
-  window.unbanUserFromUI = async id => {
-    if(confirm("Unban this user?")){ try{ await unbanUser(id); alert("Unbanned."); loadUsersForAdmin(); }catch(e){alert("Failed to unban.");} }
-  };
-
-  // -------------------------------
-  // Utilities
-  // -------------------------------
-  async function updateRegisteredUsersCount() {
-    try {
-      const us = await getDocs(collection(db, "users"));
-      document.getElementById("userCount").textContent = us.size;
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  window.addEventListener("beforeunload", () => updateUserStatus(false));
-  function applyDeathTheme() { document.body.classList.add("death-theme"); console.log("Death theme activated."); }
-  </script>
+  
   
   <style>
     /* Base Styles */
@@ -792,6 +449,12 @@
     <input type="email" id="loginEmail" placeholder="Email">
     <input type="password" id="loginPassword" placeholder="Password">
     <button id="loginBtn">Login</button>
+    <!-- right after <button id="loginBtn">Login</button> -->
+    <div id="verifyResend" style="display:none; margin-top:8px;">
+      Didn’t get it? 
+      <button id="resendBtn">Resend Verification Email</button>
+    </div>
+
   </div>
 
   <!-- Chat Container -->
@@ -815,6 +478,388 @@
     <button id="sendBtn" disabled>Send</button>
   </div>
 </body>
+<script type="module">
+  import { 
+ db, storage, auth, updateUserStatus, incrementSiteVisits, getSiteVisits,
+ signUp, logout, banUser, unbanUser  
+} from "./firebase.js";
+import {
+ collection, addDoc, serverTimestamp, query, orderBy, onSnapshot,
+ updateDoc, doc, increment, getDoc, getDocs, where, limit, deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import {
+ onAuthStateChanged,
+ signInWithEmailAndPassword,
+ signOut,
+ sendEmailVerification
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+
+
+// -------------------------------
+// Global Variables
+// -------------------------------
+let isAdmin = false;
+let bannedWords = [];
+let bannedAlertShown = false;
+let matrixInterval;
+
+// -------------------------------
+// DOM Elements
+// -------------------------------
+const chatMessages    = document.getElementById("chatMessages");
+const chatInput       = document.getElementById("chatInput");
+const sendBtn         = document.getElementById("sendBtn");
+const signupEmail     = document.getElementById("signupEmail");
+const signupPassword  = document.getElementById("signupPassword");
+const signupUsername  = document.getElementById("signupUsername");
+const signupBtn       = document.getElementById("signupBtn");
+const tosCheckbox     = document.getElementById("tosCheckbox");
+const loginEmail      = document.getElementById("loginEmail");
+const loginPassword   = document.getElementById("loginPassword");
+const loginBtn        = document.getElementById("loginBtn");
+const logoutBtn       = document.getElementById("logoutBtn");
+const settingsBtn     = document.getElementById("settingsBtn");
+const settingsPanel   = document.getElementById("settingsPanel");
+const themeRadios     = document.querySelectorAll('input[name="theme"]');
+
+// -------------------------------
+// Request Desktop Notification Permission
+// -------------------------------
+document.addEventListener("DOMContentLoaded", async () => {
+ if ("Notification" in window) {
+   await Notification.requestPermission();
+ }
+ // Existing init tasks
+ await incrementSiteVisits();
+ const visits = await getSiteVisits();
+ document.getElementById("visitsCount").textContent = visits;
+ updateRegisteredUsersCount();
+ loadTheme();
+});
+
+// TOS checkbox enables sign up
+signupBtn.disabled = true;
+tosCheckbox.addEventListener("change", () => {
+ signupBtn.disabled = !tosCheckbox.checked;
+});
+
+// -------------------------------
+// Matrix Effect
+// -------------------------------
+function startMatrixEffect() {
+ const chars = "01";
+ const canvas = document.createElement("div");
+ canvas.className = "matrix-canvas";
+ document.body.appendChild(canvas);
+ const fontSize = 14;
+ const columns = Math.floor(window.innerWidth / fontSize);
+ for (let i = 0; i < columns; i++) {
+   const column = document.createElement("div");
+   column.className = "matrix-column";
+   column.style.left = (i * fontSize) + "px";
+   column.style.setProperty('--duration', Math.random() * 5 + 3);
+   canvas.appendChild(column);
+   animateColumn(column);
+ }
+ matrixInterval = setInterval(() => {
+   document.querySelectorAll(".matrix-column").forEach(col => {
+     if (Math.random() > 0.9) animateColumn(col);
+   });
+ }, 100);
+}
+function animateColumn(column) {
+ const chars = "01";
+ const length = Math.floor(Math.random() * 15) + 5;
+ let html = "";
+ for (let i = 0; i < length; i++) {
+   const char = chars[Math.floor(Math.random() * chars.length)];
+   const opacity = (length - i) / length;
+   const delay = i * 100;
+   html += `<span style="animation-delay:${delay}ms;opacity:${opacity}">${char}</span>`;
+ }
+ column.innerHTML = html;
+}
+function stopMatrixEffect() {
+ clearInterval(matrixInterval);
+ const canvas = document.querySelector(".matrix-canvas");
+ if (canvas) canvas.remove();
+}
+
+// -------------------------------
+// Theme Management
+// -------------------------------
+function loadTheme() {
+ const theme = localStorage.getItem("theme") || "light";
+ document.body.className = theme + "-mode";
+ document.getElementById(theme + "ModeRadio").checked = true;
+ if (theme === "hacker") startMatrixEffect();
+}
+themeRadios.forEach(radio => {
+ radio.addEventListener("change", () => {
+   const theme = radio.value;
+   document.body.className = theme + "-mode";
+   localStorage.setItem("theme", theme);
+   stopMatrixEffect();
+   if (theme === "hacker") startMatrixEffect();
+ });
+});
+settingsBtn.addEventListener("click", () => {
+ settingsPanel.classList.toggle("open");
+});
+
+// -------------------------------
+// Banned Words Loader & Filtering
+// -------------------------------
+async function loadBannedWords() {
+ try {
+   const response = await fetch("banned_words.txt");
+   const text     = await response.text();
+   bannedWords     = text.split("\n").map(w => w.trim()).filter(w => w);
+ } catch (e) {
+   console.error("Failed to load banned words:", e);
+ }
+}
+async function filterMessage(msg) {
+if (!bannedWords.length) await loadBannedWords();  
+
+// use a for-of so you can await loadBannedWords once
+for (const word of bannedWords) {
+ // escape any special regex chars in word, then build your regex
+ const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+ const re      = new RegExp(`\\b${escaped}\\b`, 'gi');
+
+ msg = msg.replace(re, match => '*'.repeat(match.length));
+}
+
+return msg;
+}
+
+
+// -------------------------------
+// Authentication
+// -------------------------------
+signupBtn.addEventListener("click", async () => {
+ const email = signupEmail.value;
+ const pw    = signupPassword.value;
+ const user  = signupUsername.value;
+ if (!email||!pw||!user) { alert("Please fill out all sign up fields.");return; }
+ if (user.length>15){alert("Username max is 15 chars.");return;}
+ if (!bannedWords.length) await loadBannedWords();
+ for (const w of bannedWords) if (new RegExp(`\\b${w}\\b`,`i`).test(user)){
+   alert("Username contains banned language.");return;
+ }
+ const uq = query(collection(db,"users"),where("email","==",email),limit(1));
+ const us = await getDocs(uq);
+ if(!us.empty && us.docs[0].data().banned){alert("This email is banned.");return;}
+ signUp(email,pw,user);
+});
+
+loginBtn.addEventListener("click", async () => {
+const email = loginEmail.value.trim();
+const pw    = loginPassword.value.trim();
+if (!email || !pw) {
+ alert("Fill in both Email and Password");
+ return;
+}
+
+try {
+ // sign in once…
+ const { user } = await signInWithEmailAndPassword(auth, email, pw);
+ await user.reload();               // refresh emailVerified
+
+ if (!user.emailVerified) {
+   alert("Please verify your email first.");
+   await signOut(auth);
+   document.getElementById("verifyResend").style.display = "block";
+   return;
+ }
+
+ // banned-check and let onAuthStateChanged handle the rest
+ const ud = await getDoc(doc(db, "users", user.uid));
+ if (ud.exists() && ud.data().banned) {
+   alert("You are banned.");
+   await signOut(auth);
+ }
+} catch (e) {
+ alert("Login failed: " + e.message);
+}
+});
+
+logoutBtn.addEventListener("click",()=>logout());
+
+onAuthStateChanged(auth,async user=>{
+ if(user) {
+   logoutBtn.style.display="block";
+   chatInput.disabled=false; sendBtn.disabled=false;
+   updateUserStatus(true);
+   document.getElementById("authContainer").style.display="none";
+   const uref=doc(db,"users",user.uid);
+   onSnapshot(uref,docSnap=>{
+     if(docSnap.exists()&&docSnap.data().banned&&!bannedAlertShown){
+       alert("You are banned, logging out.");bannedAlertShown=true;logout();}
+   });
+   const ud=await getDoc(uref);
+   if(ud.exists()&&ud.data().banned&&!bannedAlertShown){alert("You are banned, logging out.");bannedAlertShown=true;logout();return;}
+   if(ud.exists()&&ud.data().isAdmin){isAdmin=true;document.getElementById("adminPanel").style.display="block";loadUsersForAdmin();}
+   else{isAdmin=false;document.getElementById("adminPanel").style.display="none";}
+ } else {
+   logoutBtn.style.display="none";
+   chatInput.disabled=true; sendBtn.disabled=true;
+   updateUserStatus(false);
+   document.getElementById("authContainer").style.display="block";
+   document.getElementById("adminPanel").style.display="none";
+ }
+});
+
+// -------------------------------
+// Chat Functionality + Notifications
+// -------------------------------
+const q = query(
+ collection(db, "chatrooms", "general", "messages"),
+ orderBy("timestamp", "desc"),
+ limit(100)
+);
+
+onSnapshot(q, async snapshot => {
+ // Desktop notification for newest message
+ const latest = snapshot.docs[0];
+ if (document.hidden && Notification.permission === "granted" /*…*/ ) {
+ const m    = latest.data();
+ const u    = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
+ const text = m.text || "[image]";
+ // run your censor
+ const safe = m.text ? await filterMessage(text) : text;
+ new Notification(u, { body: safe });
+ }
+
+
+ // Rebuild chat UI
+ await loadBannedWords();
+ const html = await Promise.all(snapshot.docs.map(async d => {
+   const m = d.data();
+   const ts = m.timestamp?.toDate()||new Date();
+   const tstr = ts.toLocaleString("en-US",{
+     year:"numeric",month:"short",day:"numeric",
+     hour:"numeric",minute:"numeric",second:"numeric",hour12:true
+   });
+   const txt = m.text? await filterMessage(m.text):"";
+   let usr="Unknown User";
+   if(m.senderId){const ud=await getDoc(doc(db,"users",m.senderId));if(ud.exists())usr=ud.data().username;}
+   const del = isAdmin
+     ? `<button class="delete-btn" onclick="deleteMessage('${d.id}')">Delete</button>`
+     : "";
+   return `
+     <div class="message">
+       <div class="message-content">
+         <span class="author">${usr}:</span>
+         ${txt?`<span class="text">${txt}</span>`:""}
+         ${m.image?`<img src="${m.image}" alt="Uploaded image">`:""}
+       </div>
+       <div class="message-actions">
+         <span class="timestamp">${tstr}</span>
+         ${del}
+       </div>
+     </div>`;
+ }));
+ chatMessages.innerHTML = html.join('');
+ chatMessages.scrollTop = 0;
+});
+
+window.deleteMessage = async id => {
+ if(!isAdmin){alert("Not authorized to delete.");return;}
+ try{ await deleteDoc(doc(db,"chatrooms/general/messages",id)); }
+ catch(e){console.error(e);alert("Delete failed.");}
+};
+
+// Send Button & Special Commands
+sendBtn.addEventListener("click", async () => {
+ if(!auth.currentUser){alert("Log in to chat.");return;}
+ const text = chatInput.value.trim();
+ // Special redirects
+ const cmds = { xanlack:"truth.html", death:null, encode:"encode.html",
+                endtimes:"end.html", html:"test.html",
+                wishlist:"wishlist.html", stats:"stats.html",
+                kills:"torture1.html", musak:"secret.html" };
+ const cmd = text.toLowerCase();
+ if(cmds.hasOwnProperty(cmd)){
+   if(cmds[cmd]) window.location.href = cmds[cmd];
+   else applyDeathTheme();
+   chatInput.value=""; return;
+ }
+ if(text){
+   const ud = await getDoc(doc(db,"users",auth.currentUser.uid));
+   const name = ud.exists()?ud.data().username:"Unknown User";
+   await addDoc(collection(db,"chatrooms/general/messages"),{
+     senderId:auth.currentUser.uid,
+     nickname:name,
+     text:text,
+     timestamp:serverTimestamp(),
+     likes:0
+   });
+   chatInput.value="";chatInput.focus();
+ }
+});
+chatInput.addEventListener("keypress",e=>{
+ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendBtn.click();}
+});
+
+// -------------------------------
+// Admin Panel Functions
+// -------------------------------
+async function loadUsersForAdmin() {
+ try {
+   const us = await getDocs(collection(db, "users"));
+   const list = document.getElementById("adminUserList");
+   list.innerHTML = "";
+   us.forEach(u => {
+     const d = u.data(); if(d.isAdmin) return;
+     const item = document.createElement("div");
+     const btn  = document.createElement("button");
+     if(d.banned){ btn.textContent = "Unban"; btn.onclick = () => unbanUserFromUI(u.id); }
+     else       { btn.textContent = "Ban";   btn.onclick = () => banUserFromUI(u.id); }
+     item.innerHTML = `<span>${d.username} (${d.email})</span>`;
+     item.appendChild(btn);
+     list.appendChild(item);
+   });
+ } catch (e) { console.error(e); }
+}
+window.banUserFromUI = async id => {
+ if(confirm("Ban this user?")){ try{ await banUser(id); alert("Banned."); loadUsersForAdmin(); }catch(e){alert("Failed to ban.");} }
+};
+window.unbanUserFromUI = async id => {
+ if(confirm("Unban this user?")){ try{ await unbanUser(id); alert("Unbanned."); loadUsersForAdmin(); }catch(e){alert("Failed to unban.");} }
+};
+
+// -------------------------------
+// Utilities
+// -------------------------------
+async function updateRegisteredUsersCount() {
+ try {
+   const us = await getDocs(collection(db, "users"));
+   document.getElementById("userCount").textContent = us.size;
+ } catch (e) {
+   console.error(e);
+ }
+}
+window.addEventListener("beforeunload", () => updateUserStatus(false));
+function applyDeathTheme() { document.body.classList.add("death-theme"); console.log("Death theme activated."); }
+
+document.addEventListener("DOMContentLoaded", () => {
+document.getElementById("resendBtn").addEventListener("click", async () => {
+ const user = auth.currentUser;
+ if (user && !user.emailVerified) {
+   try {
+     await sendEmailVerification(user);
+     alert("Verification email sent again. Check spam.");
+   } catch (err) {
+     alert("Error: " + err.message);
+   }
+ }
+});
+});
+
+</script>
 </html>
 <!--journal entry #1, 4/25/2025. YW9sIHpwYWwgcHoga3ZkdSwgZG9wam8gcHogemhrLiBQIGpodWEgemF2dyBhb3B1cnB1biBoaXZiYSBhb3B6IGtodHUgbnB5
 cywgem9sIHB6IG15dnQgb3ZqcmxmIGh1ayBwIGFvcHVyIChvdndsbWJzc2YpIGRsIGl2YW8gc3BybCBsaGpvdmFvbHkgaWxqaGJ6bCBwIHlsaHNzZiB5bGhzc2Ygc3Byb

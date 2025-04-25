@@ -18,7 +18,8 @@ import {
   getAuth, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signOut 
+  signOut,
+  sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // Firebase Configuration
@@ -48,12 +49,12 @@ function updateUserStatus(isOnline) {
   if (isOnline) {
     set(userStatusRef, true)
       .then(() => console.log(`${userKey} is online (RTDB).`))
-      .catch((err) => console.error("Error updating online status:", err));
+      .catch(err => console.error("Error updating online status:", err));
     onDisconnect(userStatusRef).remove();
   } else {
     set(userStatusRef, false)
       .then(() => console.log(`${userKey} is offline (RTDB).`))
-      .catch((err) => console.error("Error updating online status:", err));
+      .catch(err => console.error("Error updating online status:", err));
   }
 }
 
@@ -67,7 +68,7 @@ async function incrementSiteVisits() {
     await updateDoc(siteStatsRef, { visits: increment(1) });
     console.log("Site visits incremented by 1.");
   } catch (err) {
-    console.warn("Could not update siteStats doc. It might not exist. Creating it...", err);
+    console.warn("Could not update siteStats doc. Creating it...", err);
     try {
       await setDoc(siteStatsRef, { visits: 1 });
       console.log("SiteStats document created with visits = 1.");
@@ -81,11 +82,8 @@ async function getSiteVisits() {
   try {
     const docSnap = await getDoc(siteStatsRef);
     if (docSnap.exists()) {
-      const visits = docSnap.data().visits || 0;
-      console.log("Retrieved site visits:", visits);
-      return visits;
+      return docSnap.data().visits || 0;
     }
-    console.warn("SiteStats document does not exist.");
     return 0;
   } catch (error) {
     console.error("Error getting siteStats document:", error);
@@ -94,35 +92,38 @@ async function getSiteVisits() {
 }
 
 // -------------------------------
-// Authentication Functions with Admin Check
+// Authentication Functions + Email Verification
 // -------------------------------
 async function signUp(email, password, username) {
   try {
     const normalizedUsername = username.toLowerCase();
+    // check username uniqueness
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("username", "==", normalizedUsername));
     const querySnapshot = await getDocs(q);
-
     if (!querySnapshot.empty) {
       alert("Username is already taken. Please choose another one.");
       return;
     }
 
+    // create account
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
+    // send verification email
+    await sendEmailVerification(user);
+    alert("✔️ Account created! A verification email has been sent. Check your inbox.");
+
+    // store profile (unverified until they click the link)
     const isAdmin = (email === "metallicfarts867@gmail.com" && normalizedUsername === "muzdog");
     await setDoc(doc(db, "users", user.uid), {
       username: normalizedUsername,
-      email: email,
-      isAdmin: isAdmin,
+      email,
+      isAdmin,
       banned: false
     });
-
-    console.log("User created:", user);
-    alert("Account created successfully!");
   } catch (error) {
-    console.error("Signup Error:", error.message);
+    console.error("Signup Error:", error);
     alert(error.message);
   }
 }
@@ -131,10 +132,15 @@ async function login(email, password) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    console.log("User logged in:", user);
+    await user.reload(); // refresh emailVerified
+    if (!user.emailVerified) {
+      await signOut(auth);
+      alert("🚫 Please verify your email before logging in.");
+      return;
+    }
     alert("Login successful!");
   } catch (error) {
-    console.error("Login Error:", error.message);
+    console.error("Login Error:", error);
     alert(error.message);
   }
 }
@@ -145,46 +151,42 @@ async function logout() {
     console.log("User logged out.");
     alert("You have been logged out.");
   } catch (error) {
-    console.error("Logout Error:", error.message);
+    console.error("Logout Error:", error);
     alert(error.message);
   }
 }
 
 async function banUser(userId) {
   try {
-    await updateDoc(doc(db, "users", userId), {
-      banned: true
-    });
+    await updateDoc(doc(db, "users", userId), { banned: true });
     alert("User banned successfully.");
   } catch (error) {
-    console.error("Error banning user:", error.message);
+    console.error("Error banning user:", error);
     alert("Failed to ban user.");
   }
 }
 
-// Added missing unbanUser export
 async function unbanUser(userId) {
   try {
-    await updateDoc(doc(db, "users", userId), {
-      banned: false
-    });
+    await updateDoc(doc(db, "users", userId), { banned: false });
     alert("User unbanned successfully.");
   } catch (error) {
-    console.error("Error unbanning user:", error.message);
+    console.error("Error unbanning user:", error);
     alert("Failed to unban user.");
   }
 }
 
-export { 
-  db, 
-  storage, 
-  auth, 
-  updateUserStatus, 
-  incrementSiteVisits, 
-  getSiteVisits, 
-  signUp, 
-  login, 
+export {
+  db,
+  storage,
+  auth,
+  rtdb,
+  updateUserStatus,
+  incrementSiteVisits,
+  getSiteVisits,
+  signUp,
+  login,
   logout,
   banUser,
-  unbanUser // Now properly exported
+  unbanUser
 };
