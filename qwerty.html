@@ -6,8 +6,9 @@
 </head>
 <body>
   <form onsubmit="checkPswd();return false">
-    <label for="pswd">Enter the house password: </label>
+    <label for="pswd">Enter the house password:</label>
     <input type="password" id="pswd">
+    <span id="timer" style="color:red; margin-left:10px;">10s</span>
     <input type="submit" value="Submit">
   </form>
   <div id="journal" style="display:none;">
@@ -41,17 +42,18 @@
   
   </div>
   <script>
-    var h="e49e4ac4d1c08d27d52655459ef1a01ba20c5e4039cb05348b5b640940f936b2";
-    var t=setTimeout(function(){window.location="index.html"},10000);
+    var h="e49e4ac4d1c08d27d52655459ef1a01ba20c5e4039cb05348b5b640940f936b2",r=10;
+    var countdown=setInterval(function(){
+      document.getElementById('timer').textContent=(r--)+'s';
+      if(r<0)clearInterval(countdown),window.location="index.html";
+    },1000);
     function checkPswd(){
-      clearTimeout(t);
+      clearInterval(countdown);
       var p=document.getElementById("pswd").value;
       if(CryptoJS.SHA256(p).toString()===h){
         document.querySelector('form').style.display='none';
         document.getElementById('journal').style.display='block';
-      } else {
-        alert("simply ask me for the password");
-      }
+      } else alert("simply ask me for the password");
     }
   </script>
 </body>
