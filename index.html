@@ -17,17 +17,13 @@
     signInWithEmailAndPassword
   } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-  // -------------------------------
-  // Global Variables
-  // -------------------------------
+  // global variables
   let isAdmin = false;
   let bannedWords = [];
   let bannedAlertShown = false;
   let matrixInterval;
 
-  // -------------------------------
-  // DOM Elements
-  // -------------------------------
+  // dom
   const chatMessages    = document.getElementById("chatMessages");
   const chatInput       = document.getElementById("chatInput");
   const sendBtn         = document.getElementById("sendBtn");
@@ -44,14 +40,12 @@
   const settingsPanel   = document.getElementById("settingsPanel");
   const themeRadios     = document.querySelectorAll('input[name="theme"]');
 
-  // -------------------------------
-  // Request Desktop Notification Permission
-  // -------------------------------
+  // ask for noti perms
   document.addEventListener("DOMContentLoaded", async () => {
     if ("Notification" in window) {
       await Notification.requestPermission();
     }
-    // Existing init tasks
+    // init
     await incrementSiteVisits();
     const visits = await getSiteVisits();
     document.getElementById("visitsCount").textContent = visits;
@@ -59,15 +53,14 @@
     loadTheme();
   });
 
-  // TOS checkbox enables sign up
+  // tos box
   signupBtn.disabled = true;
   tosCheckbox.addEventListener("change", () => {
     signupBtn.disabled = !tosCheckbox.checked;
   });
 
-  // -------------------------------
-  // Matrix Effect
-  // -------------------------------
+
+  // ones and zeros have sex on my screen
   function startMatrixEffect() {
     const chars = "01";
     const canvas = document.createElement("div");
@@ -107,9 +100,7 @@
     if (canvas) canvas.remove();
   }
 
-  // -------------------------------
-  // Theme Management
-  // -------------------------------
+  // theme toucher
   function loadTheme() {
     const theme = localStorage.getItem("theme") || "light";
     document.body.className = theme + "-mode";
@@ -129,9 +120,7 @@
     settingsPanel.classList.toggle("open");
   });
 
-  // -------------------------------
-  // Banned Words Loader & Filtering
-  // -------------------------------
+  // banned word loader
   async function loadBannedWords() {
     try {
       const response = await fetch("banned_words.txt");
@@ -144,9 +133,8 @@
   async function filterMessage(msg) {
   if (!bannedWords.length) await loadBannedWords();  
 
-  // use a for-of so you can await loadBannedWords once
   for (const word of bannedWords) {
-    // escape any special regex chars in word, then build your regex
+    // escape fuckass special characters
     const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const re      = new RegExp(`\\b${escaped}\\b`, 'gi');
 
@@ -157,9 +145,7 @@
 }
 
 
-  // -------------------------------
-  // Authentication
-  // -------------------------------
+  // auth
   signupBtn.addEventListener("click", async () => {
     const email = signupEmail.value;
     const pw    = signupPassword.value;
@@ -214,9 +200,7 @@
     }
   });
 
-  // -------------------------------
-  // Chat Functionality + Notifications
-  // -------------------------------
+  // chat functionality
   const q = query(
     collection(db, "chatrooms", "general", "messages"),
     orderBy("timestamp", "desc"),
@@ -224,19 +208,19 @@
   );
 
   onSnapshot(q, async snapshot => {
-    // Desktop notification for newest message
+    // desktop notificatiom
     const latest = snapshot.docs[0];
     if (document.hidden && Notification.permission === "granted" /*…*/ ) {
     const m    = latest.data();
     const u    = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
     const text = m.text || "[image]";
-    // run your censor
+    // run censor
     const safe = m.text ? await filterMessage(text) : text;
     new Notification(u, { body: safe });
     }
 
 
-    // Rebuild chat UI
+    // rebuild chat ui
     await loadBannedWords();
     const html = await Promise.all(snapshot.docs.map(async d => {
       const m = d.data();
@@ -274,11 +258,11 @@
     catch(e){console.error(e);alert("Delete failed.");}
   };
 
-  // Send Button & Special Commands
+  // send buttons 
   sendBtn.addEventListener("click", async () => {
     if(!auth.currentUser){alert("Log in to chat.");return;}
     const text = chatInput.value.trim();
-    // Special redirects
+    // redirects
     const cmds = { xanlack:"truth.html", death:null, encode:"encode.html",
                    endtimes:"end.html", html:"test.html",
                    wishlist:"wishlist.html", stats:"stats.html",
@@ -306,9 +290,7 @@
     if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendBtn.click();}
   });
 
-  // -------------------------------
-  // Admin Panel Functions
-  // -------------------------------
+  // admin panel
   async function loadUsersForAdmin() {
     try {
       const us = await getDocs(collection(db, "users"));
@@ -333,9 +315,7 @@
     if(confirm("Unban this user?")){ try{ await unbanUser(id); alert("Unbanned."); loadUsersForAdmin(); }catch(e){alert("Failed to unban.");} }
   };
 
-  // -------------------------------
-  // Utilities
-  // -------------------------------
+  // penis 
   async function updateRegisteredUsersCount() {
     try {
       const us = await getDocs(collection(db, "users"));
@@ -349,7 +329,7 @@
   </script>
   
   <style>
-    /* Base Styles */
+    /* white theme */
     * {
       margin: 0;
       padding: 0;
@@ -577,7 +557,7 @@
       font-size: 12px;
     }
 
-    /* Matrix Effect */
+    /* sex */
     .matrix-canvas {
       position: fixed;
       top: 0;
@@ -607,7 +587,7 @@
       100% { transform: translateY(calc(100vh + 100px)); }
     }
 
-    /* Dark Mode Specific Styles */
+    /* dark mode */
     body.dark-mode {
       background: #222 !important;
       color: #fff !important;
@@ -658,7 +638,7 @@
       color: #bbb !important;
     }
 
-    /* Hacker Mode Specific Styles */
+    /* haking */
     body.hacker-mode {
       background: #000 !important;
       color: #0f0 !important;
@@ -708,7 +688,7 @@
       border-color: #0f0 !important;
     }
 
-    /* Death Theme */
+    /* death theme */
     body.death-theme {
       background: #000;
       color: #FF0000;
@@ -760,7 +740,7 @@
     </div>
   </header>
 
-  <!-- Settings Panel -->
+  <!-- modes -->
   <div id="settingsPanel">
     <h3>Settings</h3>
     <label>
@@ -774,7 +754,7 @@
     </label>
   </div>
 
-  <!-- Authentication Section -->
+  <!-- auth + sign ups -->
   <div class="auth-container" id="authContainer">
     <h2>Sign Up</h2>
     <input type="email" id="signupEmail" placeholder="Email">
@@ -794,11 +774,11 @@
     <button id="loginBtn">Login</button>
   </div>
 
-  <!-- Chat Container -->
+  <!-- container -->
   <div class="container">
     <div class="chat-column">
       <div class="chat-header">
-        <span class="chat-title">Live Chat [MUZDOG CHATS BACK!!!]</span>
+        <span class="chat-title">Live Chat</span>
         <span class="visits">Total Visits: <span id="visitsCount">0</span></span>
       </div>
       <div id="adminPanel">
@@ -809,7 +789,7 @@
     </div>
   </div>
 
-  <!-- Chat Input Area -->
+  <!-- cjat input -->
   <div class="chat-input-area">
     <input type="text" id="chatInput" placeholder="Type your thoughts." disabled>
     <button id="sendBtn" disabled>Send</button>
