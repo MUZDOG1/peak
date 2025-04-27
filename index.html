@@ -615,20 +615,48 @@
 
  // auth
  signupBtn.addEventListener("click", async () => {
-   const email = signupEmail.value;
-   const pw    = signupPassword.value;
-   const user  = signupUsername.value;
-   if (!email||!pw||!user) { alert("Please fill out all sign up fields.");return; }
-   if (user.length>15){alert("Username max is 15 chars.");return;}
-   if (!bannedWords.length) await loadBannedWords();
-   for (const w of bannedWords) if (new RegExp(`\\b${w}\\b`,`i`).test(user)){
-     alert("Username contains banned language.");return;
-   }
-   const uq = query(collection(db,"users"),where("email","==",email),limit(1));
-   const us = await getDocs(uq);
-   if(!us.empty && us.docs[0].data().banned){alert("This email is banned.");return;}
-   signUp(email,pw,user);
- });
+  // 1) Enforce TOS agreement
+  if (!tosCheckbox.checked) {
+    alert("Please agree to the Terms of Service before signing up.");
+    return;
+  }
+
+  // 2) Gather and validate inputs
+  const email = signupEmail.value.trim();
+  const pw    = signupPassword.value;
+  const user  = signupUsername.value.trim();
+  if (!email || !pw || !user) {
+    alert("Please fill out all sign up fields.");
+    return;
+  }
+  if (user.length > 15) {
+    alert("Username max is 15 chars.");
+    return;
+  }
+
+  // 3) Load banned words if needed and check username
+  if (!bannedWords.length) await loadBannedWords();
+  for (const w of bannedWords) {
+    const esc = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re  = new RegExp(`\\b${esc}\\b`, "i");
+    if (re.test(user)) {
+      alert("Username contains banned language.");
+      return;
+    }
+  }
+
+  // 4) Check if email is banned
+  const uq = query(collection(db, "users"), where("email", "==", email), limit(1));
+  const us = await getDocs(uq);
+  if (!us.empty && us.docs[0].data().banned) {
+    alert("This email is banned.");
+    return;
+  }
+
+  // 5) All clear → sign up
+  signUp(email, pw, user);
+});
+
 
  loginBtn.addEventListener("click",async()=>{
    const email=loginEmail.value,pw=loginPassword.value;
