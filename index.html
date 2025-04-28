@@ -611,6 +611,23 @@
 
  return msg;
 }
+// emoji lookup table
+const emojiMap = {
+  laugh:    "😂",
+  smile:    "😄",
+  thumbsup: "👍",
+  heart:    "💔",
+  rose:     "🥀",
+  // …add more codes here…
+};
+
+// helper to swap :code: → actual emoji
+function replaceEmojis(str) {
+  return str.replace(/:([a-z0-9_]+):/gi, (_, code) =>
+    emojiMap[code.toLowerCase()] || `:${code}:`
+  );
+}
+
 
 
  // auth
@@ -711,7 +728,8 @@
    const u    = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
    const text = m.text || "[image]";
    // run censor
-   const safe = m.text ? await filterMessage(text) : text;
+   let txt = m.text ? await filterMessage(m.text) : "";
+   txt     = replaceEmojis(txt);
    new Notification(u, { body: safe });
    }
 
