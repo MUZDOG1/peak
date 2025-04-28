@@ -595,7 +595,7 @@
      const text     = await response.text();
      bannedWords     = text.split("\n").map(w => w.trim()).filter(w => w);
    } catch (e) {
-     console.error("Failed to load banned words:", e);
+     console.error("Failed to load banned words(BAD!!! FIX NOW!):", e);
    }
  }
  async function filterMessage(msg) {
@@ -637,7 +637,7 @@ function replaceEmojis(str) {
  signupBtn.addEventListener("click", async () => {
   // 1) Enforce TOS agreement
   if (!tosCheckbox.checked) {
-    alert("Please agree to the Terms of Service before signing up.");
+    alert("Please agree to the TOS before signing up.");
     return;
   }
 
@@ -646,7 +646,7 @@ function replaceEmojis(str) {
   const pw    = signupPassword.value;
   const user  = signupUsername.value.trim();
   if (!email || !pw || !user) {
-    alert("Please fill out all sign up fields.");
+    alert("Please fill out all fields.");
     return;
   }
   if (user.length > 15) {
@@ -680,7 +680,7 @@ function replaceEmojis(str) {
 
  loginBtn.addEventListener("click",async()=>{
    const email=loginEmail.value,pw=loginPassword.value;
-   if(!email||!pw){alert("Please fill out login fields.");return;}
+   if(!email||!pw){alert("Please fill out all fields.");return;}
    try{
      const cred=await signInWithEmailAndPassword(auth,email,pw);
      const ud=await getDoc(doc(db,"users",cred.user.uid));
