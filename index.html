@@ -730,7 +730,7 @@ function replaceEmojis(str) {
    // run censor
    let txt = m.text ? await filterMessage(m.text) : "";
    txt     = replaceEmojis(txt);
-   new Notification(u, { body: safe });
+   new Notification(u, { body });
    }
 
 
