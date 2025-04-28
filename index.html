@@ -744,7 +744,9 @@ function replaceEmojis(str) {
        year:"numeric",month:"short",day:"numeric",
        hour:"numeric",minute:"numeric",second:"numeric",hour12:true
      });
-     const txt = m.text? await filterMessage(m.text):"";
+     let txt = m.text ? await filterMessage(m.text) : "";
+     txt     = replaceEmojis(txt);
+
      let usr="Unknown User";
      if(m.senderId){const ud=await getDoc(doc(db,"users",m.senderId));if(ud.exists())usr=ud.data().username;}
      const del = isAdmin
