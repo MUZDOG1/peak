@@ -726,11 +726,12 @@ function replaceEmojis(str) {
    if (document.hidden && Notification.permission === "granted" /*…*/ ) {
    const m    = latest.data();
    const u    = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
-   const text = m.text || "[image]";
-   // run censor
-   let txt = m.text ? await filterMessage(m.text) : "";
-   txt     = replaceEmojis(txt);
+   // build notification body: censor + emojis
+   const raw     = m.text || "[image]";
+   const filtered= m.text ? await filterMessage(raw) : raw;
+   const body    = replaceEmojis(filtered);
    new Notification(u, { body });
+
    }
 
 
