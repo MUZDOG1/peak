@@ -403,7 +403,7 @@
     <div class="logo">
       Muzdog Chat 
       <span class="subtitle">
-        - <span id="userCount">0</span> users and counting!
+        - <span id="userCount">?</span> users and counting!
         <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
         <a href="log.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Update Log</a>
         <a href="words.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Hidden Codes</a>
@@ -455,7 +455,7 @@
   <div class="container">
     <div class="chat-column">
       <div class="chat-header">
-        <span class="chat-title">Live Chat [1000 VISITS!!!]</span>
+        <span class="chat-title">Live Chat [1000 VISITS!!! Celebrate <a href="1000visits.html">here</a>]</span>
         <span class="visits">Total Visits: <span id="visitsCount">0</span></span>
       </div>
       <div id="adminPanel">
@@ -611,7 +611,7 @@
 
  return msg;
 }
-// emoji lookup table
+// emojis
 const emojiMap = {
   laugh:    "😂",
   happy:    "😄",
@@ -619,10 +619,10 @@ const emojiMap = {
   heart:    "💔",
   rose:     "🥀",
   sad:      "😭",
-  // …add more codes here…
+  // TODO: add more codes
 };
 
-// helper to swap :code: → actual emoji
+// swapper
 function replaceEmojis(str) {
   return str.replace(/:([a-z0-9_]+):/gi, (_, code) =>
     emojiMap[code.toLowerCase()] || `:${code}:`
