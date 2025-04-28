@@ -660,7 +660,7 @@ function replaceEmojis(str) {
     const esc = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const re  = new RegExp(`\\b${esc}\\b`, "i");
     if (re.test(user)) {
-      alert("Username contains banned language.");
+      alert("Username contains naughty language.");
       return;
     }
   }
