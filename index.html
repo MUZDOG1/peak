@@ -603,12 +603,8 @@
 
  for (const word of bannedWords) {
    // escape fuckass special characters
-     const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-     const pattern = escaped.split('')
-                       .map(ch => ch + '\\s*')
-                       .join('');
-     const re = new RegExp(pattern, 'gi');
-
+   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+   const re      = new RegExp(`\\b${escaped}\\b`, 'gi');
 
    msg = msg.replace(re, match => '*'.repeat(match.length));
  }
