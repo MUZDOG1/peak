@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Banned Word Tester</title>
+  <title>muzdog chat banned word tester</title>
   <style>
     body { font-family: sans-serif; padding: 2em; }
     #out { margin-top: 1em; }
@@ -14,25 +14,20 @@
 <body>
 
   <h1>Test Banned Words</h1>
-  <a href="index.html">← Back to chat</a>
+  <a href="index.html">back to chat</a>
 
   <div style="margin-top:1em;">
-    <input id="word" placeholder="Enter word" autofocus>
-    <button id="go">Check</button>
+    <input id="word" placeholder="enter word" autofocus>
+    <button id="go">check</button>
   </div>
 
   <div id="out"></div>
 
   <script>
-    // ─────────────────────────────────────────────────────────
-    // 1) Paste your Discord webhook URL here:
     const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1367058175005556747/I6hsebPu_DZ6pdsQ8KNiJpR-Ut3yAq03B29WHSi3qXKI6sW7h17n-3TnjfHAWa1e7L6x';
-    // ─────────────────────────────────────────────────────────
-
     const outEl = document.getElementById('out');
     let banned = [];
 
-    // Load banned list
     fetch('banned_words.txt')
       .then(r => r.ok ? r.text() : Promise.reject(`Load ${r.status}`))
       .then(txt => {
@@ -59,7 +54,6 @@
         return;
       }
 
-      // Show allowed + report button
       const msg = document.createElement('span');
       msg.textContent = `"${w}" is allowed `;
       const btn = document.createElement('button');
