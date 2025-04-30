@@ -5494,6 +5494,15 @@ d y k e
 c o c k
 f 0ck
 f0c k
+f1ck
+f2ck
+f3ck 
+f4ck 
+f5ck 
+f6ck 
+f7ck 
+f8ck 
+f9ck 
 
 
 

@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>test out banned words here</h1>
-  <a href="index.html">click me to go back to chat</a>
+  <a href="index.html">← back to chat</a>
   <input id="word" placeholder="Enter word">
   <button id="go">check</button>
   <div id="out"></div>
@@ -16,19 +16,51 @@
     fetch('banned_words.txt')
       .then(r => r.ok ? r.text() : Promise.reject(r.status))
       .then(txt => {
-        banned = txt.split(/\r?\n/).map(w=>w.trim().toLowerCase()).filter(Boolean);
-        console.log('Loaded', banned.length, 'terms');
+        banned = txt
+          .split(/\r?\n/)
+          .map(w => w.trim().toLowerCase())
+          .filter(Boolean);
       })
       .catch(err => {
-        console.error('Load failed:', err);
         document.getElementById('out').textContent = 'Error loading list';
+        console.error(err);
       });
 
     document.getElementById('go').onclick = () => {
       const w = document.getElementById('word').value.trim().toLowerCase();
       if (!w) return;
-      document.getElementById('out').textContent = 
-        banned.includes(w) ? `"${w}" is BANNED` : `"${w}" is allowed`;
+
+      const out = document.getElementById('out');
+      out.innerHTML = '';               // clear old
+      if (banned.includes(w)) {
+        out.textContent = `"${w}" is BANNED`;
+      } else {
+        // show “allowed” + a report button
+        const span = document.createElement('span');
+        span.textContent = `"${w}" is allowed `;
+        const btn = document.createElement('button');
+        btn.textContent = 'report';
+        btn.onclick = () => {
+          btn.disabled = true;
+          btn.textContent = 'reporting…';
+          // send POST to PHP
+          fetch('report.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'word=' + encodeURIComponent(w)
+          })
+          .then(r => r.ok ? r.text() : Promise.reject(r.status))
+          .then(msg => {
+            btn.textContent = 'reported ✓';
+          })
+          .catch(() => {
+            btn.textContent = 'error!';
+            btn.disabled = false;
+          });
+        };
+        out.appendChild(span);
+        out.appendChild(btn);
+      }
     };
   </script>
 </body>
