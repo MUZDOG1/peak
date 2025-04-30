@@ -64,22 +64,22 @@
 
       btn.addEventListener('click', async () => {
         btn.disabled = true;
-        btn.textContent = 'Reporting…';
+        btn.textContent = 'reporting...';
 
         try {
           const resp = await fetch(DISCORD_WEBHOOK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: `📝 Reported word: **${w}**` })
+            body: JSON.stringify({ content: `reported word: **${w}**` })
           });
           if (!resp.ok) throw new Error(`Status ${resp.status}`);
 
           outEl.className = 'success';
-          outEl.textContent = `"${w}" reported to Discord.`;
+          outEl.textContent = `"${w}" reported to discord.`;
         } catch (err) {
           console.error('Discord webhook error:', err);
           outEl.className = 'error';
-          outEl.textContent = 'Error reporting to Discord.';
+          outEl.textContent = 'error reporting to discord.';
           btn.disabled = false;
           btn.textContent = 'Report';
         }
