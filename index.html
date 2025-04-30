@@ -491,6 +491,10 @@
  let bannedWords = [];
  let bannedAlertShown = false;
  let matrixInterval;
+ // throttle: only allow one send per 5 seconds
+ let lastSendTime = 0;
+ const SEND_COOLDOWN = 5000; // ms
+
 
  // dom
  const chatMessages    = document.getElementById("chatMessages");
@@ -782,6 +786,14 @@ function replaceEmojis(str) {
 
  // send buttons 
  sendBtn.addEventListener("click", async () => {
+  const now = Date.now();
+  if (now - lastSendTime < SEND_COOLDOWN) {
+  const wait = Math.ceil((SEND_COOLDOWN - (now - lastSendTime)) / 1000);
+  alert(`Please wait ${wait} more second${wait > 1 ? 's' : ''} before sending again.`);
+  return;
+  }
+  lastSendTime = now;
+
    if(!auth.currentUser){alert("Log in to chat.");return;}
    const text = chatInput.value.trim();
    // redirects
