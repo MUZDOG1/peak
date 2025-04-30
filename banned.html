@@ -3,18 +3,34 @@
 <head>
   <meta charset="utf-8">
   <title>banned word tester</title>
+  <style>
+    #out { margin-top: 1em; }
+    #out.error { color: red; }
+    #out.success { color: green; }
+  </style>
 </head>
 <body>
-  <h1>test out banned words here</h1>
-  <a href="index.html">← back to chat</a>
+  <h1>Test out banned words here</h1>
+  <a href="index.html">← back to chat</a><br><br>
+
   <input id="word" placeholder="Enter word">
-  <button id="go">check</button>
+  <button id="go">Check</button>
+
   <div id="out"></div>
 
+  <!-- Fallback form in case JS/AJAX fails/unavailable -->
+  <form id="reportForm" action="report.php" method="post" style="display:none;">
+    <input type="hidden" name="word" id="hiddenWord">
+    <button type="submit">Report via form</button>
+  </form>
+
   <script>
+    const out = document.getElementById('out');
+
+    // Load banned list
     let banned = [];
     fetch('banned_words.txt')
-      .then(r => r.ok ? r.text() : Promise.reject(r.status))
+      .then(r => r.ok ? r.text() : Promise.reject(`HTTP ${r.status}`))
       .then(txt => {
         banned = txt
           .split(/\r?\n/)
@@ -22,46 +38,69 @@
           .filter(Boolean);
       })
       .catch(err => {
-        document.getElementById('out').textContent = 'Error loading list';
+        out.className = 'error';
+        out.textContent = 'Error loading banned list: ' + err;
         console.error(err);
       });
 
-    document.getElementById('go').onclick = () => {
+    document.getElementById('go').addEventListener('click', () => {
       const w = document.getElementById('word').value.trim().toLowerCase();
+      out.className = '';
+      out.textContent = '';
       if (!w) return;
 
-      const out = document.getElementById('out');
-      out.innerHTML = '';               // clear old
       if (banned.includes(w)) {
+        out.className = 'error';
         out.textContent = `"${w}" is BANNED`;
-      } else {
-        // show “allowed” + a report button
-        const span = document.createElement('span');
-        span.textContent = `"${w}" is allowed `;
-        const btn = document.createElement('button');
-        btn.textContent = 'report';
-        btn.onclick = () => {
-          btn.disabled = true;
-          btn.textContent = 'reporting…';
-          // send POST to PHP
-          fetch('report.php', {
+        return;
+      }
+
+      // Show allowed + report button
+      const span = document.createElement('span');
+      span.textContent = `"${w}" is allowed   `;
+      const btn = document.createElement('button');
+      btn.textContent = 'Report';
+      btn.type = 'button';
+      out.className = '';
+      out.appendChild(span);
+      out.appendChild(btn);
+
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Reporting…';
+        out.className = '';
+
+        try {
+          // Make sure the path matches where report.php actually lives!
+          const response = await fetch('report.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'word=' + encodeURIComponent(w)
-          })
-          .then(r => r.ok ? r.text() : Promise.reject(r.status))
-          .then(msg => {
-            btn.textContent = 'reported ✓';
-          })
-          .catch(() => {
-            btn.textContent = 'error!';
-            btn.disabled = false;
           });
-        };
-        out.appendChild(span);
-        out.appendChild(btn);
-      }
-    };
+          const text = await response.text();
+          console.log('report.php response:', response.status, text);
+
+          if (!response.ok) {
+            throw new Error(`Status ${response.status}: ${text}`);
+          }
+
+          out.className = 'success';
+          out.textContent = `"${w}" reported successfully.`;
+          btn.remove();
+        }
+        catch (err) {
+          console.error('Reporting error:', err);
+          out.className = 'error';
+          out.textContent = 'Error reporting: ' + err.message;
+
+          // Show fallback form
+          document.getElementById('hiddenWord').value = w;
+          document.getElementById('reportForm').style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Report';
+        }
+      });
+    });
   </script>
 </body>
 </html>
