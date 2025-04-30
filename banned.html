@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Banned Word Tester</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 400px;
+      margin: auto;
+    }
+    label, button {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    #result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    #result.banned {
+      color: red;
+    }
+    #result.ok {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>Banned Word Tester</h1>
+  <label for="wordInput">Enter a word to test:</label>
+  <input id="wordInput" type="text" placeholder="e.g. foobar">
+  <button id="testBtn">Check</button>
+  <div id="result"></div>
+
+  <script>
+    let bannedWords = [];
+
+    // 1) Load your banned words file on page load
+    fetch('banned_words.txt')
+      .then(r => r.text())
+      .then(txt => {
+        // split lines, trim, lowercase
+        bannedWords = txt
+          .split('\\n')
+          .map(w => w.trim().toLowerCase())
+          .filter(Boolean);
+      })
+      .catch(err => {
+        console.error('Failed to load banned_words.txt:', err);
+        document.getElementById('result').textContent =
+          '⚠️ Could not load banned list.';
+      });
+
+    // 2) On button click, test the input
+    document.getElementById('testBtn').addEventListener('click', () => {
+      const inpt = document.getElementById('wordInput');
+      const word = inpt.value.trim().toLowerCase();
+      const res  = document.getElementById('result');
+
+      if (!word) {
+        res.textContent = 'Please enter a word.';
+        res.className = '';
+        return;
+      }
+
+      if (bannedWords.includes(word)) {
+        res.textContent = `"${inpt.value}" is 🔴 BANNED`;
+        res.className = 'banned';
+      } else {
+        res.textContent = `"${inpt.value}" is ✅ OK`;
+        res.className = 'ok';
+      }
+    });
+
+    // also allow Enter key
+    document.getElementById('wordInput')
+      .addEventListener('keypress', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          document.getElementById('testBtn').click();
+        }
+      });
+  </script>
+</body>
+</html>
