@@ -1,36 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>banned word tester</title>
+  <title>Banned Word Tester</title>
   <style>
+    body { font-family: sans-serif; padding: 2em; line-height: 1.5; }
     #out { margin-top: 1em; }
-    #out.error { color: red; }
-    #out.success { color: green; }
+    .error { color: #c00; }
+    .success { color: #080; }
+    button { margin-left: .5em; }
   </style>
 </head>
 <body>
-  <h1>Test out banned words here</h1>
-  <a href="index.html">← back to chat</a><br><br>
 
-  <input id="word" placeholder="Enter word">
-  <button id="go">Check</button>
+  <h1>Test Banned Words</h1>
+  <a href="index.html">← Back to chat</a>
+
+  <div style="margin-top:1em;">
+    <input id="word" placeholder="Enter word" autofocus>
+    <button id="go">Check</button>
+  </div>
 
   <div id="out"></div>
 
-  <!-- Fallback form in case JS/AJAX fails/unavailable -->
-  <form id="reportForm" action="report.php" method="post" style="display:none;">
-    <input type="hidden" name="word" id="hiddenWord">
-    <button type="submit">Report via form</button>
-  </form>
-
   <script>
-    const out = document.getElementById('out');
+    // ─────────────────────────────────────────────────────────
+    // 1) Paste your Apps Script Web App URL here:
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFjcNkguVUh_D7lxN7e7VTVHLv-5AgGmqNYJA1-uaVPhhtL3K5SfXHFlWW4bll4wGQ/exec';
+    // ─────────────────────────────────────────────────────────
+
+    const outEl = document.getElementById('out');
+    let banned = [];
 
     // Load banned list
-    let banned = [];
     fetch('banned_words.txt')
-      .then(r => r.ok ? r.text() : Promise.reject(`HTTP ${r.status}`))
+      .then(res => res.ok ? res.text() : Promise.reject(`Load error: ${res.status}`))
       .then(txt => {
         banned = txt
           .split(/\r?\n/)
@@ -38,66 +42,62 @@
           .filter(Boolean);
       })
       .catch(err => {
-        out.className = 'error';
-        out.textContent = 'Error loading banned list: ' + err;
+        outEl.className = 'error';
+        outEl.textContent = err;
         console.error(err);
       });
 
     document.getElementById('go').addEventListener('click', () => {
       const w = document.getElementById('word').value.trim().toLowerCase();
-      out.className = '';
-      out.textContent = '';
+      outEl.className = '';
+      outEl.textContent = '';
       if (!w) return;
 
       if (banned.includes(w)) {
-        out.className = 'error';
-        out.textContent = `"${w}" is BANNED`;
+        outEl.className = 'error';
+        outEl.textContent = `"${w}" is BANNED`;
         return;
       }
 
-      // Show allowed + report button
-      const span = document.createElement('span');
-      span.textContent = `"${w}" is allowed   `;
+      // Show “allowed” + report button
+      const msg = document.createElement('span');
+      msg.textContent = `"${w}" is allowed `;
       const btn = document.createElement('button');
       btn.textContent = 'Report';
       btn.type = 'button';
-      out.className = '';
-      out.appendChild(span);
-      out.appendChild(btn);
+      outEl.appendChild(msg);
+      outEl.appendChild(btn);
 
       btn.addEventListener('click', async () => {
         btn.disabled = true;
         btn.textContent = 'Reporting…';
-        out.className = '';
-
         try {
-          // Make sure the path matches where report.php actually lives!
-          const response = await fetch('report.php', {
+          const resp = await fetch(SCRIPT_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'word=' + encodeURIComponent(w)
           });
-          const text = await response.text();
-          console.log('report.php response:', response.status, text);
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(`${resp.status}: ${text}`);
 
-          if (!response.ok) {
-            throw new Error(`Status ${response.status}: ${text}`);
-          }
-
-          out.className = 'success';
-          out.textContent = `"${w}" reported successfully.`;
-          btn.remove();
-        }
-        catch (err) {
-          console.error('Reporting error:', err);
-          out.className = 'error';
-          out.textContent = 'Error reporting: ' + err.message;
-
-          // Show fallback form
-          document.getElementById('hiddenWord').value = w;
-          document.getElementById('reportForm').style.display = 'block';
-          btn.disabled = false;
-          btn.textContent = 'Report';
+          outEl.className = 'success';
+          outEl.textContent = `"${w}" reported successfully.`;
+          console.log('Apps Script response:', text);
+        } catch (err) {
+          console.error('Report failed:', err);
+          outEl.className = 'error';
+          outEl.innerHTML = 
+            'Error reporting. Check console.<br>' +
+            'Or <a href="#" id="fallback">click here</a> to report manually.';
+          
+          // Fallback manual link
+          document.getElementById('fallback').addEventListener('click', e => {
+            e.preventDefault();
+            window.open(
+              SCRIPT_URL + '?word=' + encodeURIComponent(w),
+              '_blank'
+            );
+          });
         }
       });
     });
