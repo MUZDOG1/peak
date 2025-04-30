@@ -1,91 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Banned Word Tester</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 400px;
-      margin: auto;
-    }
-    label, button {
-      display: block;
-      margin-top: 10px;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
-    }
-    #result {
-      margin-top: 20px;
-      font-weight: bold;
-    }
-    #result.banned {
-      color: red;
-    }
-    #result.ok {
-      color: green;
-    }
-  </style>
+  <meta charset="utf-8">
+  <title>banned word tester</title>
 </head>
 <body>
-  <h1>Banned Word Tester</h1>
-  <label for="wordInput">Enter a word to test:</label>
-  <input id="wordInput" type="text" placeholder="e.g. foobar">
-  <button id="testBtn">Check</button>
-  <div id="result"></div>
+  <h1>Banned-Words Tester</h1>
+  <input id="word" placeholder="Enter word">
+  <button id="go">Check</button>
+  <div id="out"></div>
 
   <script>
-    let bannedWords = [];
-
-    // 1) Load your banned words file on page load
+    let banned = [];
     fetch('banned_words.txt')
-      .then(r => r.text())
+      .then(r => r.ok ? r.text() : Promise.reject(r.status))
       .then(txt => {
-        // split lines, trim, lowercase
-        bannedWords = txt
-          .split('\\n')
-          .map(w => w.trim().toLowerCase())
-          .filter(Boolean);
+        banned = txt.split(/\r?\n/).map(w=>w.trim().toLowerCase()).filter(Boolean);
+        console.log('Loaded', banned.length, 'terms');
       })
       .catch(err => {
-        console.error('Failed to load banned_words.txt:', err);
-        document.getElementById('result').textContent =
-          '⚠️ Could not load banned list.';
+        console.error('Load failed:', err);
+        document.getElementById('out').textContent = 'Error loading list';
       });
 
-    // 2) On button click, test the input
-    document.getElementById('testBtn').addEventListener('click', () => {
-      const inpt = document.getElementById('wordInput');
-      const word = inpt.value.trim().toLowerCase();
-      const res  = document.getElementById('result');
-
-      if (!word) {
-        res.textContent = 'Please enter a word.';
-        res.className = '';
-        return;
-      }
-
-      if (bannedWords.includes(word)) {
-        res.textContent = `"${inpt.value}" is 🔴 BANNED`;
-        res.className = 'banned';
-      } else {
-        res.textContent = `"${inpt.value}" is ✅ OK`;
-        res.className = 'ok';
-      }
-    });
-
-    // also allow Enter key
-    document.getElementById('wordInput')
-      .addEventListener('keypress', e => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          document.getElementById('testBtn').click();
-        }
-      });
+    document.getElementById('go').onclick = () => {
+      const w = document.getElementById('word').value.trim().toLowerCase();
+      if (!w) return;
+      document.getElementById('out').textContent = 
+        banned.includes(w) ? `"${w}" is BANNED` : `"${w}" is OK`;
+    };
   </script>
 </body>
 </html>
