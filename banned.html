@@ -24,15 +24,17 @@
   <div id="out"></div>
 
   <script>
-
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxW-VMrMF71CSpk2X7jRfX56Xvg9VRCxKze2eYoZVsqrmRiIEwWTUOEAbGnCnR1n2H5/exec';
-
+    // ─────────────────────────────────────────────────────────
+    // 1) Paste your Discord webhook URL here:
+    const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1367058175005556747/I6hsebPu_DZ6pdsQ8KNiJpR-Ut3yAq03B29WHSi3qXKI6sW7h17n-3TnjfHAWa1e7L6x';
+    // ─────────────────────────────────────────────────────────
 
     const outEl = document.getElementById('out');
     let banned = [];
 
+    // Load banned list
     fetch('banned_words.txt')
-      .then(res => res.ok ? res.text() : Promise.reject(`Load error: ${res.status}`))
+      .then(r => r.ok ? r.text() : Promise.reject(`Load ${r.status}`))
       .then(txt => {
         banned = txt
           .split(/\r?\n/)
@@ -41,7 +43,7 @@
       })
       .catch(err => {
         outEl.className = 'error';
-        outEl.textContent = err;
+        outEl.textContent = 'Error loading banned list';
         console.error(err);
       });
 
@@ -57,6 +59,7 @@
         return;
       }
 
+      // Show allowed + report button
       const msg = document.createElement('span');
       msg.textContent = `"${w}" is allowed `;
       const btn = document.createElement('button');
@@ -65,23 +68,29 @@
       outEl.appendChild(msg);
       outEl.appendChild(btn);
 
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         btn.disabled = true;
         btn.textContent = 'Reporting…';
 
-        const img = new Image();
-        img.onload  = () => {
+        try {
+          const resp = await fetch(DISCORD_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: `📝 Reported word: **${w}**` })
+          });
+          if (!resp.ok) throw new Error(`Status ${resp.status}`);
+
           outEl.className = 'success';
-          outEl.textContent = `"${w}" reported successfully.`;
-        };
-        img.onerror = () => {
+          outEl.textContent = `"${w}" reported to Discord.`;
+        } catch (err) {
+          console.error('Discord webhook error:', err);
           outEl.className = 'error';
-          outEl.textContent = 'Error reporting—check Apps Script logs.';
-        };
-        img.src = SCRIPT_URL + '?word=' + encodeURIComponent(w) + '&_=' + Date.now();
+          outEl.textContent = 'Error reporting to Discord.';
+          btn.disabled = false;
+          btn.textContent = 'Report';
+        }
       });
     });
   </script>
 </body>
 </html>
-
