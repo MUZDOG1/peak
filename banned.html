@@ -13,8 +13,8 @@
 </head>
 <body>
 
-  <h1>Test Banned Words</h1>
-  <a href="index.html">← Back to chat</a>
+  <h1>muzdog chats banned word tester</h1>
+  <a href="index.html">back to muzdog chat</a>
 
   <div style="margin-top:1em;">
     <input id="word" placeholder="Enter word" autofocus>
@@ -24,15 +24,11 @@
   <div id="out"></div>
 
   <script>
-    // ─────────────────────────────────────────────────────────
-    // 1) Paste your Apps Script Web App URL here:
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuqWlhCJnoS-hLDmTGb7LyC69ViKSogJ1Mpdap3PSHDV7Xg-mnjL2GCF5WWM6TMfk8/exec';
-    // ─────────────────────────────────────────────────────────
 
     const outEl = document.getElementById('out');
     let banned = [];
 
-    // Load banned list
     fetch('banned_words.txt')
       .then(res => res.ok ? res.text() : Promise.reject(`Load error: ${res.status}`))
       .then(txt => {
@@ -59,7 +55,6 @@
         return;
       }
 
-      // Show “allowed” + report button
       const msg = document.createElement('span');
       msg.textContent = `"${w}" is allowed `;
       const btn = document.createElement('button');
@@ -89,8 +84,7 @@
           outEl.innerHTML = 
             'Error reporting. Check console.<br>' +
             'Or <a href="#" id="fallback">click here</a> to report manually.';
-          
-          // Fallback manual link
+
           document.getElementById('fallback').addEventListener('click', e => {
             e.preventDefault();
             window.open(
