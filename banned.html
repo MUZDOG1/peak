@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Banned Word Tester</title>
   <style>
-    body { font-family: sans-serif; padding: 2em; line-height: 1.5; }
+    body { font-family: sans-serif; padding: 2em; }
     #out { margin-top: 1em; }
     .error { color: #c00; }
     .success { color: #080; }
@@ -13,8 +13,8 @@
 </head>
 <body>
 
-  <h1>muzdog chats banned word tester</h1>
-  <a href="index.html">back to muzdog chat</a>
+  <h1>Test Banned Words</h1>
+  <a href="index.html">← Back to chat</a>
 
   <div style="margin-top:1em;">
     <input id="word" placeholder="Enter word" autofocus>
@@ -24,7 +24,9 @@
   <div id="out"></div>
 
   <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuqWlhCJnoS-hLDmTGb7LyC69ViKSogJ1Mpdap3PSHDV7Xg-mnjL2GCF5WWM6TMfk8/exec';
+
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxW-VMrMF71CSpk2X7jRfX56Xvg9VRCxKze2eYoZVsqrmRiIEwWTUOEAbGnCnR1n2H5/exec';
+
 
     const outEl = document.getElementById('out');
     let banned = [];
@@ -63,38 +65,23 @@
       outEl.appendChild(msg);
       outEl.appendChild(btn);
 
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', () => {
         btn.disabled = true;
         btn.textContent = 'Reporting…';
-        try {
-          const resp = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'word=' + encodeURIComponent(w)
-          });
-          const text = await resp.text();
-          if (!resp.ok) throw new Error(`${resp.status}: ${text}`);
 
+        const img = new Image();
+        img.onload  = () => {
           outEl.className = 'success';
           outEl.textContent = `"${w}" reported successfully.`;
-          console.log('Apps Script response:', text);
-        } catch (err) {
-          console.error('Report failed:', err);
+        };
+        img.onerror = () => {
           outEl.className = 'error';
-          outEl.innerHTML = 
-            'Error reporting. Check console.<br>' +
-            'Or <a href="#" id="fallback">click here</a> to report manually.';
-
-          document.getElementById('fallback').addEventListener('click', e => {
-            e.preventDefault();
-            window.open(
-              SCRIPT_URL + '?word=' + encodeURIComponent(w),
-              '_blank'
-            );
-          });
-        }
+          outEl.textContent = 'Error reporting—check Apps Script logs.';
+        };
+        img.src = SCRIPT_URL + '?word=' + encodeURIComponent(w) + '&_=' + Date.now();
       });
     });
   </script>
 </body>
 </html>
+
