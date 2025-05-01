@@ -1,29 +1,29 @@
-name: Deploy to GitHub Pages            # A human-friendly label for your workflow.
+name: Deploy to GitHub Pages
 on:
   push:
-    branches: [ main ]                  # Trigger this workflow whenever you push to “main.”
+    branches: [ main ]
 
 permissions:
-  pages: write                          # Allow this workflow to push to GitHub Pages.
-  id-token: write                       # Needed by the configure-pages action.
+  pages: write
+  id-token: write
 
 jobs:
   build-deploy:
-    runs-on: ubuntu-latest              # A fresh Ubuntu VM for each run.
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3       # 1️⃣ Grab your repo’s current files.
+      - uses: actions/checkout@v3
 
-      - run: |                          # 2️⃣ Prepare your “site” directory.
-          mkdir output                  #   – Make a folder called “output.”
-          cp -r * output                #   – Copy everything into it.
-        # If your site lives in “docs/” instead of root:
-        # mkdir output && cp -r docs/* output
+      - name: Prepare site
+        run: 
+          mkdir output
+          cp -r * output
+          # If your site is in docs/, replace cp -r * output with:
+          # cp -r docs/* output
 
       - uses: actions/configure-pages@v3
-        # 3️⃣ Tells GitHub “I’m about to deploy to Pages.” It injects a special token.
 
       - uses: actions/upload-pages-artifact@v1
         with:
-          path: output                  # 4️⃣ Zips up that “output” folder so GitHub knows what to publish.
+          path: output
 
-      - uses: actions/deploy-pages@v1   # 5️⃣ Sends that artifact to GitHub Pages, making it live.
+      - uses: actions/deploy-pages@v1
