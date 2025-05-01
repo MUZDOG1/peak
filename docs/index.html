@@ -1,24 +1,872 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>githu</title>
-    <link rel="stylesheet" href="anon2.css">
+  <meta charset="UTF-8">
+  <title>Muzdog Chat</title>
+  
+  
+  <style>
+    /* white theme */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #000;
+      transition: all 0.3s;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .muzdog-header {
+      background: #222;
+      color: #fff;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 100;
+    }
+    .muzdog-header .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .muzdog-header .logo .subtitle {
+      font-family: inherit;
+      font-size: 16px;
+      color: #bbb;
+      margin-left: 5px;
+    }
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    #settingsBtn, #logoutBtn {
+      padding: 5px 10px;
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .auth-container {
+      background: #fff;
+      padding: 10px;
+      border: 1px solid #ccc;
+      width: 800px;
+      margin: 20px auto;
+      position: relative;
+      z-index: 100;
+    }
+    .auth-container button {
+      padding: 6px 12px;
+      margin: 5px 0;
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .auth-container input {
+      padding: 6px;
+      margin: 5px 0;
+      width: calc(100% - 20px);
+    }
+    .signup-btn-row {
+      display: inline-flex; 
+      align-items: center; 
+      gap: 6px;
+      margin-top: 5px;
+      white-space: nowrap;
+    }
+    .signup-btn-row input[type="checkbox"] {
+      margin: 0;
+    }
+    .signup-btn-row label {
+      margin: 0;
+    }
+    .container {
+      width: 800px;
+      margin: 20px auto;
+      background: #fff;
+      border: 1px solid #ccc;
+      position: relative;
+      z-index: 100;
+    }
+    .chat-column {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header {
+      background: #ddd;
+      padding: 10px;
+      font-weight: bold;
+      color: #ff4500;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #adminPanel {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border: 2px solid #f00;
+      padding: 10px;
+      display: none;
+      z-index: 1000;
+      margin-top: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    #settingsPanel {
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      display: none;
+      z-index: 2000;
+      width: 150px;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #settingsPanel.open {
+      display: flex;
+    }
+    #adminUserList {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    #adminUserList div {
+      margin-bottom: 5px;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #fff;
+      height: 400px;
+      margin-top: 10px;
+    }
+    .message {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 8px;
+      margin-bottom: 8px;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+    }
+    .message-content {
+      flex: 1;
+    }
+    .message img {
+      max-width: 100%;
+      display: block;
+      margin-top: 5px;
+    }
+    .chat-input-area {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      background: #ddd;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid #ccc;
+      z-index: 1000;
+    }
+    .chat-input-area input[type="text"] {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #ccc;
+    }
+    .chat-input-area button {
+      padding: 6px 12px;
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .message-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-top: 5px;
+    }
+    .timestamp {
+      font-size: 12px;
+      color: gray;
+    }
+    .like-btn {
+      padding: 3px 6px;
+      background-color: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+    .like-count {
+      font-size: 12px;
+      color: #333;
+    }
+    .delete-btn {
+      padding: 3px 6px;
+      background-color: #c00;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    /* sex */
+    .matrix-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .matrix-column {
+      position: absolute;
+      top: -100px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: rgba(0, 255, 0, 0.7);
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+    }
+    .matrix-column span {
+      display: block;
+      animation: matrix-fall linear infinite;
+      animation-duration: calc(var(--duration) * 1s);
+    }
+    @keyframes matrix-fall {
+      0% { transform: translateY(-100px); }
+      100% { transform: translateY(calc(100vh + 100px)); }
+    }
+
+    /* dark mode */
+    body.dark-mode {
+      background: #222 !important;
+      color: #fff !important;
+    }
+    body.dark-mode .muzdog-header {
+      background: #111 !important;
+      border-bottom: 1px solid #333;
+    }
+    body.dark-mode .chat-header {
+      background: #111 !important;
+      color: #ff4500 !important;
+      border-bottom: 1px solid #333;
+    }
+    body.dark-mode .container,
+    body.dark-mode .auth-container,
+    body.dark-mode .chat-input-area {
+      background: #333 !important;
+      border: 1px solid #444 !important;
+    }
+    body.dark-mode #adminPanel {
+      background: #333 !important;
+      border: 2px solid #f00 !important;
+      color: #fff !important;
+    }
+    body.dark-mode #settingsPanel {
+      background: #333 !important;
+      border: 1px solid #444 !important;
+      color: #fff !important;
+    }
+    body.dark-mode input,
+    body.dark-mode button {
+      background: #444 !important;
+      border: 1px solid #555 !important;
+      color: #fff !important;
+    }
+    body.dark-mode .delete-btn {
+      background: #c00 !important;
+      color: #fff !important;
+    }
+    body.dark-mode .chat-messages {
+      background: #222 !important;
+    }
+    body.dark-mode .message {
+      background: #444 !important;
+      border-color: #555 !important;
+    }
+    body.dark-mode .timestamp {
+      color: #bbb !important;
+    }
+
+    /* haking */
+    body.hacker-mode {
+      background: #000 !important;
+      color: #0f0 !important;
+      font-family: 'Courier New', monospace;
+    }
+    body.hacker-mode .muzdog-header {
+      background: #000 !important;
+      border-bottom: 1px solid #0f0;
+    }
+    body.hacker-mode .chat-header {
+      background: #000 !important;
+      color: #0f0 !important;
+      border-bottom: 1px solid #0f0;
+    }
+    body.hacker-mode .container,
+    body.hacker-mode .auth-container,
+    body.hacker-mode .chat-input-area {
+      background: rgba(0, 20, 0, 0.7) !important;
+      border: 1px solid #0f0 !important;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+    body.hacker-mode #adminPanel {
+      background: rgba(0, 20, 0, 0.9) !important;
+      border: 1px solid #0f0 !important;
+      color: #0f0 !important;
+    }
+    body.hacker-mode #settingsPanel {
+      background: rgba(0, 20, 0, 0.9) !important;
+      border: 1px solid #0f0 !important;
+      color: #0f0 !important;
+    }
+    body.hacker-mode input,
+    body.hacker-mode button {
+      background: #000 !important;
+      border: 1px solid #0f0 !important;
+      color: #0f0 !important;
+    }
+    body.hacker-mode .delete-btn {
+      background: #0f0 !important;
+      color: #000 !important;
+    }
+    body.hacker-mode .chat-messages {
+      background: rgba(0, 10, 0, 0.8) !important;
+    }
+    body.hacker-mode .message {
+      background: rgba(0, 30, 0, 0.7) !important;
+      border-color: #0f0 !important;
+    }
+
+    /* death theme */
+    body.death-theme {
+      background: #000;
+      color: #FF0000;
+    }
+    body.death-theme a {
+      color: #FF0000;
+    }
+    body.death-theme .muzdog-header,
+    body.death-theme .chat-header,
+    body.death-theme .auth-container,
+    body.death-theme .container,
+    body.death-theme .chat-input-area,
+    body.death-theme .chat-messages,
+    body.death-theme .message,
+    body.death-theme #adminPanel,
+    body.death-theme #settingsPanel {
+      background: #000;
+      border-color: #FF0000;
+      color: #FF0000;
+    }
+    body.death-theme .chat-input-area input[type="text"] {
+      background: #000;
+      border-color: #FF0000;
+      color: #FF0000;
+    }
+    body.death-theme .delete-btn,
+    body.death-theme .like-btn {
+      background: #FF0000;
+      color: #000;
+    }
+  </style>
 </head>
-<body>
-    <h1>Sorry, there is an error.</h1>
-    <p>if your seeing this page, muzdog chat is either down or you have entered a restricted page, below 
-        should be a live update
-    </p>
-    <p class="warning" style="color: red;">Live update (EC:404)</p>
-    <p style="width: 500px; margin: auto;">if this is up it has been fixed, github pages
-        is screwing the site over right now, nothing i can do due to the fact that i have absolutely no fucking clue whats going on</p>
-    <div style="text-align: center;">
-        <img src="dog4.png">
+<body class="light-mode">
+  <header class="muzdog-header">
+    <div class="logo">
+      Muzdog Chat 
+      <span class="subtitle">
+        - <span id="userCount">?</span> users and counting!
+        <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
+        <a href="log.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Update Log</a>
+        <a href="banned.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Banned Word Tester</a>
+        <a href="help.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Help</a>
+        
+      </span>
     </div>
-    
+    <div class="header-buttons">
+      <button id="settingsBtn">Settings</button>
+      <button id="logoutBtn" style="display: none;">Logout</button>
+    </div>
+  </header>
+
+  <!-- modes -->
+  <div id="settingsPanel">
+    <h3>Settings</h3>
+    <label>
+      <input type="radio" name="theme" value="light" id="lightModeRadio"> Light Mode
+    </label>
+    <label>
+      <input type="radio" name="theme" value="dark" id="darkModeRadio"> Dark Mode
+    </label>
+    <label>
+      <input type="radio" name="theme" value="hacker" id="hackerModeRadio"> Hacker Mode
+    </label>
+  </div>
+
+  <!-- auth + sign ups -->
+  <div class="auth-container" id="authContainer">
+    <h2>Sign Up</h2>
+    <input type="email" id="signupEmail" placeholder="Email">
+    <input type="password" id="signupPassword" placeholder="Password">
+    <input type="text" id="signupUsername" placeholder="Username">
+    <div class="signup-btn-row">
+      <button id="signupBtn">Sign Up</button>
+      <input type="checkbox" id="tosCheckbox">
+      <label for="tosCheckbox">
+        Click this box to agree to our 
+        <a href="tos.html" target="_blank" style="color: darkblue;">Terms of Service</a>
+      </label>
+    </div>
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <!-- container -->
+  <div class="container">
+    <div class="chat-column">
+      <div class="chat-header">
+        <span class="chat-title">Live Chat [VERSION 1.8]</span>
+        <span class="visits">Total Visits: <span id="visitsCount">?</span></span>
+      </div>
+      <div id="adminPanel">
+        <h3>ban list</h3>
+        <div id="adminUserList"></div>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+    </div>
+  </div>
+
+  <!-- cjat input -->
+  <div class="chat-input-area">
+    <input
+     type="text"
+     id="chatInput"
+     placeholder="Type your thoughts."
+     disabled
+     maxlength="200"           
+     >
+    <button id="sendBtn" disabled>Send</button>
+  </div>
+  <script type="module">
+    import { 
+   db, storage, auth, updateUserStatus, incrementSiteVisits, getSiteVisits,
+   signUp, logout, banUser, unbanUser  
+ } from "./firebase.js";
+ import {
+   collection, addDoc, serverTimestamp, query, orderBy, onSnapshot,
+   updateDoc, doc, increment, getDoc, getDocs, where, limit, deleteDoc
+ } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+ import {
+   onAuthStateChanged,
+   signInWithEmailAndPassword
+ } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+ // global variables
+ let isAdmin = false;
+ let bannedWords = [];
+ let bannedAlertShown = false;
+ let matrixInterval;
+ // throttle: only allow one send per 5 seconds
+ let lastSendTime = 0;
+ const SEND_COOLDOWN = 5000; // ms
+
+
+ // dom
+ const chatMessages    = document.getElementById("chatMessages");
+ const chatInput       = document.getElementById("chatInput");
+ const sendBtn         = document.getElementById("sendBtn");
+ const signupEmail     = document.getElementById("signupEmail");
+ const signupPassword  = document.getElementById("signupPassword");
+ const signupUsername  = document.getElementById("signupUsername");
+ const signupBtn       = document.getElementById("signupBtn");
+ const tosCheckbox     = document.getElementById("tosCheckbox");
+ const loginEmail      = document.getElementById("loginEmail");
+ const loginPassword   = document.getElementById("loginPassword");
+ const loginBtn        = document.getElementById("loginBtn");
+ const logoutBtn       = document.getElementById("logoutBtn");
+ const settingsBtn     = document.getElementById("settingsBtn");
+ const settingsPanel   = document.getElementById("settingsPanel");
+ const themeRadios     = document.querySelectorAll('input[name="theme"]');
+
+ // ask for noti perms
+ document.addEventListener("DOMContentLoaded", async () => {
+   if ("Notification" in window) {
+     await Notification.requestPermission();
+   }
+   // init
+   await incrementSiteVisits();
+   const visits = await getSiteVisits();
+   document.getElementById("visitsCount").textContent = visits;
+   updateRegisteredUsersCount();
+   loadTheme();
+ });
+
+ // tos box
+ signupBtn.disabled = true;
+ tosCheckbox.addEventListener("change", () => {
+   signupBtn.disabled = !tosCheckbox.checked;
+ });
+
+
+ // ones and zeros have sex on my screen
+ function startMatrixEffect() {
+   const chars = "01";
+   const canvas = document.createElement("div");
+   canvas.className = "matrix-canvas";
+   document.body.appendChild(canvas);
+   const fontSize = 14;
+   const columns = Math.floor(window.innerWidth / fontSize);
+   for (let i = 0; i < columns; i++) {
+     const column = document.createElement("div");
+     column.className = "matrix-column";
+     column.style.left = (i * fontSize) + "px";
+     column.style.setProperty('--duration', Math.random() * 5 + 3);
+     canvas.appendChild(column);
+     animateColumn(column);
+   }
+   matrixInterval = setInterval(() => {
+     document.querySelectorAll(".matrix-column").forEach(col => {
+       if (Math.random() > 0.9) animateColumn(col);
+     });
+   }, 100);
+ }
+ function animateColumn(column) {
+   const chars = "01";
+   const length = Math.floor(Math.random() * 15) + 5;
+   let html = "";
+   for (let i = 0; i < length; i++) {
+     const char = chars[Math.floor(Math.random() * chars.length)];
+     const opacity = (length - i) / length;
+     const delay = i * 100;
+     html += `<span style="animation-delay:${delay}ms;opacity:${opacity}">${char}</span>`;
+   }
+   column.innerHTML = html;
+ }
+ function stopMatrixEffect() {
+   clearInterval(matrixInterval);
+   const canvas = document.querySelector(".matrix-canvas");
+   if (canvas) canvas.remove();
+ }
+
+ // theme toucher
+ function loadTheme() {
+   const theme = localStorage.getItem("theme") || "light";
+   document.body.className = theme + "-mode";
+   document.getElementById(theme + "ModeRadio").checked = true;
+   if (theme === "hacker") startMatrixEffect();
+ }
+ themeRadios.forEach(radio => {
+   radio.addEventListener("change", () => {
+     const theme = radio.value;
+     document.body.className = theme + "-mode";
+     localStorage.setItem("theme", theme);
+     stopMatrixEffect();
+     if (theme === "hacker") startMatrixEffect();
+   });
+ });
+ settingsBtn.addEventListener("click", () => {
+   settingsPanel.classList.toggle("open");
+ });
+
+ // banned word loader
+ async function loadBannedWords() {
+   try {
+     const response = await fetch("banned_words.txt");
+     const text     = await response.text();
+     bannedWords     = text.split("\n").map(w => w.trim()).filter(w => w);
+   } catch (e) {
+     console.error("Failed to load banned words(BAD!!! FIX NOW!):", e);
+   }
+ }
+ async function filterMessage(msg) {
+ if (!bannedWords.length) await loadBannedWords();  
+
+ for (const word of bannedWords) {
+   // escape fuckass special characters
+   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+   const re      = new RegExp(`\\b${escaped}\\b`, 'gi');
+
+   msg = msg.replace(re, match => '*'.repeat(match.length));
+ }
+
+ return msg;
+}
+// emojis
+const emojiMap = {
+  laugh:    "😂",
+  happy:    "😄",
+  thumbsup: "👍",
+  heart:    "💔",
+  rose:     "🥀",
+  sad:      "😭",
+  angry:    "😡",
+  king:     "👑",
+  
+  // TODO: add more codes
+};
+
+// swapper
+function replaceEmojis(str) {
+  return str.replace(/:([a-z0-9_]+):/gi, (_, code) =>
+    emojiMap[code.toLowerCase()] || `:${code}:`
+  );
+}
+
+
+
+ // auth
+ signupBtn.addEventListener("click", async () => {
+  // 1) Enforce TOS agreement
+  if (!tosCheckbox.checked) {
+    alert("Please agree to the TOS before signing up.");
+    return;
+  }
+
+  // 2) Gather and validate inputs
+  const email = signupEmail.value.trim();
+  const pw    = signupPassword.value;
+  const user  = signupUsername.value.trim();
+  if (!email || !pw || !user) {
+    alert("Please fill out all fields.");
+    return;
+  }
+  if (user.length > 15) {
+    alert("Username max is 15 chars.");
+    return;
+  }
+
+  // 3) Load banned words if needed and check username
+  if (!bannedWords.length) await loadBannedWords();
+  for (const w of bannedWords) {
+    const esc = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re  = new RegExp(`\\b${esc}\\b`, "i");
+    if (re.test(user)) {
+      alert("Username contains naughty language.");
+      return;
+    }
+  }
+
+  // 4) Check if email is banned
+  const uq = query(collection(db, "users"), where("email", "==", email), limit(1));
+  const us = await getDocs(uq);
+  if (!us.empty && us.docs[0].data().banned) {
+    alert("This email is banned.");
+    return;
+  }
+
+  // 5) All clear → sign up
+  signUp(email, pw, user);
+});
+
+
+ loginBtn.addEventListener("click",async()=>{
+   const email=loginEmail.value,pw=loginPassword.value;
+   if(!email||!pw){alert("Please fill out all fields.");return;}
+   try{
+     const cred=await signInWithEmailAndPassword(auth,email,pw);
+     const ud=await getDoc(doc(db,"users",cred.user.uid));
+     if(ud.exists()&&ud.data().banned){
+       if(!bannedAlertShown){alert("You are banned, logging out.");bannedAlertShown=true;}
+       await logout();return;
+     }
+   }catch(e){alert("Login failed: "+e.message);}
+ });
+ logoutBtn.addEventListener("click",()=>logout());
+
+ onAuthStateChanged(auth,async user=>{
+   if(user) {
+     logoutBtn.style.display="block";
+     chatInput.disabled=false; sendBtn.disabled=false;
+     updateUserStatus(true);
+     document.getElementById("authContainer").style.display="none";
+     const uref=doc(db,"users",user.uid);
+     onSnapshot(uref,docSnap=>{
+       if(docSnap.exists()&&docSnap.data().banned&&!bannedAlertShown){
+         alert("You are banned, logging out.");bannedAlertShown=true;logout();}
+     });
+     const ud=await getDoc(uref);
+     if(ud.exists()&&ud.data().banned&&!bannedAlertShown){alert("You are banned, logging out.");bannedAlertShown=true;logout();return;}
+     if(ud.exists()&&ud.data().isAdmin){isAdmin=true;document.getElementById("adminPanel").style.display="block";loadUsersForAdmin();}
+     else{isAdmin=false;document.getElementById("adminPanel").style.display="none";}
+   } else {
+     logoutBtn.style.display="none";
+     chatInput.disabled=true; sendBtn.disabled=true;
+     updateUserStatus(false);
+     document.getElementById("authContainer").style.display="block";
+     document.getElementById("adminPanel").style.display="none";
+   }
+ });
+
+ // chat functionality
+ const q = query(
+   collection(db, "chatrooms", "general", "messages"),
+   orderBy("timestamp", "desc"),
+   limit(100)
+ );
+
+ onSnapshot(q, async snapshot => {
+   // desktop notificatiom
+   const latest = snapshot.docs[0];
+   if (document.hidden && Notification.permission === "granted" /*…*/ ) {
+   const m    = latest.data();
+   const u    = (await getDoc(doc(db,"users",m.senderId))).data()?.username || "Someone";
+   // build notification body: censor + emojis
+   const raw     = m.text || "[image]";
+   const filtered= m.text ? await filterMessage(raw) : raw;
+   const body    = replaceEmojis(filtered);
+   new Notification(u, { body });
+
+   }
+
+
+   // rebuild chat ui
+   await loadBannedWords();
+   const html = await Promise.all(snapshot.docs.map(async d => {
+     const m = d.data();
+     const ts = m.timestamp?.toDate()||new Date();
+     const tstr = ts.toLocaleString("en-US",{
+       year:"numeric",month:"short",day:"numeric",
+       hour:"numeric",minute:"numeric",second:"numeric",hour12:true
+     });
+     let txt = m.text ? await filterMessage(m.text) : "";
+     txt     = replaceEmojis(txt);
+
+     let usr="Unknown User";
+     if(m.senderId){const ud=await getDoc(doc(db,"users",m.senderId));if(ud.exists())usr=ud.data().username;}
+     const del = isAdmin
+       ? `<button class="delete-btn" onclick="deleteMessage('${d.id}')">Delete</button>`
+       : "";
+     return `
+       <div class="message">
+         <div class="message-content">
+           <span class="author">${usr}:</span>
+           ${txt?`<span class="text">${txt}</span>`:""}
+           ${m.image?`<img src="${m.image}" alt="Uploaded image">`:""}
+         </div>
+         <div class="message-actions">
+           <span class="timestamp">${tstr}</span>
+           ${del}
+         </div>
+       </div>`;
+   }));
+   chatMessages.innerHTML = html.join('');
+   chatMessages.scrollTop = 0;
+ });
+
+ window.deleteMessage = async id => {
+   if(!isAdmin){alert("Not authorized to delete.");return;}
+   try{ await deleteDoc(doc(db,"chatrooms/general/messages",id)); }
+   catch(e){console.error(e);alert("Delete failed.");}
+ };
+
+ // send buttons 
+ sendBtn.addEventListener("click", async () => {
+  const now = Date.now();
+  if (now - lastSendTime < SEND_COOLDOWN) {
+  const wait = Math.ceil((SEND_COOLDOWN - (now - lastSendTime)) / 1000);
+  alert(`Please wait ${wait} more second${wait > 1 ? 's' : ''} before sending again.`);
+  return;
+  }
+  lastSendTime = now;
+
+   if(!auth.currentUser){alert("Log in to chat.");return;}
+   const text = chatInput.value.trim();
+   // redirects
+   const cmds = { xanlack:"truth.html", death:null, encode:"encode.html",
+                  endtimes:"end.html", html:"test.html",
+                  wishlist:"wishlist.html", stats:"stats.html",
+                  kills:"torture1.html", tester:"banned.html" };
+   const cmd = text.toLowerCase();
+   if(cmds.hasOwnProperty(cmd)){
+     if(cmds[cmd]) window.location.href = cmds[cmd];
+     else applyDeathTheme();
+     chatInput.value=""; return;
+   }
+   if(text){
+     const ud = await getDoc(doc(db,"users",auth.currentUser.uid));
+     const name = ud.exists()?ud.data().username:"Unknown User";
+     await addDoc(collection(db,"chatrooms/general/messages"),{
+       senderId:auth.currentUser.uid,
+       nickname:name,
+       text:text,
+       timestamp:serverTimestamp(),
+       likes:0
+     });
+     chatInput.value="";chatInput.focus();
+   }
+ });
+ chatInput.addEventListener("keypress",e=>{
+   if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendBtn.click();}
+ });
+
+ // admin panel
+ async function loadUsersForAdmin() {
+   try {
+     const us = await getDocs(collection(db, "users"));
+     const list = document.getElementById("adminUserList");
+     list.innerHTML = "";
+     us.forEach(u => {
+       const d = u.data(); if(d.isAdmin) return;
+       const item = document.createElement("div");
+       const btn  = document.createElement("button");
+       if(d.banned){ btn.textContent = "Unban"; btn.onclick = () => unbanUserFromUI(u.id); }
+       else       { btn.textContent = "Ban";   btn.onclick = () => banUserFromUI(u.id); }
+       item.innerHTML = `<span>${d.username} (${d.email})</span>`;
+       item.appendChild(btn);
+       list.appendChild(item);
+     });
+   } catch (e) { console.error(e); }
+ }
+ window.banUserFromUI = async id => {
+   if(confirm("Ban this user?")){ try{ await banUser(id); alert("Banned."); loadUsersForAdmin(); }catch(e){alert("Failed to ban.");} }
+ };
+ window.unbanUserFromUI = async id => {
+   if(confirm("Unban this user?")){ try{ await unbanUser(id); alert("Unbanned."); loadUsersForAdmin(); }catch(e){alert("Failed to unban.");} }
+ };
+
+ // penis 
+ async function updateRegisteredUsersCount() {
+   try {
+     const us = await getDocs(collection(db, "users"));
+     document.getElementById("userCount").textContent = us.size;
+   } catch (e) {
+     console.error(e);
+   }
+ }
+ window.addEventListener("beforeunload", () => updateUserStatus(false));
+ function applyDeathTheme() { document.body.classList.add("death-theme"); console.log("Death theme activated."); }
+ </script>
 </body>
-</html>  
-
-
+</html>
+<!--journal link: "aHR0cHM6Ly9tdXpkb2cxLmdpdGh1Yi5pby9wZWFrL3F3ZXJ0eQ==" 
+beyond easy to decode, go nuts.-->
