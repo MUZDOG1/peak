@@ -2743,7 +2743,6 @@ pho
 qho
 rho
 sho
-tho
 uho
 vho
 who
