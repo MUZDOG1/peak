@@ -675,22 +675,18 @@
 
  // swapper
  function replaceEmojis(str) {
-  // Match :word: patterns
-  return str.replace(/:([a-z0-9_]+):/gi, (match, code) => // capture the full match too for fallback
-    emojiMap[code.toLowerCase()] || match // Return emoji or original full match if not found
+  return str.replace(/:([a-z0-9_]+):/gi, (match, code) => 
+    emojiMap[code.toLowerCase()] || match
   );
  }
 
 
- // auth
  signupBtn.addEventListener("click", async () => {
-  // 1) Enforce TOS agreement
   if (!tosCheckbox.checked) {
     alert("Please agree to the TOS before signing up.");
     return;
   }
 
-  // 2) Gather and validate inputs
   const email = signupEmail.value.trim();
   const pw    = signupPassword.value;
   const userDisplayName  = signupUsername.value.trim();
@@ -707,13 +703,10 @@
         return;
     }
 
-  // 3) Load banned words if needed and check username
   if (!bannedWords.length) await loadBannedWords();
-  if (bannedWords.length > 0) { // Only check if words loaded successfully
+  if (bannedWords.length > 0) { 
       const usernameLower = userDisplayName.toLowerCase();
       for (const w of bannedWords) {
-          // Simple substring check might be too broad, use regex if needed
-          // Using includes for simplicity here, adjust if needed
           if (usernameLower.includes(w)) {
             alert("Username contains disallowed words. Please choose another.");
             return;
@@ -722,7 +715,6 @@
   }
 
 
-  // 4) Check if email is *already* banned (redundant if checking during login, but good pre-check)
   const uq = query(collection(db, "users"), where("email", "==", email), limit(1));
   const us = await getDocs(uq);
   if (!us.empty && us.docs[0].data().banned) {
@@ -730,35 +722,32 @@
     return;
   }
 
-  // 5) Attempt to sign up
-  signupBtn.disabled = true; // Prevent double-clicks
+  signupBtn.disabled = true; 
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pw);
     const newUser = userCredential.user;
 
     console.log("Signup successful for UID:", newUser.uid);
 
-    // 6) Send verification email
+   
     await sendEmailVerification(newUser);
     console.log("Verification email sent to:", email);
 
-    // 7) Create user document in Firestore
     await setDoc(doc(db, "users", newUser.uid), {
         username: userDisplayName,
         email: email,
         createdAt: serverTimestamp(),
         online: false,
         banned: false,
-        isAdmin: false // Default new users are not admins
+        isAdmin: false 
     });
     console.log("Firestore document created for UID:", newUser.uid);
 
-    // 8) Inform user and log them out to force verification
+ 
     alert("Signup successful! Please check your email inbox (and spam folder) to verify your account before logging in.");
-    await logout(); // Log out immediately
+    await logout(); 
     console.log("User logged out post-signup.");
 
-    // 9) Clear form
     signupEmail.value = "";
     signupPassword.value = "";
     signupUsername.value = "";
@@ -774,13 +763,11 @@
         alert("Signup failed: " + error.message);
     }
   } finally {
-      // Re-enable button based on TOS checkbox state AFTER attempt
       signupBtn.disabled = !tosCheckbox.checked;
   }
  });
 
 
- // LOGIN BUTTON LISTENER (Option 2 Fix Logic)
  loginBtn.addEventListener("click", async () => {
     const email = loginEmail.value.trim();
     const pw = loginPassword.value;
@@ -792,62 +779,52 @@
     try {
         const cred = await signInWithEmailAndPassword(auth, email, pw);
         const user = cred.user;
-        const userDocRef = doc(db, "users", user.uid); // Define ref here
-        let userDocSnap = null; // Initialize snap
+        const userDocRef = doc(db, "users", user.uid); 
+        let userDocSnap = null; 
 
-        // Check verification status FIRST
         if (!user.emailVerified) {
             console.log(`User ${user.uid} not verified. Checking Firestore doc.`);
-            userDocSnap = await getDoc(userDocRef); // Fetch doc only if needed
+            userDocSnap = await getDoc(userDocRef); 
 
-            // If Firestore doc exists, assume older user: send email, allow login.
             if (userDocSnap.exists()) {
                 console.log(`Firestore doc exists for unverified user ${user.uid}. Sending verification email.`);
                 try {
                     await sendEmailVerification(user);
                     alert("Verification email sent. Please check your inbox (and spam folder) soon to verify your account.");
-                    // *** DO NOT logout() or return here - allow login for existing user ***
                 } catch (verificationError) {
                     console.error("Failed to send verification email:", verificationError);
-                    // Optional: Alert user about the failure, but still allow login
-                    // alert("Could not send verification email. You can still proceed.");
+                   
                 }
             } else {
-                // Firestore doc DOES NOT exist AND email not verified.
-                // This implies a new user who hasn't verified yet (or Firestore write failed?). Block them.
                 console.log(`Firestore doc does NOT exist for ${user.uid} and not verified. Blocking login.`);
                 alert("Please verify your email address first. Check your inbox (and spam folder) for the verification email sent during signup.");
-                await logout(); // Log them out
-                loginBtn.disabled = false; // Re-enable button
-                return; // Stop login process
+                await logout(); 
+                loginBtn.disabled = false; 
+                return; 
             }
         }
 
-        // Now, check ban status (fetch doc again only if not already fetched)
         if (!userDocSnap) {
              userDocSnap = await getDoc(userDocRef);
         }
 
-        // Ensure userDocSnap is checked before accessing data()
         if (userDocSnap && userDocSnap.exists() && userDocSnap.data().banned) {
             if (!bannedAlertShown) {
                 alert("You are banned.");
-                bannedAlertShown = true; // Set flag
+                bannedAlertShown = true; 
             }
             await logout();
-            loginBtn.disabled = false; // Re-enable button
-            return; // Stop login process
+            loginBtn.disabled = false; 
+            return; 
         }
 
-        // Login successful (either verified, or existing unverified user allowed through)
         console.log("Login successful for:", user.uid);
-        loginEmail.value = ""; // Clear login form on success
+        loginEmail.value = ""; 
         loginPassword.value = "";
-        bannedAlertShown = false; // Reset banned alert flag on successful login
+        bannedAlertShown = false; 
 
     } catch (e) {
         console.error("Login Error:", e);
-        // Reset banned flag on any login error
         bannedAlertShown = false;
         if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
             alert("Login failed: Invalid email or password.");
@@ -857,48 +834,43 @@
             alert("Login failed: " + e.message);
         }
     } finally {
-        loginBtn.disabled = false; // Always re-enable button
+        loginBtn.disabled = false; 
     }
  });
 
 
  logoutBtn.addEventListener("click", () => {
-    // Update status before logging out if possible
     if (auth.currentUser) {
         updateUserStatus(false);
     }
     logout();
 });
 
- // AUTH STATE CHANGED LISTENER (Option 2 Fix Logic)
+
  onAuthStateChanged(auth, async user => {
-    if (verificationMsg) verificationMsg.style.display = 'none'; // Hide by default
+    if (verificationMsg) verificationMsg.style.display = 'none'; 
 
     if (user) {
-        const uref = doc(db, "users", user.uid); // Define ref here
-        let userDocSnap = null; // Initialize snap
+        const uref = doc(db, "users", user.uid);
+        let userDocSnap = null; 
 
-        // Check verification status
         if (!user.emailVerified) {
             console.log(`onAuthStateChanged: User ${user.uid} not verified. Checking Firestore doc.`);
             try {
-                userDocSnap = await getDoc(uref); // Fetch Firestore doc
+                userDocSnap = await getDoc(uref); 
 
                 if (userDocSnap.exists()) {
-                    // Firestore doc exists, likely older user. Allow UI to proceed, but show reminder.
                     console.log(`onAuthStateChanged: Firestore doc exists for unverified user ${user.uid}. Allowing UI, showing reminder.`);
                     if (verificationMsg) {
                         verificationMsg.textContent = "Reminder: Please verify your email soon (check inbox/spam).";
                         verificationMsg.style.display = 'block';
                     }
-                    // *** DO NOT return or block UI here - let logic proceed ***
+
                 } else {
-                    // Firestore doc DOES NOT exist AND not verified. Block UI.
                     console.log(`onAuthStateChanged: Firestore doc does NOT exist for unverified user ${user.uid}. Blocking UI.`);
                     logoutBtn.style.display = "none";
                     chatInput.disabled = true;
                     sendBtn.disabled = true;
-                    // No need to call updateUserStatus(false) here as they aren't really 'online' yet
                     document.getElementById("authContainer").style.display = "block";
                     document.getElementById("adminPanel").style.display = "none";
                     isAdmin = false;
@@ -906,15 +878,11 @@
                         verificationMsg.textContent = "Please check your email to verify your account before proceeding.";
                         verificationMsg.style.display = 'block';
                     }
-                    // Keep them logged in according to Auth, but locked out of UI.
-                    // Or logout immediately:
-                    // await logout(); // Uncomment this line if you prefer to force logout immediately
-                    return; // Stop processing further for this unverified new user
+                   
+                    return;
                 }
             } catch (error) {
                 console.error("Error fetching user doc in onAuthStateChanged:", error);
-                // Fallback: Maybe block UI? Or let it proceed cautiously?
-                // For now, let's block to be safe if the doc fetch fails.
                 logoutBtn.style.display = "none";
                 chatInput.disabled = true;
                 sendBtn.disabled = true;
@@ -929,23 +897,20 @@
             }
         }
 
-        // --- User is LOGGED IN (Either verified, or existing unverified allowed) ---
+
         console.log("onAuthStateChanged: User proceeding to logged-in state:", user.uid);
 
-        // Ensure doc is fetched if not already done during verification check
         if (!userDocSnap) {
             try {
                 userDocSnap = await getDoc(uref);
             } catch (error) {
                  console.error("Error fetching user doc later in onAuthStateChanged:", error);
-                 // Handle this? Maybe logout?
                  alert("Error loading your user data. Logging out.");
                  await logout();
                  return;
             }
         }
 
-        // Check if the Firestore document actually exists now
         if (!userDocSnap || !userDocSnap.exists()) {
             console.error(`User ${user.uid} is authenticated, but Firestore document missing!`);
             alert("Error: Your user data could not be found. Logging out.");
@@ -953,7 +918,6 @@
             return;
         }
 
-        // Check ban status from the fetched document
         const userData = userDocSnap.data();
         if (userData.banned) {
             if (!bannedAlertShown) {
@@ -964,22 +928,19 @@
             return;
         }
 
-        // --- User is LOGGED IN, NOT BANNED (and allowed past verification check) ---
-        bannedAlertShown = false; // Reset flag
+        bannedAlertShown = false; 
         logoutBtn.style.display = "block";
         chatInput.disabled = false;
         sendBtn.disabled = false;
-        updateUserStatus(true); // Mark as online
+        updateUserStatus(true); 
         document.getElementById("authContainer").style.display = "none";
 
-        // Listen for real-time ban/admin status changes from this point
-        const unsubscribe = onSnapshot(uref, (docSnap) => { // Assign to variable to potentially unsubscribe later if needed
+        const unsubscribe = onSnapshot(uref, (docSnap) => { 
             if (!docSnap.exists()) {
                 console.warn(`User document ${user.uid} no longer exists during snapshot listening.`);
-                // If the doc is deleted while user is logged in, force logout
                 if (auth.currentUser && auth.currentUser.uid === user.uid) {
                     alert("Your account data seems to be missing. Logging out.");
-                    logout(); // No need for await here if we're already in async context
+                    logout(); 
                 }
                 return;
             }
@@ -988,27 +949,26 @@
             if (currentData.banned && auth.currentUser && auth.currentUser.uid === user.uid && !bannedAlertShown) {
                 alert("You have been banned. Logging out.");
                 bannedAlertShown = true;
-                logout(); // This will trigger onAuthStateChanged again
+                logout(); 
             }
             // Admin check
             const currentlyAdmin = currentData.isAdmin || false;
-            if (currentlyAdmin !== isAdmin) { // Check if status actually changed
+            if (currentlyAdmin !== isAdmin) { 
                 console.log(`Admin status changed for ${user.uid} to: ${currentlyAdmin}`);
                 isAdmin = currentlyAdmin;
                 document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
                 if (isAdmin) {
-                    loadUsersForAdmin(); // Load users if they just became admin
+                    loadUsersForAdmin(); 
                 }
             }
         }, error => {
             console.error(`Error in Firestore listener for ${user.uid}:`, error);
-            // Consider what to do on listener error - maybe alert user?
+            
         });
-        // Note: You might want to store 'unsubscribe' somewhere if you need to manually stop listening later,
-        // e.g., before logout, though onAuthStateChanged usually handles cleanup implicitly.
+        
 
 
-        // Set initial admin status based on the fetched data
+        
         isAdmin = userData.isAdmin || false;
         document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
         if (isAdmin) {
@@ -1016,24 +976,22 @@
         }
 
     } else {
-        // --- User is LOGGED OUT ---
+        
         console.log("onAuthStateChanged: User logged out.");
         logoutBtn.style.display = "none";
         chatInput.disabled = true;
         sendBtn.disabled = true;
-        // Ensure user status is false if they were previously logged in
-        // (updateUserStatus needs UID, so can't call directly here)
         document.getElementById("authContainer").style.display = "block";
         document.getElementById("adminPanel").style.display = "none";
         isAdmin = false;
-        bannedAlertShown = false; // Reset flag
-        if (verificationMsg) verificationMsg.style.display = 'none'; // Hide message on logout
-        stopMatrixEffect(); // Stop effects on logout if desired
+        bannedAlertShown = false; 
+        if (verificationMsg) verificationMsg.style.display = 'none'; 
+        stopMatrixEffect(); 
     }
  });
 
 
- // chat functionality
+
  const messagesCollectionRef = collection(db, "chatrooms", "general", "messages");
  const q = query(
    messagesCollectionRef,
@@ -1041,38 +999,36 @@
    limit(100)
  );
 
- onSnapshot(q, async (snapshot) => { // Use arrow function for consistency
+ onSnapshot(q, async (snapshot) => { 
     if (snapshot.empty) {
-        chatMessages.innerHTML = '<div class="message info-message">No messages yet. Be the first!</div>'; // Add a class for styling info messages
-        return;
+        chatMessages.innerHTML = '<div class="message info-message">No messages yet. Be the first!</div>';
     }
-   // desktop notification
-   if (snapshot.docChanges().some(change => change.type === 'added')) { // Only notify on new messages
-        const latestDoc = snapshot.docs[0]; // Newest message is first due to 'desc' order
+
+   if (snapshot.docChanges().some(change => change.type === 'added')) { 
+        const latestDoc = snapshot.docs[0]; 
         if (latestDoc) {
             const latestMsgData = latestDoc.data();
-            // Check if window hidden, permission granted, AND message is not from current user
+            
             if (document.hidden && Notification.permission === "granted" && auth.currentUser && latestMsgData.senderId !== auth.currentUser.uid) {
                 try {
                     const senderDoc = await getDoc(doc(db, "users", latestMsgData.senderId));
                     const senderUsername = senderDoc.exists() ? senderDoc.data().username : "Someone";
 
                     const raw = latestMsgData.text || "[image]";
-                    // Ensure filterMessage handles potential errors gracefully
                     let filtered = raw;
                     try {
                         filtered = latestMsgData.text ? await filterMessage(raw) : raw;
                     } catch (filterError) {
                         console.error("Error filtering message for notification:", filterError);
-                        // Use raw message if filtering fails
+                     
                     }
                     const body = replaceEmojis(filtered);
 
-                    new Notification(senderUsername, { body, tag: 'chat-message' }); // Add tag to prevent multiple notifications stacking up quickly?
+                    new Notification(senderUsername, { body, tag: 'chat-message' }); 
 
                 } catch (error) {
                     console.error("Error processing notification:", error);
-                    // Fallback notification if user fetch fails
+                    
                     const raw = latestMsgData.text || "[image]";
                      let filtered = raw;
                     try {
@@ -1086,19 +1042,19 @@
    }
 
 
-   // rebuild chat ui
-   // No need to await loadBannedWords here, filterMessage will call it if needed.
-   const messagePromises = snapshot.docs.map(async d => { // 'd' is the DocumentSnapshot
-     const m = d.data(); // m is the message data object
-     if (!m) return ''; // Skip if data is somehow missing
 
-     const ts = m.timestamp?.toDate() || new Date(); // Use optional chaining and fallback
+   
+   const messagePromises = snapshot.docs.map(async d => { 
+     const m = d.data(); 
+     if (!m) return ''; 
+
+     const ts = m.timestamp?.toDate() || new Date(); 
      const tstr = ts.toLocaleString("en-US", {
        year: "numeric", month: "short", day: "numeric",
        hour: "numeric", minute: "numeric", /*second: "numeric",*/ hour12: true // Removed seconds for cleaner look?
      });
 
-     // Filter and replace emojis
+     
      let txt = '';
      if (m.text) {
          try {
@@ -1111,7 +1067,7 @@
      }
 
 
-     // Get username - consider caching usernames locally for short periods?
+     
      let usr = "Unknown User";
      if (m.senderId) {
         try {
@@ -1121,17 +1077,15 @@
             }
         } catch (e) {
             console.error(`Error fetching username for senderId ${m.senderId}:`, e);
-            // Keep usr as "Unknown User"
+           
         }
      }
 
-     // Add delete button if admin
-     // Ensure window.deleteMessage is defined correctly globally or attached differently
+
      const del = isAdmin
-       ? `<button class="delete-btn" data-message-id="${d.id}">Delete</button>` // Use data attribute instead of inline onclick
+       ? `<button class="delete-btn" data-message-id="${d.id}">Delete</button>` 
        : "";
 
-     // Generate message HTML
      return `
        <div class="message" data-message-id="${d.id}">
          <div class="message-content">
@@ -1146,10 +1100,10 @@
        </div>`;
    });
 
-   const html = (await Promise.all(messagePromises)).join(''); // Wait for all promises and join
+   const html = (await Promise.all(messagePromises)).join(''); 
    chatMessages.innerHTML = html;
 
-    // Add event listener for delete buttons AFTER innerHTML is set
+   
     if (isAdmin) {
         document.querySelectorAll('.delete-btn').forEach(button => {
             button.addEventListener('click', (event) => {
@@ -1161,29 +1115,27 @@
         });
     }
 
-   // Scroll to bottom (newest messages) only if user isn't scrolled up
+  
     const shouldScroll = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 100; // Add tolerance
     if (shouldScroll) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
  });
 
- // Make deleteMessage globally accessible IF using data attributes and listener above isn't feasible,
- // otherwise the listener approach is better. Keep the function definition.
- async function deleteMessage(id) { // Changed from window.deleteMessage
+
+ async function deleteMessage(id) { 
    if (!isAdmin) { alert("Not authorized to delete."); return; }
    // Check if the message exists before confirming (optional)
    if (confirm(`Are you sure you want to delete message ID: ${id}?`)) {
         try {
             await deleteDoc(doc(db, "chatrooms/general/messages", id));
             console.log("Message deleted:", id);
-             // UI will update via the onSnapshot listener automatically
+            
         }
         catch (e) { console.error("Delete failed:", e); alert("Delete failed."); }
    }
  }
- // If using inline onclick="deleteMessage(...)", expose it to window:
- // window.deleteMessage = deleteMessage;
+
 
 
  // send buttons
@@ -1197,16 +1149,16 @@
 
 
    if (!auth.currentUser) { alert("Log in to chat."); return; }
-   // Re-check verification just in case UI state is weird
+   
    if (!auth.currentUser.emailVerified) {
-       // Check if they are an existing user allowed through
+       
        const userDocRef = doc(db, "users", auth.currentUser.uid);
        const userDocSnap = await getDoc(userDocRef);
        if (!userDocSnap.exists()) {
             alert("Please verify your email to chat.");
-            return; // Block new unverified users here too
+            return; 
        }
-       // Allow existing unverified users to chat, maybe show reminder? No alert here to avoid annoyance.
+      
    }
 
    const text = chatInput.value.trim();
@@ -1214,14 +1166,14 @@
    // commands check
    const cmds = {
         xanlack: "truth.html",
-        death: null, // Special case handled below
+        death: null, 
         encode: "encode.html",
         endtimes: "end.html",
         html: "test.html",
         wishlist: "wishlist.html",
         stats: "stats.html",
         kills: "torture1.html",
-        tester: "banned.html" // Careful with redirecting to a 'banned' page
+        tester: "banned.html" 
    };
    const cmd = text.toLowerCase();
    if (cmds.hasOwnProperty(cmd)) {
@@ -1230,41 +1182,41 @@
         } else if (cmd === "death") {
             applyDeathTheme();
         }
-        chatInput.value = ""; // Clear input after command
-        return; // Stop further processing for commands
+        chatInput.value = ""; 
+        return; 
    }
 
    if (text) {
-     // Only update lastSendTime if a message is actually sent
+     
      lastSendTime = now;
      try {
-        // Don't need to fetch username here, just send ID. Display logic handles username fetching.
-        await addDoc(messagesCollectionRef, { // Use defined ref
+        
+        await addDoc(messagesCollectionRef, { 
             senderId: auth.currentUser.uid,
-            text: text, // Send raw text, filtering happens on display
+            text: text, 
             timestamp: serverTimestamp()
-            // Removed nickname and likes
+            
         });
         chatInput.value = "";
         chatInput.focus();
      } catch (error) {
          console.error("Error sending message:", error);
          alert("Failed to send message.");
-         // Don't reset cooldown on failure to prevent spamming errors
+         
      }
    }
  });
  chatInput.addEventListener("keypress", e => {
    if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault(); // Prevent newline
-        sendBtn.click(); // Trigger send button click
+        e.preventDefault(); 
+        sendBtn.click(); 
     }
  });
 
  // admin panel
  async function loadUsersForAdmin() {
-   if (!isAdmin || !auth.currentUser) return; // Check admin status and logged in user
-   console.log("Loading users for admin panel..."); // Debug log
+   if (!isAdmin || !auth.currentUser) return; 
+   console.log("Loading users for admin panel..."); 
    try {
      const usersSnapshot = await getDocs(collection(db, "users"));
      const list = document.getElementById("adminUserList");
@@ -1272,38 +1224,35 @@
          console.error("Admin user list element not found!");
          return;
      }
-     list.innerHTML = ""; // Clear previous list
+     list.innerHTML = ""; 
 
-     const currentUserUid = auth.currentUser.uid; // Get current admin's UID
+     const currentUserUid = auth.currentUser.uid; 
 
      usersSnapshot.forEach(userDoc => {
        const userData = userDoc.data();
        const userId = userDoc.id;
 
-       // Skip the current admin user in the list
+       
        if (userId === currentUserUid) return;
 
        const item = document.createElement("div");
        item.className = 'admin-user-item';
 
        const userInfo = document.createElement("span");
-       // Display more info? e.g., email verified status?
        userInfo.textContent = `${userData.username || 'No Username'} (${userData.email}) ${userData.banned ? '[BANNED]' : ''} ${userData.isAdmin ? '[ADMIN]' : ''}`;
        item.appendChild(userInfo);
 
-       // Ban/Unban Button
        const banButton = document.createElement("button");
-       banButton.dataset.userId = userId; // Store user ID on the button
+       banButton.dataset.userId = userId; 
        if (userData.banned) {
          banButton.textContent = "Unban";
-         banButton.onclick = () => unbanUserFromUI(userId); // Keep direct onclick for simplicity here
+         banButton.onclick = () => unbanUserFromUI(userId); 
          banButton.classList.add('unban-button');
        } else {
          banButton.textContent = "Ban";
          banButton.onclick = () => banUserFromUI(userId);
          banButton.classList.add('ban-button');
        }
-        // Prevent banning/unbanning other admins
         if (userData.isAdmin) {
             banButton.disabled = true;
             banButton.title = "Cannot ban/unban other admins.";
@@ -1313,15 +1262,14 @@
        item.appendChild(banButton);
        list.appendChild(item);
      });
-     console.log("Admin user list populated."); // Debug log
+     console.log("Admin user list populated."); 
    } catch (e) { console.error("Error loading users for admin:", e); }
  }
- // Make admin functions globally accessible if using inline onclick
+ 
  async function banUserFromUI(id) {
    if (!isAdmin) { alert("Admin privileges required."); return; }
    if (auth.currentUser && id === auth.currentUser.uid) { alert("You cannot ban yourself."); return; }
 
-   // Optional: Fetch user data again to double-check admin status before banning
    const userToBanRef = doc(db, "users", id);
    const userToBanSnap = await getDoc(userToBanRef);
    if (userToBanSnap.exists() && userToBanSnap.data().isAdmin) {
@@ -1331,36 +1279,36 @@
 
    if (confirm("Are you sure you want to ban this user?")) {
         try {
-            await banUser(id); // Assumes banUser function updates Firestore correctly
+            await banUser(id); 
             alert("User banned successfully.");
-            loadUsersForAdmin(); // Refresh the list
+            loadUsersForAdmin(); 
         } catch (e) {
             console.error("Ban failed:", e);
             alert("Failed to ban user: " + e.message);
         }
    }
  }
- window.banUserFromUI = banUserFromUI; // Expose globally
+ window.banUserFromUI = banUserFromUI; 
 
  async function unbanUserFromUI(id) {
     if (!isAdmin) { alert("Admin privileges required."); return; }
    if (confirm("Are you sure you want to unban this user?")) {
         try {
-            await unbanUser(id); // Assumes unbanUser function updates Firestore correctly
+            await unbanUser(id); 
             alert("User unbanned successfully.");
-            loadUsersForAdmin(); // Refresh the list
+            loadUsersForAdmin(); 
         } catch (e) {
              console.error("Unban failed:", e);
             alert("Failed to unban user: " + e.message);
         }
    }
  }
- window.unbanUserFromUI = unbanUserFromUI; // Expose globally
+ window.unbanUserFromUI = unbanUserFromUI; // expose
 
  // user counts
  async function updateRegisteredUsersCount() {
    try {
-     const usersSnapshot = await getDocs(query(collection(db, "users"))); // No filter needed
+     const usersSnapshot = await getDocs(query(collection(db, "users"))); 
      const count = usersSnapshot.size;
      const userCountElement = document.getElementById("userCount");
      if (userCountElement) {
@@ -1371,32 +1319,22 @@
    }
  }
 
- // Update status on leave/close
  window.addEventListener("beforeunload", () => {
-    // Only update status if the user is actually logged in AND considered 'online' by the app logic
-    if (auth.currentUser && document.getElementById("authContainer").style.display === 'none') { // Check if chat UI is visible
-        // This is synchronous and might not always complete, but it's the best effort
+    if (auth.currentUser && document.getElementById("authContainer").style.display === 'none') {
         updateUserStatus(false);
     }
  });
 
- // Apply special theme
  function applyDeathTheme(log = true) {
-    document.body.className = 'death-theme'; // Override other themes
-    localStorage.setItem("theme", "death"); // Persist death theme
-    stopMatrixEffect(); // Stop matrix if it was running
+    document.body.className = 'death-theme'; 
+    localStorage.setItem("theme", "death");
+    stopMatrixEffect(); 
     if (log) console.log("Death theme activated.");
-    // Uncheck other theme radios
     themeRadios.forEach(radio => radio.checked = false);
-    // If there's a settings panel, maybe close it?
     if (settingsPanel && settingsPanel.classList.contains("open")) {
         settingsPanel.classList.remove("open");
     }
  }
-
- // Initial check in case user is already logged in on page load
- // The onAuthStateChanged handler covers this comprehensively.
-
 </script>
 </body>
 </html>
