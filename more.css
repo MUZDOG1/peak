@@ -6,12 +6,12 @@ h1{
     font-size: 27px;
 }
 p {
-    text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
     color: white;
     text-align: center;
 }
 body {
-    background-color: background-color #444;
+    background-color: #444;
 
 }
 video{
