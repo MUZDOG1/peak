@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Muzdog Chat</title>
   <link rel="shortcut icon" href="doglogo.ico" type="image/x-icon">
+  <!--TO DO: CHANGE SEND LIMIT TO LIKE 3 SECONDS CUZ TS IS TOO LONG-->
   
   
   <style>
@@ -499,7 +500,7 @@
  let bannedWords = [];
  let bannedAlertShown = false;
  let matrixInterval;
- // throttle: only allow one send per 5 seconds
+ // throttle: only allow one send per 5 seconds, 
  let lastSendTime = 0;
  const SEND_COOLDOWN = 5000; // ms
 
@@ -658,7 +659,7 @@
   laugh:    "😂",
   happy:    "😄",
   thumbsup: "👍",
-  heart:    "💔", // Note: This is a broken heart, consider adding a regular heart :love: ❤️ ?
+  heart:    "💔", 
   rose:     "🥀",
   sad:      "😭",
   angry:    "😡",
@@ -671,7 +672,7 @@
   poop:     "💩",
   money:    "🤑",
   peace:    "✌🏼",
-  // TODO: add more codes
+  // TODO: add more codes also add them to the help section bcuz rn they are not there(last 3)
  };
 
  // swapper
@@ -1130,7 +1131,7 @@
    if (confirm(`Are you sure you want to delete message ID: ${id}?`)) {
         try {
             await deleteDoc(doc(db, "chatrooms/general/messages", id));
-            console.log("Message deleted:", id);
+            
             
         }
         catch (e) { console.error("Delete failed:", e); alert("Delete failed."); }
@@ -1175,6 +1176,7 @@
         stats: "stats.html",
         kills: "torture1.html",
         tester: "banned.html" 
+        
    };
    const cmd = text.toLowerCase();
    if (cmds.hasOwnProperty(cmd)) {
