@@ -622,7 +622,6 @@
    try {
      // Prevent multiple loads if already loading or loaded
      if (bannedWords.length > 0) return;
-     console.log("Loading banned words..."); // Debug log
      const response = await fetch("banned_words.txt");
      if (!response.ok) {
          throw new Error(`HTTP error! status: ${response.status}`);
@@ -896,7 +895,6 @@
         }
 
 
-        console.log("onAuthStateChanged: User proceeding to logged-in state:", user.uid);
 
         if (!userDocSnap) {
             try {
@@ -1215,7 +1213,6 @@
  // admin panel
  async function loadUsersForAdmin() {
    if (!isAdmin || !auth.currentUser) return; 
-   console.log("Loading users for admin panel..."); 
    try {
      const usersSnapshot = await getDocs(collection(db, "users"));
      const list = document.getElementById("adminUserList");
@@ -1261,7 +1258,6 @@
        item.appendChild(banButton);
        list.appendChild(item);
      });
-     console.log("Admin user list populated."); 
    } catch (e) { console.error("Error loading users for admin:", e); }
  }
  
