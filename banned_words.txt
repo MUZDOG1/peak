@@ -2745,7 +2745,6 @@ rho
 sho
 uho
 vho
-who
 xho
 yho
 zho
