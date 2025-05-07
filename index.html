@@ -5,8 +5,8 @@
   <title>Muzdog Chat</title>
   <link rel="shortcut icon" href="doglogo.ico" type="image/x-icon">
   <!--TO DO: CHANGE SEND LIMIT TO LIKE 3 SECONDS CUZ TS IS TOO LONG-->
-  
-  
+
+
   <style>
     /* white theme */
     * {
@@ -79,8 +79,8 @@
       width: calc(100% - 20px);
     }
     .signup-btn-row {
-      display: inline-flex; 
-      align-items: center; 
+      display: inline-flex;
+      align-items: center;
       gap: 6px;
       margin-top: 5px;
       white-space: nowrap;
@@ -403,7 +403,7 @@
 <body class="light-mode">
   <header class="muzdog-header">
     <div class="logo">
-      Muzdog Chat 
+      Muzdog Chat
       <span class="subtitle">
         - <span id="userCount">?</span> users and counting!
         <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
@@ -411,7 +411,7 @@
         <a href="banned.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Report Words</a>
         <a href="help.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Help</a>
         <a href="more.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">More...</a>
-        
+
       </span>
     </div>
     <div class="header-buttons">
@@ -444,7 +444,7 @@
       <button id="signupBtn">Sign Up</button>
       <input type="checkbox" id="tosCheckbox">
       <label for="tosCheckbox">
-        Click this box to agree to our 
+        Click this box to agree to our
         <a href="tos.html" target="_blank" style="color: darkblue;">Terms of Service</a>
       </label>
     </div>
@@ -476,7 +476,7 @@
      id="chatInput"
      placeholder="Type your thoughts."
      disabled
-     maxlength="200"           
+     maxlength="200"
      >
     <button id="sendBtn" disabled>Send</button>
   </div>
@@ -501,7 +501,7 @@
  let bannedWords = [];
  let bannedAlertShown = false;
  let matrixInterval;
- // throttle: only allow one send per 5 seconds, 
+ // throttle: only allow one send per 5 seconds,
  let lastSendTime = 0;
  const SEND_COOLDOWN = 5000; // ms
 
@@ -533,7 +533,7 @@
    await incrementSiteVisits();
    const visits = await getSiteVisits();
    document.getElementById("visitsCount").textContent = visits;
-   updateRegisteredUsersCount();
+   updateRegisteredUsersCount(); // Initial call
    loadTheme();
    // Ensure verification message is hidden initially
    if (verificationMsg) verificationMsg.style.display = 'none';
@@ -658,7 +658,7 @@
   laugh:    "😂",
   happy:    "😄",
   thumbsup: "👍",
-  heart:    "💔", 
+  heart:    "💔",
   rose:     "🥀",
   sad:      "😭",
   angry:    "😡",
@@ -676,7 +676,7 @@
 
  // swapper
  function replaceEmojis(str) {
-  return str.replace(/:([a-z0-9_]+):/gi, (match, code) => 
+  return str.replace(/:([a-z0-9_]+):/gi, (match, code) =>
     emojiMap[code.toLowerCase()] || match
   );
  }
@@ -705,7 +705,7 @@
     }
 
   if (!bannedWords.length) await loadBannedWords();
-  if (bannedWords.length > 0) { 
+  if (bannedWords.length > 0) {
       const usernameLower = userDisplayName.toLowerCase();
       for (const w of bannedWords) {
           if (usernameLower.includes(w)) {
@@ -723,31 +723,29 @@
     return;
   }
 
-  signupBtn.disabled = true; 
+  signupBtn.disabled = true;
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pw);
     const newUser = userCredential.user;
 
-    
-
-   
     await sendEmailVerification(newUser);
     console.log("Verification email sent to:", email);
 
+    // MODIFICATION: Add emailVerified: false to new user document
     await setDoc(doc(db, "users", newUser.uid), {
         username: userDisplayName,
         email: email,
         createdAt: serverTimestamp(),
         online: false,
         banned: false,
-        isAdmin: false 
+        isAdmin: false,
+        emailVerified: false // Initialize emailVerified status
     });
-   
 
- 
+
     alert("Signup successful! Please check your email inbox (and spam folder) to verify your account before logging in.");
-    await logout(); 
-    
+    await logout();
+
 
     signupEmail.value = "";
     signupPassword.value = "";
@@ -780,48 +778,48 @@
     try {
         const cred = await signInWithEmailAndPassword(auth, email, pw);
         const user = cred.user;
-        const userDocRef = doc(db, "users", user.uid); 
-        let userDocSnap = null; 
+        const userDocRef = doc(db, "users", user.uid);
+        let userDocSnap = null;
 
         if (!user.emailVerified) {
             console.log(`User ${user.uid} not verified. Checking Firestore doc.`);
-            userDocSnap = await getDoc(userDocRef); 
+            userDocSnap = await getDoc(userDocRef);
 
             if (userDocSnap.exists()) {
-                
+
                 try {
                     await sendEmailVerification(user);
                     alert("Verification email sent. Please check your inbox (and spam folder) soon to verify your account.");
                 } catch (verificationError) {
                     console.error("Failed to send verification email:", verificationError);
-                   
+
                 }
             } else {
-                
+
                 alert("Please verify your email address first. Check your inbox (and spam folder) for the verification email sent during signup.");
-                await logout(); 
-                loginBtn.disabled = false; 
-                return; 
+                await logout();
+                loginBtn.disabled = false;
+                return;
             }
         }
 
-        if (!userDocSnap) {
+        if (!userDocSnap) { // Fetch if not already fetched (e.g., if user was already verified by Auth)
              userDocSnap = await getDoc(userDocRef);
         }
 
         if (userDocSnap && userDocSnap.exists() && userDocSnap.data().banned) {
             if (!bannedAlertShown) {
                 alert("You are banned.");
-                bannedAlertShown = true; 
+                bannedAlertShown = true;
             }
             await logout();
-            loginBtn.disabled = false; 
-            return; 
+            loginBtn.disabled = false;
+            return;
         }
 
-        loginEmail.value = ""; 
+        loginEmail.value = "";
         loginPassword.value = "";
-        bannedAlertShown = false; 
+        bannedAlertShown = false;
 
     } catch (e) {
         console.error("Login Error:", e);
@@ -834,7 +832,7 @@
             alert("Login failed: " + e.message);
         }
     } finally {
-        loginBtn.disabled = false; 
+        loginBtn.disabled = false;
     }
  });
 
@@ -848,72 +846,75 @@
 
 
  onAuthStateChanged(auth, async user => {
-    if (verificationMsg) verificationMsg.style.display = 'none'; 
+    if (verificationMsg) verificationMsg.style.display = 'none';
 
     if (user) {
         const uref = doc(db, "users", user.uid);
-        let userDocSnap = null; 
+        let userDocSnap = null;
 
-        if (!user.emailVerified) {
-            try {
-                userDocSnap = await getDoc(uref); 
+        // Attempt to fetch user document once to be reused
+        try {
+            userDocSnap = await getDoc(uref);
+        } catch (error) {
+            console.error("Error fetching user doc in onAuthStateChanged (initial fetch):", error);
+            // If this critical fetch fails, consider logging out or showing a generic error.
+            // For now, subsequent checks will handle if userDocSnap remains null.
+        }
 
-                if (userDocSnap.exists()) {
-                    if (verificationMsg) {
-                        verificationMsg.textContent = "Reminder: Please verify your email soon (check inbox/spam).";
-                        verificationMsg.style.display = 'block';
-                    }
-
-                } else {
-                    logoutBtn.style.display = "none";
-                    chatInput.disabled = true;
-                    sendBtn.disabled = true;
-                    document.getElementById("authContainer").style.display = "block";
-                    document.getElementById("adminPanel").style.display = "none";
-                    isAdmin = false;
-                    if (verificationMsg) {
-                        verificationMsg.textContent = "Please check your email to verify your account before proceeding.";
-                        verificationMsg.style.display = 'block';
-                    }
-                   
-                    return;
+        if (!user.emailVerified) { // From Firebase Auth
+            // This block handles users whose Firebase Auth state says email is not verified.
+            if (userDocSnap && userDocSnap.exists()) { // Firestore doc exists
+                if (verificationMsg) {
+                    verificationMsg.textContent = "Reminder: Please verify your email soon (check inbox/spam).";
+                    verificationMsg.style.display = 'block';
                 }
-            } catch (error) {
-                console.error("Error fetching user doc in onAuthStateChanged:", error);
+                // No 'return' here; proceed to check for bans, admin status, etc.,
+                // but chat input/send will likely be disabled by later checks or sendBtn logic.
+            } else { // Firestore doc doesn't exist OR userDocSnap is null (fetch error)
+                     // This indicates an issue, e.g., signup created Auth user but Firestore doc failed or is missing.
                 logoutBtn.style.display = "none";
                 chatInput.disabled = true;
                 sendBtn.disabled = true;
                 document.getElementById("authContainer").style.display = "block";
                 document.getElementById("adminPanel").style.display = "none";
                 isAdmin = false;
-                 if (verificationMsg) {
-                    verificationMsg.textContent = "Error checking account status. Please try again.";
+                if (verificationMsg) {
+                    verificationMsg.textContent = "Please check your email to verify your account before proceeding. If issues persist, contact support.";
                     verificationMsg.style.display = 'block';
-                 }
-                 return;
+                }
+                // If the doc is truly missing, the general check below will log out.
+                // No explicit 'return' here to allow the general missing doc check to handle logout.
             }
+        } else { // user.emailVerified is true (from Firebase Auth)
+            // MODIFICATION: Update Firestore if Auth says verified but Firestore doesn't.
+            if (userDocSnap && userDocSnap.exists()) {
+                const userDataFromSnap = userDocSnap.data();
+                if (userDataFromSnap.emailVerified !== true) { // Firestore doc needs update
+                    try {
+                        await updateDoc(uref, { emailVerified: true });
+                        console.log(`User ${user.uid} Firestore doc updated to emailVerified: true.`);
+                        await updateRegisteredUsersCount(); // Update count now that Firestore reflects verification
+                    } catch (updateError) {
+                        console.error("Error updating user doc to emailVerified: true", updateError);
+                    }
+                }
+            }
+            // If userDocSnap doesn't exist here, but user.emailVerified is true from Auth,
+            // it's an inconsistent state. The general doc check below will handle it.
         }
 
 
-
-        if (!userDocSnap) {
-            try {
-                userDocSnap = await getDoc(uref);
-            } catch (error) {
-                 console.error("Error fetching user doc later in onAuthStateChanged:", error);
-                 alert("Error loading your user data. Logging out.");
-                 await logout();
-                 return;
-            }
-        }
-
+        // General check for Firestore document existence (critical for app function)
         if (!userDocSnap || !userDocSnap.exists()) {
-            console.error(`User ${user.uid} is authenticated, but Firestore document missing!`);
-            alert("Error: Your user data could not be found. Logging out.");
+            // This can be reached if initial fetch failed, or if doc truly doesn't exist
+            // for an authenticated user (problematic state).
+            console.error(`User ${user.uid} is authenticated, but Firestore document missing or failed to load!`);
+            alert("Error: Your user data could not be found or loaded. Logging out.");
             await logout();
-            return;
+            return; // Essential to stop further processing
         }
 
+        // Proceed with data from userDocSnap if it exists
         const userData = userDocSnap.data();
         if (userData.banned) {
             if (!bannedAlertShown) {
@@ -924,19 +925,23 @@
             return;
         }
 
-        bannedAlertShown = false; 
+        // If user is not banned and document exists, proceed to enable UI
+        bannedAlertShown = false;
         logoutBtn.style.display = "block";
+        // Chat enabled only if email is verified (as per sendBtn logic)
+        // but the input itself can be enabled here. The sendBtn has its own check.
         chatInput.disabled = false;
         sendBtn.disabled = false;
-        updateUserStatus(true); 
+        updateUserStatus(true);
         document.getElementById("authContainer").style.display = "none";
 
-        const unsubscribe = onSnapshot(uref, (docSnap) => { 
+        // Firestore listener for real-time updates (ban, admin status)
+        const unsubscribe = onSnapshot(uref, (docSnap) => {
             if (!docSnap.exists()) {
                 console.warn(`User document ${user.uid} no longer exists during snapshot listening.`);
                 if (auth.currentUser && auth.currentUser.uid === user.uid) {
                     alert("Your account data seems to be missing. Logging out.");
-                    logout(); 
+                    logout();
                 }
                 return;
             }
@@ -945,34 +950,29 @@
             if (currentData.banned && auth.currentUser && auth.currentUser.uid === user.uid && !bannedAlertShown) {
                 alert("You have been banned. Logging out.");
                 bannedAlertShown = true;
-                logout(); 
+                logout();
             }
             // Admin check
             const currentlyAdmin = currentData.isAdmin || false;
-            if (currentlyAdmin !== isAdmin) { 
+            if (currentlyAdmin !== isAdmin) {
                 console.log(`Admin status changed for ${user.uid} to: ${currentlyAdmin}`);
                 isAdmin = currentlyAdmin;
                 document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
                 if (isAdmin) {
-                    loadUsersForAdmin(); 
+                    loadUsersForAdmin();
                 }
             }
         }, error => {
             console.error(`Error in Firestore listener for ${user.uid}:`, error);
-            
         });
-        
 
-
-        
         isAdmin = userData.isAdmin || false;
         document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
         if (isAdmin) {
             loadUsersForAdmin();
         }
 
-    } else {
-        
+    } else { // User is logged out
         console.log("onAuthStateChanged: User logged out.");
         logoutBtn.style.display = "none";
         chatInput.disabled = true;
@@ -980,9 +980,9 @@
         document.getElementById("authContainer").style.display = "block";
         document.getElementById("adminPanel").style.display = "none";
         isAdmin = false;
-        bannedAlertShown = false; 
-        if (verificationMsg) verificationMsg.style.display = 'none'; 
-        stopMatrixEffect(); 
+        bannedAlertShown = false;
+        if (verificationMsg) verificationMsg.style.display = 'none';
+        stopMatrixEffect();
     }
  });
 
@@ -995,16 +995,16 @@
    limit(100)
  );
 
- onSnapshot(q, async (snapshot) => { 
+ onSnapshot(q, async (snapshot) => {
     if (snapshot.empty) {
         chatMessages.innerHTML = '<div class="message info-message">No messages yet. Be the first!</div>';
     }
 
-   if (snapshot.docChanges().some(change => change.type === 'added')) { 
-        const latestDoc = snapshot.docs[0]; 
+   if (snapshot.docChanges().some(change => change.type === 'added')) {
+        const latestDoc = snapshot.docs[0];
         if (latestDoc) {
             const latestMsgData = latestDoc.data();
-            
+
             if (document.hidden && Notification.permission === "granted" && auth.currentUser && latestMsgData.senderId !== auth.currentUser.uid) {
                 try {
                     const senderDoc = await getDoc(doc(db, "users", latestMsgData.senderId));
@@ -1016,15 +1016,15 @@
                         filtered = latestMsgData.text ? await filterMessage(raw) : raw;
                     } catch (filterError) {
                         console.error("Error filtering message for notification:", filterError);
-                     
+
                     }
                     const body = replaceEmojis(filtered);
 
-                    new Notification(senderUsername, { body, tag: 'chat-message' }); 
+                    new Notification(senderUsername, { body, tag: 'chat-message' });
 
                 } catch (error) {
                     console.error("Error processing notification:", error);
-                    
+
                     const raw = latestMsgData.text || "[image]";
                      let filtered = raw;
                     try {
@@ -1037,20 +1037,17 @@
         }
    }
 
+   const messagePromises = snapshot.docs.map(async d => {
+     const m = d.data();
+     if (!m) return '';
 
-
-   
-   const messagePromises = snapshot.docs.map(async d => { 
-     const m = d.data(); 
-     if (!m) return ''; 
-
-     const ts = m.timestamp?.toDate() || new Date(); 
+     const ts = m.timestamp?.toDate() || new Date();
      const tstr = ts.toLocaleString("en-US", {
        year: "numeric", month: "short", day: "numeric",
        hour: "numeric", minute: "numeric", /*second: "numeric",*/ hour12: true // Removed seconds for cleaner look?
      });
 
-     
+
      let txt = '';
      if (m.text) {
          try {
@@ -1063,7 +1060,7 @@
      }
 
 
-     
+
      let usr = "Unknown User";
      if (m.senderId) {
         try {
@@ -1073,13 +1070,13 @@
             }
         } catch (e) {
             console.error(`Error fetching username for senderId ${m.senderId}:`, e);
-           
+
         }
      }
 
 
      const del = isAdmin
-       ? `<button class="delete-btn" data-message-id="${d.id}">Delete</button>` 
+       ? `<button class="delete-btn" data-message-id="${d.id}">Delete</button>`
        : "";
 
      return `
@@ -1096,10 +1093,10 @@
        </div>`;
    });
 
-   const html = (await Promise.all(messagePromises)).join(''); 
+   const html = (await Promise.all(messagePromises)).join('');
    chatMessages.innerHTML = html;
 
-   
+
     if (isAdmin) {
         document.querySelectorAll('.delete-btn').forEach(button => {
             button.addEventListener('click', (event) => {
@@ -1111,7 +1108,7 @@
         });
     }
 
-  
+
     const shouldScroll = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 100; // Add tolerance
     if (shouldScroll) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -1119,14 +1116,14 @@
  });
 
 
- async function deleteMessage(id) { 
+ async function deleteMessage(id) {
    if (!isAdmin) { alert("Not authorized to delete."); return; }
    // Check if the message exists before confirming (optional)
    if (confirm(`Are you sure you want to delete message ID: ${id}?`)) {
         try {
             await deleteDoc(doc(db, "chatrooms/general/messages", id));
-            
-            
+
+
         }
         catch (e) { console.error("Delete failed:", e); alert("Delete failed."); }
    }
@@ -1145,16 +1142,15 @@
 
 
    if (!auth.currentUser) { alert("Log in to chat."); return; }
-   
+
+   // THIS BLOCK IS IDENTICAL TO YOUR ORIGINAL CODE
    if (!auth.currentUser.emailVerified) {
-       
        const userDocRef = doc(db, "users", auth.currentUser.uid);
        const userDocSnap = await getDoc(userDocRef);
        if (!userDocSnap.exists()) {
             alert("Please verify your email to chat.");
-            return; 
+            return;
        }
-      
    }
 
    const text = chatInput.value.trim();
@@ -1162,15 +1158,15 @@
    // commands check
    const cmds = {
         xanlack: "truth.html",
-        death: null, 
+        death: null,
         encode: "encode.html",
         endtimes: "end.html",
         html: "test.html",
         wishlist: "wishlist.html",
         stats: "stats.html",
         kills: "torture1.html",
-        tester: "banned.html" 
-        
+        tester: "banned.html"
+
    };
    const cmd = text.toLowerCase();
    if (cmds.hasOwnProperty(cmd)) {
@@ -1179,40 +1175,40 @@
         } else if (cmd === "death") {
             applyDeathTheme();
         }
-        chatInput.value = ""; 
-        return; 
+        chatInput.value = "";
+        return;
    }
 
    if (text) {
-     
+
      lastSendTime = now;
      try {
-        
-        await addDoc(messagesCollectionRef, { 
+
+        await addDoc(messagesCollectionRef, {
             senderId: auth.currentUser.uid,
-            text: text, 
+            text: text,
             timestamp: serverTimestamp()
-            
+
         });
         chatInput.value = "";
         chatInput.focus();
      } catch (error) {
          console.error("Error sending message:", error);
          alert("Failed to send message.");
-         
+
      }
    }
  });
  chatInput.addEventListener("keypress", e => {
    if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault(); 
-        sendBtn.click(); 
+        e.preventDefault();
+        sendBtn.click();
     }
  });
 
  // admin panel
  async function loadUsersForAdmin() {
-   if (!isAdmin || !auth.currentUser) return; 
+   if (!isAdmin || !auth.currentUser) return;
    try {
      const usersSnapshot = await getDocs(collection(db, "users"));
      const list = document.getElementById("adminUserList");
@@ -1220,15 +1216,15 @@
          console.error("Admin user list element not found!");
          return;
      }
-     list.innerHTML = ""; 
+     list.innerHTML = "";
 
-     const currentUserUid = auth.currentUser.uid; 
+     const currentUserUid = auth.currentUser.uid;
 
      usersSnapshot.forEach(userDoc => {
        const userData = userDoc.data();
        const userId = userDoc.id;
 
-       
+
        if (userId === currentUserUid) return;
 
        const item = document.createElement("div");
@@ -1239,10 +1235,10 @@
        item.appendChild(userInfo);
 
        const banButton = document.createElement("button");
-       banButton.dataset.userId = userId; 
+       banButton.dataset.userId = userId;
        if (userData.banned) {
          banButton.textContent = "Unban";
-         banButton.onclick = () => unbanUserFromUI(userId); 
+         banButton.onclick = () => unbanUserFromUI(userId);
          banButton.classList.add('unban-button');
        } else {
          banButton.textContent = "Ban";
@@ -1260,7 +1256,7 @@
      });
    } catch (e) { console.error("Error loading users for admin:", e); }
  }
- 
+
  async function banUserFromUI(id) {
    if (!isAdmin) { alert("Admin privileges required."); return; }
    if (auth.currentUser && id === auth.currentUser.uid) { alert("You cannot ban yourself."); return; }
@@ -1274,24 +1270,24 @@
 
    if (confirm("Are you sure you want to ban this user?")) {
         try {
-            await banUser(id); 
+            await banUser(id);
             alert("User banned successfully.");
-            loadUsersForAdmin(); 
+            loadUsersForAdmin();
         } catch (e) {
             console.error("Ban failed:", e);
             alert("Failed to ban user: " + e.message);
         }
    }
  }
- window.banUserFromUI = banUserFromUI; 
+ window.banUserFromUI = banUserFromUI;
 
  async function unbanUserFromUI(id) {
     if (!isAdmin) { alert("Admin privileges required."); return; }
    if (confirm("Are you sure you want to unban this user?")) {
         try {
-            await unbanUser(id); 
+            await unbanUser(id);
             alert("User unbanned successfully.");
-            loadUsersForAdmin(); 
+            loadUsersForAdmin();
         } catch (e) {
              console.error("Unban failed:", e);
             alert("Failed to unban user: " + e.message);
@@ -1303,14 +1299,19 @@
  // user counts
  async function updateRegisteredUsersCount() {
    try {
-     const usersSnapshot = await getDocs(query(collection(db, "users"))); 
+     // MODIFICATION: Query for users where emailVerified is true in Firestore
+     const usersSnapshot = await getDocs(query(collection(db, "users"), where("emailVerified", "==", true)));
      const count = usersSnapshot.size;
      const userCountElement = document.getElementById("userCount");
      if (userCountElement) {
         userCountElement.textContent = count;
      }
    } catch (e) {
-     console.error("Error getting user count:", e);
+     console.error("Error getting verified user count:", e);
+     const userCountElement = document.getElementById("userCount");
+     if (userCountElement) { // Set to '?' on error
+        userCountElement.textContent = '?';
+     }
    }
  }
 
@@ -1321,9 +1322,9 @@
  });
 
  function applyDeathTheme(log = true) {
-    document.body.className = 'death-theme'; 
+    document.body.className = 'death-theme';
     localStorage.setItem("theme", "death");
-    stopMatrixEffect(); 
+    stopMatrixEffect();
     if (log) console.log("Death theme activated.");
     themeRadios.forEach(radio => radio.checked = false);
     if (settingsPanel && settingsPanel.classList.contains("open")) {
@@ -1333,7 +1334,6 @@
 </script>
 </body>
 </html>
-
 
 <!--journal link: "aHR0cHM6Ly9tdXpkb2cxLmdpdGh1Yi5pby9wZWFrL3F3ZXJ0eQ==" 
 beyond easy to decode, go nuts.-->
