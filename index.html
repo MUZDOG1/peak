@@ -473,7 +473,7 @@
     <label>
       <input type="radio" name="theme" value="hacker" id="hackerModeRadio"> Hacker Mode
     </label>
-    <a href="404.html" class="settings-moreinfo">More Info...</a> <!--CHANGE TO MOREINFO.HTML LATER ONCE DONE-->
+    <a href="moreinfo.html" class="settings-moreinfo">More Info...</a> <!--CHANGE TO MOREINFO.HTML LATER ONCE DONE, done that -->
   </div>
 
   <!-- auth + sign ups -->
@@ -525,17 +525,17 @@
   <script type="module">
     import {
    db, storage, auth, updateUserStatus, incrementSiteVisits, getSiteVisits,
-   logout, banUser, unbanUser // Removed signUp, using firebase functions directly
+   logout, banUser, unbanUser
  } from "./firebase.js";
  import {
    collection, addDoc, serverTimestamp, query, orderBy, onSnapshot,
-   updateDoc, doc, increment, getDoc, getDocs, where, limit, deleteDoc, setDoc // Ensured setDoc is present
+   updateDoc, doc, increment, getDoc, getDocs, where, limit, deleteDoc, setDoc 
  } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
  import {
    onAuthStateChanged,
    signInWithEmailAndPassword,
-   createUserWithEmailAndPassword, // For signup
-   sendEmailVerification         // For verification
+   createUserWithEmailAndPassword, 
+   sendEmailVerification        
  } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
  // global variables
@@ -571,7 +571,7 @@
  const settingsBtn     = document.getElementById("settingsBtn");
  const settingsPanel   = document.getElementById("settingsPanel");
  const themeRadios     = document.querySelectorAll('input[name="theme"]');
- const verificationMsg = document.getElementById("verificationMsg"); // Make sure <div id="verificationMsg"> exists in your HTML
+ const verificationMsg = document.getElementById("verificationMsg");
 
  // ask for noti perms
  document.addEventListener("DOMContentLoaded", async () => {
@@ -1099,7 +1099,7 @@
      const ts = m.timestamp?.toDate() || new Date();
      const tstr = ts.toLocaleString("en-US", {
        year: "numeric", month: "short", day: "numeric",
-       hour: "numeric", minute: "numeric", /*second: "numeric",*/ hour12: true // Removed seconds for cleaner look?
+       hour: "numeric", minute: "numeric", hour12: true 
      });
 
 
@@ -1117,14 +1117,14 @@
 
 
      let usr = "Unknown User";
-     let senderEmail = null; // <-- Variable to store sender's email
+     let senderEmail = null; 
      if (m.senderId) {
         try {
             const userDoc = await getDoc(doc(db, "users", m.senderId));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
                 usr = userData.username || "Unknown User";
-                senderEmail = userData.email; // <-- Get the email
+                senderEmail = userData.email; 
             }
         } catch (e) {
             console.error(`Error fetching username for senderId ${m.senderId}:`, e);
@@ -1137,9 +1137,9 @@
        ? `<button class="delete-btn" data-message-id="${d.id}">Delete</button>`
        : "";
 
-     let messageClasses = "message"; // <-- Base class
+     let messageClasses = "message";
      if (senderEmail && GLOW_EMAILS.includes(senderEmail.toLowerCase())) {
-         messageClasses += " glow-message"; // <-- Add glow class if email matches
+         messageClasses += " glow-message"; 
      }
 
      return `
@@ -1181,7 +1181,6 @@
 
  async function deleteMessage(id) {
    if (!isAdmin) { alert("Not authorized to delete."); return; }
-   // Check if the message exists before confirming (optional)
    if (confirm(`Are you sure you want to delete message ID: ${id}?`)) {
         try {
             await deleteDoc(doc(db, "chatrooms/general/messages", id));
