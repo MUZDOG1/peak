@@ -263,6 +263,10 @@
       animation: matrix-fall linear infinite;
       animation-duration: calc(var(--duration) * 1s);
     }
+    .settings-moreinfo {
+      text-align: center;
+      color: blue;
+    }
     @keyframes matrix-fall {
       0% { transform: translateY(-100px); }
       100% { transform: translateY(calc(100vh + 100px)); }
@@ -432,10 +436,6 @@
       animation: pulse-glow-death 1.5s infinite alternate;
       border: 1px solid #ff0000 !important; /* Red border */
 
-    .settings-moreinfo {
-      text-align: center;
-      color: blue;
-    }
     }
   </style>
 </head>
