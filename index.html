@@ -640,19 +640,17 @@
  function loadTheme() {
    const theme = localStorage.getItem("theme") || "light";
    document.body.className = theme + "-mode";
-   // Check if the element exists before trying to set checked
    const radioElement = document.getElementById(theme + "ModeRadio");
    if (radioElement) {
         radioElement.checked = true;
    } else {
-        // Don't warn for 'death' theme as it might not have a radio
         if (theme !== 'death') {
             console.warn(`Radio button for theme "${theme}" not found.`);
         }
    }
-   stopMatrixEffect(); // Stop any previous effect first
+   stopMatrixEffect(); 
    if (theme === "hacker") startMatrixEffect();
-   else if (theme === "death") applyDeathTheme(false); // Apply death theme without console log if loaded initially
+   else if (theme === "death") applyDeathTheme(false); 
  }
  themeRadios.forEach(radio => {
    radio.addEventListener("change", () => {
@@ -670,7 +668,6 @@
  // banned word loader
  async function loadBannedWords() {
    try {
-     // Prevent multiple loads if already loading or loaded
      if (bannedWords.length > 0) return;
      const response = await fetch("banned_words.txt");
      if (!response.ok) {
@@ -1403,3 +1400,4 @@
 
 <!--journal link: "aHR0cHM6Ly9tdXpkb2cxLmdpdGh1Yi5pby9wZWFrL3F3ZXJ0eQ=="
 beyond easy to decode, go nuts.-->
+<!--ps, this is the old link as of 5/3/2025, the directory is the same so just go to it.-->
