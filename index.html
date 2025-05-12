@@ -464,6 +464,7 @@
     <div class="logo">
       Muzdog Chat
       <span class="subtitle">
+        <!--user count below >>>>>>-->
         - <span id="userCount">?</span> users and counting! <!--PLEASE REMOVE THIS WHEN WE GET 1000+ USERS BECAUSE THIS SHIT IS NOT SUSTANIBLE 
         ALSO I DONT KNOW HOW TO SPELL SUSTANIBLE OR WHATEVER PLEASE JUST REMOVE IT SOON BECAUSE IT IS GONNA 
         LOOK SO ASS-->
@@ -487,6 +488,7 @@
 
   <!-- modes -->
   <div id="settingsPanel">
+    <!--settings panel-->
     <h3>Settings</h3>
     <label>
       <input type="radio" name="theme" value="light" id="lightModeRadio"> Light Mode
@@ -503,6 +505,7 @@
 
   <!-- auth + sign ups -->
   <div class="auth-container" id="authContainer">
+    <!--sign up area-->
     <h2>Sign Up</h2>
     <input type="email" id="signupEmail" placeholder="Email">
     <input type="password" id="signupPassword" placeholder="Password">
@@ -515,19 +518,23 @@
         <a href="tos.html" target="_blank" style="color: darkblue;">Terms of Service</a>
       </label>
     </div>
+    <!--login area-->
     <h2>Login</h2>
     <input type="email" id="loginEmail" placeholder="Email">
     <input type="password" id="loginPassword" placeholder="Password">
     <button id="loginBtn">Login</button>
   </div>
 
-  <!-- container -->
+  <!-- msg containers -->
   <div class="container">
     <div class="chat-column">
       <div class="chat-header">
+        <!--live chat announcement tab below >>>>>>>>>-->
         <span class="chat-title">Live Chat [VERSION 1.9.4 | <a href="log.html" style="color: blue;">LOG HERE</a>] </span>
         <span class="visits">Total Visits: <span id="visitsCount">?</span></span>
+        <!--total visits above >>>>>> ps also remove when we gain 100000+ visits cuz it will look ass-->
       </div>
+      <!--admin panel-->
       <div id="adminPanel">
         <h3>ban list</h3>
         <br>
@@ -548,6 +555,7 @@
      >
     <button id="sendBtn" disabled>Send</button>
   </div>
+  <!--start of javascript-->
   <script type="module">
     import {
    db, storage, auth, updateUserStatus, incrementSiteVisits, getSiteVisits,
@@ -601,7 +609,8 @@
  const themeRadios     = document.querySelectorAll('input[name="theme"]');
  const verificationMsg = document.getElementById("verificationMsg");
 
- // ask for noti perms
+ // ask for noti perms, maybe change to custom window showing click this when prompted? that will look 
+ // pretty awesome tbh but its alot of work and im lazy
  document.addEventListener("DOMContentLoaded", async () => {
    if ("Notification" in window) {
      await Notification.requestPermission();
@@ -612,7 +621,7 @@
    document.getElementById("visitsCount").textContent = visits;
    updateRegisteredUsersCount();
    loadTheme();
-   // Ensure verification message is hidden initially
+   // ensure that verification is sent
    if (verificationMsg) verificationMsg.style.display = 'none';
  });
 
@@ -624,6 +633,7 @@
 
 
  // ones and zeros have sex on my screen
+ // aka matrix effect for hacker mode
  function startMatrixEffect() {
    const chars = "01";
    const canvas = document.createElement("div");
@@ -663,7 +673,8 @@
    if (canvas) canvas.remove();
  }
 
- // theme toucher
+ // theme toucher, switches themes. also if user clears cache it will reset so make that something in more info
+ // or the help page
  function loadTheme() {
    const theme = localStorage.getItem("theme") || "light";
    document.body.className = theme + "-mode";
@@ -692,7 +703,9 @@
    settingsPanel.classList.toggle("open");
  });
 
- // banned word loader
+ // banned word loader, if error shown signal the doomsday alarm cuz we are fucckeeeeddddddddddd
+ // also if there is an error, switch it to "fixing.html" cuz we simply cannot let anyone send messages
+ // with no censorship
  async function loadBannedWords() {
    try {
      if (bannedWords.length > 0) return;
@@ -704,6 +717,8 @@
      bannedWords     = text.split("\n").map(w => w.trim().toLowerCase()).filter(w => w); 
      console.log(`Loaded ${bannedWords.length} banned words.`); 
    } catch (e) {
+    // error to catch if banned words didnt load, please change index.html to redirect to "fixing.html"
+    // if this shows becuz we will be screwed.
      console.error("Failed to load banned words(BAD!!! FIX NOW!):", e);
      bannedWords = [];
    }
@@ -753,14 +768,14 @@
   // TODO: add more damn codes!!!! working on it rn as of 5/12/2025
  };
 
- // swapper
+ // swapper to change emoji codes to the actual emojis
  function replaceEmojis(str) {
   return str.replace(/:([a-z0-9_]+):/gi, (match, code) =>
     emojiMap[code.toLowerCase()] || match
   );
  }
 
-
+// sign up settings
  signupBtn.addEventListener("click", async () => {
   if (!tosCheckbox.checked) {
     alert("Please agree to the TOS before signing up.");
@@ -980,8 +995,8 @@
             try {
                 userDocSnap = await getDoc(uref);
             } catch (error) {
-                 console.error("Error fetching user doc later in onAuthStateChanged:", error);
-                 alert("Error loading your user data. Logging out.");
+                 console.error("Error fetching user doc, please report this to md chat higher ups", error);
+                 alert("Error loading your user data. Please report this to MD CHAT admins.");
                  await logout();
                  return;
             }
@@ -1428,3 +1443,4 @@
 <!--journal link: "aHR0cHM6Ly9tdXpkb2cxLmdpdGh1Yi5pby9wZWFrL3F3ZXJ0eQ=="
 beyond easy to decode, go nuts.-->
 <!--ps, this is the old link as of 5/3/2025, the directory is the same so just go to it.-->
+<!--or just go into "more info..." in settings-->
