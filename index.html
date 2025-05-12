@@ -677,11 +677,10 @@
          throw new Error(`HTTP error! status: ${response.status}`);
      }
      const text     = await response.text();
-     bannedWords     = text.split("\n").map(w => w.trim().toLowerCase()).filter(w => w); // Convert to lowercase here
-     console.log(`Loaded ${bannedWords.length} banned words.`); // Debug log, remove logs btw later
+     bannedWords     = text.split("\n").map(w => w.trim().toLowerCase()).filter(w => w); 
+     console.log(`Loaded ${bannedWords.length} banned words.`); 
    } catch (e) {
      console.error("Failed to load banned words(BAD!!! FIX NOW!):", e);
-     // Set empty array to prevent repeated failed attempts in filterMessage
      bannedWords = [];
    }
  }
@@ -695,9 +694,7 @@
   for (const word of bannedWords) {
    // escape fuckass special characters
    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-   // Use word boundaries (\b) and case-insensitive (i)
    const re      = new RegExp(`\\b${escaped}\\b`, 'gi');
-   // Replace occurrences, ensuring the loop uses the updated string
    filteredMsg = filteredMsg.replace(re, match => '*'.repeat(match.length));
   }
 
@@ -721,7 +718,15 @@
   poop:     "💩",
   money:    "🤑",
   peace:    "✌🏼",
-  // TODO: add more codes, (future me, i added them, dont bother)
+  //added more from below onwards
+  healedheart: "❤️‍🩹",
+  vomit:    "🤢",
+  swearing: "🤬",
+  unamused: "😒",
+  confused: "😕",
+  mdconfused: "🧐",
+  frown:    "🙁",
+  // TODO: add more damn codes!!!! working on it rn as of 5/12/2025
  };
 
  // swapper
