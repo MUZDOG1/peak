@@ -1373,7 +1373,7 @@
 
  async function banUserFromUI(id) {
    if (!isAdmin) { alert("Admin privileges required."); return; }
-   if (auth.currentUser && id === auth.currentUser.uid) { alert("You cannot ban yourself."); return; }
+   if (auth.currentUser && id === auth.currentUser.uid) { alert("You cannot ban yourself idiot."); return; }
 
    const userToBanRef = doc(db, "users", id);
    const userToBanSnap = await getDoc(userToBanRef);
