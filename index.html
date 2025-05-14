@@ -805,15 +805,17 @@
     alert("Please fill out all fields.");
     return;
   }
+  // check if their username is over 15 characters, if so block them.
   if (userDisplayName.length > 15) {
     alert("Username maximum length is 15 characters.");
     return;
   }
+  // checks if their username is under 6 characters, if so block them again 
    if (pw.length < 6) {
         alert("Password must be at least 6 characters long.");
         return;
     }
-
+  // banned words check
   if (!bannedWords.length) await loadBannedWords();
   if (bannedWords.length > 0) {
       const usernameLower = userDisplayName.toLowerCase();
@@ -840,11 +842,11 @@
 
 
 
-
+    // verification email
 
     await sendEmailVerification(newUser);
     console.log("Verification email sent to:", email);
-
+    // sets the users properties, change to isadmin true if you want maxium chaos lolz
     await setDoc(doc(db, "users", newUser.uid), {
         username: userDisplayName,
         email: email,
@@ -864,7 +866,7 @@
     signupPassword.value = "";
     signupUsername.value = "";
     tosCheckbox.checked = false;
-
+  // gen errors
   } catch (error) {
     console.error("Signup Error:", error);
     if (error.code === 'auth/email-already-in-use') {
@@ -908,7 +910,7 @@
 
                 }
             } else {
-
+                // if users tries to login without verified email but the account has been registered
                 alert("Please verify your email address first. Check your inbox (and spam folder) for the verification email sent during signup.");
                 await logout();
                 loginBtn.disabled = false;
@@ -933,7 +935,7 @@
         loginEmail.value = "";
         loginPassword.value = "";
         bannedAlertShown = false;
-
+     // errors
     } catch (e) {
         console.error("Login Error:", e);
         bannedAlertShown = false;
@@ -1011,7 +1013,7 @@
             try {
                 userDocSnap = await getDoc(uref);
             } catch (error) {
-                 console.error("Error fetching user doc, please report this to md chat higher ups", error);
+                 console.error("Error fetching user doc, please report this to MD CHAT admins", error);
                  alert("Error loading your user data. Please report this to MD CHAT admins.");
                  await logout();
                  return;
@@ -1019,7 +1021,7 @@
         }
 
         if (!userDocSnap || !userDocSnap.exists()) {
-            console.error(`User ${user.uid} is authenticated, but Firestore document missing!`);
+            console.error(`User ${user.uid} is authenticated, but Firestore document missing! BAD!`);
             alert("Error: Your user data could not be found. Logging out.");
             await logout();
             return;
@@ -1052,13 +1054,13 @@
                 return;
             }
             const currentData = docSnap.data();
-            // Ban check
+            // ban check
             if (currentData.banned && auth.currentUser && auth.currentUser.uid === user.uid && !bannedAlertShown) {
                 alert("You have been banned. Logging out.");
                 bannedAlertShown = true;
                 logout();
             }
-            // Admin check
+            // admin check
             const currentlyAdmin = currentData.isAdmin || false;
             if (currentlyAdmin !== isAdmin) {
                 console.log(`Admin status changed for ${user.uid} to: ${currentlyAdmin}`);
