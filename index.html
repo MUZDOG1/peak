@@ -198,10 +198,15 @@
     .message-content {
       flex: 1;
     }
-    .message img {
+    .message img.chat-image,
+    .message img.chat-sticker {
       max-width: 100%;
       display: block;
       margin-top: 5px;
+    }
+    .message img.chat-sticker {
+        max-width: 80px;
+        max-height: 80px;
     }
     .chat-input-area {
       position: fixed;
@@ -223,11 +228,56 @@
     }
     .chat-input-area button {
       padding: 6px 12px;
-      background: #ff4500;
       color: #fff;
       border: none;
       cursor: pointer;
     }
+    .chat-input-area button#sendBtn {
+      background: #ff4500;
+    }
+    .chat-input-area button#stickerBtn {
+      background: #007bff; 
+      margin-left: 5px;
+      margin-right: 5px;
+    }
+
+    .sticker-panel {
+      display: none;
+      position: fixed;
+      bottom: 60px; 
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto; 
+      min-width: 200px;
+      max-width: 800px; 
+      background: #e0e0e0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-bottom: none; 
+      z-index: 1001; 
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
+    }
+
+    .sticker-panel img {
+      width: 60px; 
+      height: 60px; 
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+      object-fit: contain;
+    }
+    .sticker-panel img:hover {
+      border-color: #ff4500;
+      transform: scale(1.1);
+    }
+
+
     .message-actions {
       display: flex;
       justify-content: space-between;
@@ -337,12 +387,19 @@
       border: 1px solid #444 !important;
       color: #fff !important;
     }
-    body.dark-mode input,
-    body.dark-mode button {
+    body.dark-mode input, 
+    body.dark-mode .auth-container button, 
+    body.dark-mode .chat-input-area button#sendBtn, 
+    body.dark-mode .chat-input-area button#stickerBtn 
+    {
       background: #444 !important;
       border: 1px solid #555 !important;
       color: #fff !important;
     }
+    body.dark-mode .chat-input-area button#sendBtn { background: #ff4500 !important; }
+    body.dark-mode .chat-input-area button#stickerBtn { background: #0056b3 !important; }
+
+
     body.dark-mode .delete-btn {
       background: #c00 !important;
       color: #fff !important;
@@ -358,8 +415,14 @@
       color: #bbb !important;
     }
     body.dark-mode .glow-message {
-      /* Default gold glow should contrast well, uses pulse-glow-default animation */
-      border: 1px solid #f8c300 !important; /* Slightly different gold for dark mode if needed */
+      border: 1px solid #f8c300 !important;
+    }
+    body.dark-mode .sticker-panel {
+      background: #2a2a2a !important;
+      border-color: #444 !important;
+    }
+    body.dark-mode .sticker-panel img:hover {
+      border-color: #ff4500 !important;
     }
 
 
@@ -420,6 +483,13 @@
       animation: pulse-glow-hacker 1.5s infinite alternate;
       border: 1px solid #00ff00 !important; /* Green border */
     }
+    body.hacker-mode .sticker-panel {
+      background: rgba(0, 10, 0, 0.9) !important;
+      border-color: #0f0 !important;
+    }
+    body.hacker-mode .sticker-panel img:hover {
+      border-color: #0f0 !important;
+    }
 
 
     /* death theme */
@@ -449,9 +519,13 @@
       color: #FF0000;
     }
     body.death-theme .delete-btn,
-    body.death-theme .like-btn {
+    body.death-theme .like-btn,
+    body.death-theme .chat-input-area button#sendBtn, 
+    body.death-theme .chat-input-area button#stickerBtn 
+    {
       background: #FF0000;
       color: #000;
+      border-color: #FF0000; 
     }
     @keyframes pulse-glow-death {
       from { box-shadow: 0 0 6px #cc0000, 0 0 12px #cc0000; }
@@ -460,7 +534,13 @@
     body.death-theme .glow-message {
       animation: pulse-glow-death 1.5s infinite alternate;
       border: 1px solid #ff0000 !important;
-
+    }
+    body.death-theme .sticker-panel { 
+      background: #000 !important;
+      border-color: #FF0000 !important;
+    }
+    body.death-theme .sticker-panel img:hover { 
+      border-color: #FF0000 !important;
     }
   </style>
 </head>
@@ -554,6 +634,7 @@
     </div>
   </div>
 
+
   <!-- cjat input -->
   <div class="chat-input-area">
     <input
@@ -563,7 +644,14 @@
      disabled
      maxlength="200"
      >
+    <button id="stickerBtn" disabled>😀</button>
     <button id="sendBtn" disabled>Send</button>
+  </div>
+  <!--stickers below >>>>>>>>>>>-->
+  <div id="stickerPanel" class="sticker-panel">
+    <img src="thumbsup.png" alt="thumbsup sticker" data-sticker-url="thumbsup.png" title="thumbsup sticker">
+    <img src="dog4.png" alt="muzdog chat dog sticker" data-sticker-url="dog4.png" title="muzdog chat dog">
+    <img src="angry.png" alt="angry sticker" data-sticker-url="angry.png" title="angry sticker">
   </div>
   <!--start of javascript-->
   <script type="module">
@@ -605,6 +693,8 @@
  const chatMessages    = document.getElementById("chatMessages");
  const chatInput       = document.getElementById("chatInput");
  const sendBtn         = document.getElementById("sendBtn");
+ const stickerBtn      = document.getElementById("stickerBtn");
+ const stickerPanel    = document.getElementById("stickerPanel");
  const signupEmail     = document.getElementById("signupEmail");
  const signupPassword  = document.getElementById("signupPassword");
  const signupUsername  = document.getElementById("signupUsername");
@@ -633,6 +723,7 @@
    loadTheme();
    // ensure that verification is sent
    if (verificationMsg) verificationMsg.style.display = 'none';
+   stickerPanel.style.display = "none";
  });
 
  // tos box
@@ -912,13 +1003,13 @@
             } else {
                 // if users tries to login without verified email but the account has been registered
                 alert("Please verify your email address first. Check your inbox (and spam folder) for the verification email sent during signup.");
-                await logout();
-                loginBtn.disabled = false;
-                return;
             }
+            await logout(); // Log out unverified user in both cases (doc exists or not)
+            loginBtn.disabled = false;
+            return;
         }
 
-        if (!userDocSnap) {
+        if (!userDocSnap) { // If user was verified, userDocSnap is still null
              userDocSnap = await getDoc(userDocRef);
         }
 
@@ -977,18 +1068,21 @@
                         verificationMsg.style.display = 'block';
                     }
 
-                } else {
+                } else { // User authenticated but no Firestore doc
                     logoutBtn.style.display = "none";
                     chatInput.disabled = true;
                     sendBtn.disabled = true;
+                    stickerBtn.disabled = true;
                     document.getElementById("authContainer").style.display = "block";
                     document.getElementById("adminPanel").style.display = "none";
+                    stickerPanel.style.display = "none";
                     isAdmin = false;
-                    if (verificationMsg) {
+                    if (verificationMsg) { // This block was original
                         verificationMsg.textContent = "Please check your email to verify your account before proceeding.";
                         verificationMsg.style.display = 'block';
                     }
-
+                    // Consider logging out here as well if doc is missing
+                    // await logout(); // To be consistent with other missing doc scenarios
                     return;
                 }
             } catch (error) {
@@ -996,20 +1090,23 @@
                 logoutBtn.style.display = "none";
                 chatInput.disabled = true;
                 sendBtn.disabled = true;
+                stickerBtn.disabled = true;
                 document.getElementById("authContainer").style.display = "block";
                 document.getElementById("adminPanel").style.display = "none";
+                stickerPanel.style.display = "none";
                 isAdmin = false;
                  if (verificationMsg) {
                     verificationMsg.textContent = "Error checking account status. Please try again.";
                     verificationMsg.style.display = 'block';
                  }
+                 // await logout(); // Also consider logout here
                  return;
             }
         }
 
 
 
-        if (!userDocSnap) {
+        if (!userDocSnap) { // If user was verified or path above didn't fetch
             try {
                 userDocSnap = await getDoc(uref);
             } catch (error) {
@@ -1041,8 +1138,10 @@
         logoutBtn.style.display = "block";
         chatInput.disabled = false;
         sendBtn.disabled = false;
+        stickerBtn.disabled = false;
         updateUserStatus(true);
         document.getElementById("authContainer").style.display = "none";
+        stickerPanel.style.display = "none";
 
         const unsubscribe = onSnapshot(uref, (docSnap) => {
             if (!docSnap.exists()) {
@@ -1075,10 +1174,6 @@
 
         });
 
-
-
-
-
         isAdmin = userData.isAdmin || false;
         document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
         if (isAdmin) {
@@ -1091,8 +1186,10 @@
         logoutBtn.style.display = "none";
         chatInput.disabled = true;
         sendBtn.disabled = true;
+        stickerBtn.disabled = true;
         document.getElementById("authContainer").style.display = "block";
         document.getElementById("adminPanel").style.display = "none";
+        stickerPanel.style.display = "none";
         isAdmin = false;
         bannedAlertShown = false;
         if (verificationMsg) verificationMsg.style.display = 'none';
@@ -1124,36 +1221,43 @@
                     const senderDoc = await getDoc(doc(db, "users", latestMsgData.senderId));
                     const senderUsername = senderDoc.exists() ? senderDoc.data().username : "Someone";
 
-                    const raw = latestMsgData.text || "[image]";
-                    let filtered = raw;
-                    try {
-                        filtered = latestMsgData.text ? await filterMessage(raw) : raw;
-                    } catch (filterError) {
-                        console.error("Error filtering message for notification:", filterError);
-
+                    let raw = "[New message]";
+                    if (latestMsgData.text) {
+                        raw = latestMsgData.text;
+                    } else if (latestMsgData.image) {
+                        raw = "[image]";
+                    } else if (latestMsgData.stickerUrl) {
+                        const stickerName = latestMsgData.stickerUrl.split('/').pop().split('.')[0] || "sticker";
+                        raw = `Sent a sticker: ${stickerName}`;
                     }
-                    const body = replaceEmojis(filtered);
+
+                    let filtered = raw;
+                    if (latestMsgData.text) { // Only filter if it's text
+                        try {
+                            filtered = await filterMessage(raw);
+                        } catch (filterError) {
+                            console.error("Error filtering message for notification:", filterError);
+                        }
+                    }
+                    const body = replaceEmojis(filtered); // replaceEmojis is safe for non-text too
 
                     new Notification(senderUsername, { body, tag: 'chat-message' });
 
                 } catch (error) {
                     console.error("Error processing notification:", error);
-
-                    const raw = latestMsgData.text || "[image]";
+                    let raw = latestMsgData.text || (latestMsgData.stickerUrl ? "[New Sticker]" : "[image]");
                      let filtered = raw;
-                    try {
-                        filtered = latestMsgData.text ? await filterMessage(raw) : raw;
-                    } catch (filterError) { /* Ignore inner error */ }
+                    if(latestMsgData.text) {
+                        try {
+                            filtered = await filterMessage(raw);
+                        } catch (filterError) { /* Ignore inner error */ }
+                    }
                     const body = replaceEmojis(filtered);
                     new Notification("Someone", { body, tag: 'chat-message' });
                 }
             }
         }
    }
-
-
-
-
 
    const messagePromises = snapshot.docs.map(async d => {
      const m = d.data();
@@ -1211,6 +1315,7 @@
            <span class="author">${usr}:</span>
            ${txt ? `<span class="text">${txt}</span>` : ""}
            ${m.image ? `<img src="${m.image}" alt="Uploaded image" class="chat-image">` : ""}
+           ${m.stickerUrl ? `<img src="${m.stickerUrl}" alt="Sticker" class="chat-sticker">` : ""}
          </div>
          <div class="message-actions">
            <span class="timestamp">${tstr}</span>
@@ -1235,7 +1340,7 @@
     }
 
 
-    const shouldScroll = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 100; // Add tolerance
+    const shouldScroll = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 100; 
     if (shouldScroll) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -1247,8 +1352,6 @@
    if (confirm(`Are you sure you want to delete message ID: ${id}?`)) {
         try {
             await deleteDoc(doc(db, "chatrooms/general/messages", id));
-
-
         }
         catch (e) { console.error("Delete failed:", e); alert("Delete failed."); }
    }
@@ -1265,23 +1368,19 @@
     return;
   }
 
-
    if (!auth.currentUser) { alert("Log in to chat."); return; }
 
    if (!auth.currentUser.emailVerified) {
-
        const userDocRef = doc(db, "users", auth.currentUser.uid);
-       const userDocSnap = await getDoc(userDocRef);
+       const userDocSnap = await getDoc(userDocRef); // This check was original
        if (!userDocSnap.exists()) {
             alert("Please verify your email to chat.");
             return;
        }
-
    }
 
    const text = chatInput.value.trim();
    //COMMANDS HERE ---------------------------------
-   // commands check
    const cmds = {
         xanlack: "404.html",
         death: null,
@@ -1292,7 +1391,6 @@
         stats: "404.html",
         kills: "torture1.html",
         tester: "banned.html"
-
    };
    // COMMANDS HERE ---------------------------------
    const cmd = text.toLowerCase();
@@ -1307,22 +1405,18 @@
    }
 
    if (text) {
-
      lastSendTime = now;
      try {
-
         await addDoc(messagesCollectionRef, {
             senderId: auth.currentUser.uid,
             text: text,
             timestamp: serverTimestamp()
-
         });
         chatInput.value = "";
         chatInput.focus();
      } catch (error) {
          console.error("Error sending message:", error);
          alert("Failed to send message.");
-
      }
    }
  });
@@ -1332,6 +1426,52 @@
         sendBtn.click();
     }
  });
+
+ stickerBtn.addEventListener("click", () => {
+    if (stickerPanel.style.display === "flex") {
+        stickerPanel.style.display = "none";
+    } else {
+        stickerPanel.style.display = "flex";
+    }
+ });
+
+ stickerPanel.addEventListener("click", async (event) => {
+    if (event.target.tagName === "IMG" && event.target.dataset.stickerUrl) {
+        const stickerUrl = event.target.dataset.stickerUrl;
+
+        const now = Date.now();
+        if (now - lastSendTime < SEND_COOLDOWN) {
+            const wait = Math.ceil((SEND_COOLDOWN - (now - lastSendTime)) / 1000);
+            alert(`Please wait ${wait} more second${wait > 1 ? 's' : ''} before sending again.`);
+            return;
+        }
+
+        if (!auth.currentUser) { alert("Log in to send stickers."); return; }
+        
+        if (!auth.currentUser.emailVerified) {
+            const userDocRef = doc(db, "users", auth.currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (!userDocSnap.exists()) {
+                alert("Please verify your email to send stickers.");
+                return;
+            }
+        }
+
+        lastSendTime = now;
+        try {
+            await addDoc(messagesCollectionRef, {
+                senderId: auth.currentUser.uid,
+                stickerUrl: stickerUrl, 
+                timestamp: serverTimestamp()
+            });
+            stickerPanel.style.display = "none"; 
+        } catch (error) {
+            console.error("Error sending sticker:", error);
+            alert("Failed to send sticker. Please try again.");
+        }
+    }
+ });
+
 
  // admin panel
  async function loadUsersForAdmin() {
@@ -1456,7 +1596,6 @@
 </script>
 </body>
 </html>
-
 
 <!--journal link: "aHR0cHM6Ly9tdXpkb2cxLmdpdGh1Yi5pby9wZWFrL3F3ZXJ0eQ=="
 beyond easy to decode, go nuts.-->
