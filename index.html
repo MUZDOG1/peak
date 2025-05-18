@@ -198,10 +198,15 @@
     .message-content {
       flex: 1;
     }
-    .message img {
-      max-width: 100%;
+    .message img.chat-image, /* Added .chat-image for specificity */
+    .message img.chat-sticker { /* NEW: Style for stickers in chat */
+      max-width: 100%; /* Default for uploaded images */
       display: block;
       margin-top: 5px;
+    }
+    .message img.chat-sticker { /* NEW: Specific size for stickers in chat */
+        max-width: 80px;
+        max-height: 80px;
     }
     .chat-input-area {
       position: fixed;
@@ -221,13 +226,58 @@
       padding: 6px;
       border: 1px solid #ccc;
     }
-    .chat-input-area button {
+    .chat-input-area button { /* General style for buttons in this area */
       padding: 6px 12px;
-      background: #ff4500;
       color: #fff;
       border: none;
       cursor: pointer;
     }
+    .chat-input-area button#sendBtn { /* Specific for send */
+      background: #ff4500;
+    }
+    .chat-input-area button#stickerBtn { /* NEW: Sticker Button */
+      background: #007bff; /* A different color for sticker button */
+      margin-left: 5px;
+      margin-right: 5px;
+    }
+
+    .sticker-panel { /* NEW: Sticker Panel */
+      display: none; /* Hidden by default, JS will toggle to 'flex' */
+      position: fixed;
+      bottom: 60px; /* Adjust based on chat-input-area height (approx 50px + some spacing) */
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto; 
+      min-width: 200px; /* ensure it's not too small */
+      max-width: 800px; 
+      background: #e0e0e0; /* Slightly different from chat-input for distinction */
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-bottom: none; 
+      z-index: 1001; 
+      flex-wrap: wrap; /* Allow stickers to wrap if many */
+      gap: 10px;
+      justify-content: center;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
+    }
+
+    .sticker-panel img { /* NEW: Individual Stickers in Panel */
+      width: 60px; 
+      height: 60px; 
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+      object-fit: contain; /* Ensure sticker aspect ratio is maintained */
+    }
+    .sticker-panel img:hover { /* NEW */
+      border-color: #ff4500;
+      transform: scale(1.1);
+    }
+
+
     .message-actions {
       display: flex;
       justify-content: space-between;
@@ -337,12 +387,20 @@
       border: 1px solid #444 !important;
       color: #fff !important;
     }
-    body.dark-mode input,
-    body.dark-mode button {
+    body.dark-mode input, /* General inputs */
+    body.dark-mode .auth-container button, /* Auth buttons */
+    body.dark-mode .chat-input-area button#sendBtn, /* Send button */
+    body.dark-mode .chat-input-area button#stickerBtn /* Sticker button */
+    {
       background: #444 !important;
       border: 1px solid #555 !important;
       color: #fff !important;
     }
+    /* Keep specific button colors if needed */
+    body.dark-mode .chat-input-area button#sendBtn { background: #ff4500 !important; }
+    body.dark-mode .chat-input-area button#stickerBtn { background: #0056b3 !important; } /* Darker blue for dark mode */
+
+
     body.dark-mode .delete-btn {
       background: #c00 !important;
       color: #fff !important;
@@ -360,6 +418,13 @@
     body.dark-mode .glow-message {
       /* Default gold glow should contrast well, uses pulse-glow-default animation */
       border: 1px solid #f8c300 !important; /* Slightly different gold for dark mode if needed */
+    }
+    body.dark-mode .sticker-panel { /* NEW */
+      background: #2a2a2a !important;
+      border-color: #444 !important;
+    }
+    body.dark-mode .sticker-panel img:hover { /* NEW */
+      border-color: #ff4500 !important;
     }
 
 
@@ -420,6 +485,13 @@
       animation: pulse-glow-hacker 1.5s infinite alternate;
       border: 1px solid #00ff00 !important; /* Green border */
     }
+    body.hacker-mode .sticker-panel { /* NEW */
+      background: rgba(0, 10, 0, 0.9) !important;
+      border-color: #0f0 !important;
+    }
+    body.hacker-mode .sticker-panel img:hover { /* NEW */
+      border-color: #0f0 !important;
+    }
 
 
     /* death theme */
@@ -449,9 +521,13 @@
       color: #FF0000;
     }
     body.death-theme .delete-btn,
-    body.death-theme .like-btn {
+    body.death-theme .like-btn,
+    body.death-theme .chat-input-area button#sendBtn, 
+    body.death-theme .chat-input-area button#stickerBtn 
+    {
       background: #FF0000;
       color: #000;
+      border-color: #FF0000; 
     }
     @keyframes pulse-glow-death {
       from { box-shadow: 0 0 6px #cc0000, 0 0 12px #cc0000; }
@@ -460,11 +536,18 @@
     body.death-theme .glow-message {
       animation: pulse-glow-death 1.5s infinite alternate;
       border: 1px solid #ff0000 !important;
-
+    }
+    body.death-theme .sticker-panel { 
+      background: #000 !important;
+      border-color: #FF0000 !important;
+    }
+    body.death-theme .sticker-panel img:hover { 
+      border-color: #FF0000 !important;
     }
   </style>
 </head>
 <body class="light-mode">
+  <!-- ... (header and other unchanged parts) ... -->
   <header class="muzdog-header">
     <div class="logo">
       <a href="index.html">Muzdog Chat</a>
@@ -554,7 +637,8 @@
     </div>
   </div>
 
-  <!-- cjat input -->
+
+  <!-- chat input -->
   <div class="chat-input-area">
     <input
      type="text"
@@ -563,8 +647,19 @@
      disabled
      maxlength="200"
      >
+    <button id="stickerBtn" disabled>😀</button> 
     <button id="sendBtn" disabled>Send</button>
   </div>
+   <!--stickers below >>>>>>>>>>>-->
+  <div id="stickerPanel" class="sticker-panel">
+    <img src="thumbsup.png" alt="thumbsup sticker" data-sticker-url="thumbsup.png" title="thumbsup sticker">
+    <img src="dog4.png" alt="muzdog chat dog sticker" data-sticker-url="dog4.png" title="muzdog chat dog">
+    <img src="angry.png" alt="angry sticker" data-sticker-url="angry.png" title="angry sticker">
+  </div>
+
+
+
+
   <!--start of javascript-->
   <script type="module">
     import {
@@ -605,6 +700,8 @@
  const chatMessages    = document.getElementById("chatMessages");
  const chatInput       = document.getElementById("chatInput");
  const sendBtn         = document.getElementById("sendBtn");
+ const stickerBtn      = document.getElementById("stickerBtn"); // NEW
+ const stickerPanel    = document.getElementById("stickerPanel"); // NEW
  const signupEmail     = document.getElementById("signupEmail");
  const signupPassword  = document.getElementById("signupPassword");
  const signupUsername  = document.getElementById("signupUsername");
@@ -633,6 +730,9 @@
    loadTheme();
    // ensure that verification is sent
    if (verificationMsg) verificationMsg.style.display = 'none';
+   
+   // hide sticker panel initially 
+    stickerPanel.style.display = "none";
  });
 
  // tos box
@@ -692,7 +792,7 @@
    if (radioElement) {
         radioElement.checked = true;
    } else {
-        if (theme !== 'death') {
+        if (theme !== 'death') { // 'death' theme doesn't have a radio button
             console.warn(`Radio button for theme "${theme}" not found.`);
         }
    }
@@ -707,6 +807,7 @@
      localStorage.setItem("theme", theme);
      stopMatrixEffect();
      if (theme === "hacker") startMatrixEffect();
+     // if death theme was manually set and user picks another, it will switch.
    });
  });
  settingsBtn.addEventListener("click", () => {
@@ -735,7 +836,8 @@
  }
  async function filterMessage(msg) {
   if (!bannedWords.length) await loadBannedWords();
-  if (!bannedWords.length) {
+  if (!bannedWords.length) { 
+    console.warn("banned words list is empty. messages are not being filtered for banned words.");
     return msg;
   }
 
@@ -776,7 +878,7 @@
   mdconfused: "🧐",
   frown:    "🙁",
   goober: "🤪",
-  money: "🤑",
+  // money: "🤑", // duplicate, removed
   okay: "👌",
   // the dementia has kicked in they are no longer straight
   cold: "🥶",
@@ -817,11 +919,11 @@
     }
   // banned words check
   if (!bannedWords.length) await loadBannedWords();
-  if (bannedWords.length > 0) {
+  if (bannedWords.length > 0) { 
       const usernameLower = userDisplayName.toLowerCase();
       for (const w of bannedWords) {
-          if (usernameLower.includes(w)) {
-            alert("Username contains banned words. Please choose another."); // to profesh, going to change
+          if (usernameLower.includes(w)) { 
+            alert("Username contains banned words. Please choose another.");
             return;
           }
       }
@@ -853,13 +955,13 @@
         createdAt: serverTimestamp(),
         online: false,
         banned: false,
-        isAdmin: false
+        isAdmin: false 
     });
 
 
 
     alert("Signup successful! Please check your email inbox (and spam folder) to verify your account before logging in.");
-    await logout();
+    await logout(); 
 
 
     signupEmail.value = "";
@@ -877,7 +979,7 @@
         alert("Signup failed: " + error.message);
     }
   } finally {
-      signupBtn.disabled = !tosCheckbox.checked;
+      signupBtn.disabled = !tosCheckbox.checked; 
   }
  });
 
@@ -894,28 +996,26 @@
         const cred = await signInWithEmailAndPassword(auth, email, pw);
         const user = cred.user;
         const userDocRef = doc(db, "users", user.uid);
-        let userDocSnap = null;
+        let userDocSnap = null; 
 
         if (!user.emailVerified) {
             console.log(`User ${user.uid} not verified. Checking Firestore doc.`);
             userDocSnap = await getDoc(userDocRef);
 
             if (userDocSnap.exists()) {
-
                 try {
                     await sendEmailVerification(user);
-                    alert("Verification email sent. Please check your inbox (and spam folder) soon to verify your account.");
+                    alert("Verification email resent. Please check your inbox (and spam folder) soon to verify your account before logging in.");
                 } catch (verificationError) {
-                    console.error("Failed to send verification email:", verificationError);
-
+                    console.error("Failed to resend verification email:", verificationError);
+                    alert("Could not resend verification email. Please try logging in again. If the problem persists, contact support.");
                 }
             } else {
-                // if users tries to login without verified email but the account has been registered
                 alert("Please verify your email address first. Check your inbox (and spam folder) for the verification email sent during signup.");
-                await logout();
-                loginBtn.disabled = false;
-                return;
             }
+            await logout();
+            loginBtn.disabled = false;
+            return;
         }
 
         if (!userDocSnap) {
@@ -923,7 +1023,7 @@
         }
 
         if (userDocSnap && userDocSnap.exists() && userDocSnap.data().banned) {
-            if (!bannedAlertShown) {
+            if (!bannedAlertShown) { 
                 alert("You are banned.");
                 bannedAlertShown = true;
             }
@@ -932,9 +1032,10 @@
             return;
         }
 
+        
         loginEmail.value = "";
         loginPassword.value = "";
-        bannedAlertShown = false;
+        bannedAlertShown = false; 
      // errors
     } catch (e) {
         console.error("Login Error:", e);
@@ -956,64 +1057,45 @@
     if (auth.currentUser) {
         updateUserStatus(false);
     }
-    logout();
+    logout(); 
 });
 
 
  onAuthStateChanged(auth, async user => {
-    if (verificationMsg) verificationMsg.style.display = 'none';
+    if (verificationMsg) verificationMsg.style.display = 'none'; 
 
     if (user) {
         const uref = doc(db, "users", user.uid);
         let userDocSnap = null;
-
         if (!user.emailVerified) {
             try {
-                userDocSnap = await getDoc(uref);
+                userDocSnap = await getDoc(uref); 
 
                 if (userDocSnap.exists()) {
                     if (verificationMsg) {
-                        verificationMsg.textContent = "Reminder: Please verify your email soon (check inbox/spam).";
+                        verificationMsg.textContent = "Reminder: Please verify your email soon (check inbox/spam). Chat features might be limited.";
                         verificationMsg.style.display = 'block';
                     }
-
                 } else {
-                    logoutBtn.style.display = "none";
-                    chatInput.disabled = true;
-                    sendBtn.disabled = true;
-                    document.getElementById("authContainer").style.display = "block";
-                    document.getElementById("adminPanel").style.display = "none";
-                    isAdmin = false;
-                    if (verificationMsg) {
-                        verificationMsg.textContent = "Please check your email to verify your account before proceeding.";
-                        verificationMsg.style.display = 'block';
-                    }
-
-                    return;
+                    console.error(`User ${user.uid} authenticated but no Firestore document. Forcing logout.`);
+                    alert("Account data is missing. Please try signing up again or contact support. Logging out.");
+                    await logout();
+                    return; 
                 }
             } catch (error) {
-                console.error("Error fetching user doc in onAuthStateChanged:", error);
-                logoutBtn.style.display = "none";
-                chatInput.disabled = true;
-                sendBtn.disabled = true;
-                document.getElementById("authContainer").style.display = "block";
-                document.getElementById("adminPanel").style.display = "none";
-                isAdmin = false;
-                 if (verificationMsg) {
-                    verificationMsg.textContent = "Error checking account status. Please try again.";
-                    verificationMsg.style.display = 'block';
-                 }
-                 return;
+                console.error("Error fetching user doc for verification check in onAuthStateChanged:", error);
+                alert("Error checking your account status. Please try logging in again.");
+                await logout();
+                return; 
             }
         }
-
 
 
         if (!userDocSnap) {
             try {
                 userDocSnap = await getDoc(uref);
             } catch (error) {
-                 console.error("Error fetching user doc, please report this to MD CHAT admins", error);
+                 console.error("Error fetching user doc in onAuthStateChanged, please report this to MD CHAT admins", error);
                  alert("Error loading your user data. Please report this to MD CHAT admins.");
                  await logout();
                  return;
@@ -1021,7 +1103,7 @@
         }
 
         if (!userDocSnap || !userDocSnap.exists()) {
-            console.error(`User ${user.uid} is authenticated, but Firestore document missing! BAD!`);
+            console.error(`User ${user.uid} is authenticated, but Firestore document missing! Logging out.`);
             alert("Error: Your user data could not be found. Logging out.");
             await logout();
             return;
@@ -1029,55 +1111,53 @@
 
         const userData = userDocSnap.data();
         if (userData.banned) {
-            if (!bannedAlertShown) {
+            if (!bannedAlertShown) { 
                 alert("Your account is banned. Logging out.");
                 bannedAlertShown = true;
             }
             await logout();
-            return;
+            return; 
         }
 
-        bannedAlertShown = false;
+        bannedAlertShown = false; 
         logoutBtn.style.display = "block";
         chatInput.disabled = false;
         sendBtn.disabled = false;
+        stickerBtn.disabled = false; 
         updateUserStatus(true);
         document.getElementById("authContainer").style.display = "none";
-
+        stickerPanel.style.display = "none"; 
         const unsubscribe = onSnapshot(uref, (docSnap) => {
             if (!docSnap.exists()) {
                 console.warn(`User document ${user.uid} no longer exists during snapshot listening.`);
-                if (auth.currentUser && auth.currentUser.uid === user.uid) {
+                if (auth.currentUser && auth.currentUser.uid === user.uid) { 
                     alert("Your account data seems to be missing. Logging out.");
-                    logout();
+                    logout(); 
                 }
-                return;
+                return; 
             }
+
             const currentData = docSnap.data();
-            // ban check
             if (currentData.banned && auth.currentUser && auth.currentUser.uid === user.uid && !bannedAlertShown) {
                 alert("You have been banned. Logging out.");
                 bannedAlertShown = true;
-                logout();
+                logout(); 
             }
-            // admin check
+
+          
             const currentlyAdmin = currentData.isAdmin || false;
-            if (currentlyAdmin !== isAdmin) {
+            if (currentlyAdmin !== isAdmin) { 
                 console.log(`Admin status changed for ${user.uid} to: ${currentlyAdmin}`);
                 isAdmin = currentlyAdmin;
                 document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
                 if (isAdmin) {
-                    loadUsersForAdmin();
+                    loadUsersForAdmin(); 
                 }
             }
         }, error => {
-            console.error(`Error in Firestore listener for ${user.uid}:`, error);
-
+            console.error(`Error in Firestore listener for user ${user.uid}:`, error);
+           
         });
-
-
-
-
 
         isAdmin = userData.isAdmin || false;
         document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
@@ -1086,17 +1166,18 @@
         }
 
     } else {
-
         console.log("onAuthStateChanged: User logged out.");
         logoutBtn.style.display = "none";
         chatInput.disabled = true;
         sendBtn.disabled = true;
+        stickerBtn.disabled = true; 
         document.getElementById("authContainer").style.display = "block";
         document.getElementById("adminPanel").style.display = "none";
+        stickerPanel.style.display = "none"; 
         isAdmin = false;
-        bannedAlertShown = false;
+        bannedAlertShown = false; 
         if (verificationMsg) verificationMsg.style.display = 'none';
-        stopMatrixEffect();
+        stopMatrixEffect(); 
     }
  });
 
@@ -1106,46 +1187,48 @@
  const q = query(
    messagesCollectionRef,
    orderBy("timestamp", "desc"),
-   limit(100)
+   limit(100) 
  );
 
  onSnapshot(q, async (snapshot) => {
-    if (snapshot.empty) {
+    if (snapshot.empty && chatMessages.children.length === 0) { 
         chatMessages.innerHTML = '<div class="message info-message">No messages yet. Be the first!</div>';
+        return; 
     }
 
    if (snapshot.docChanges().some(change => change.type === 'added')) {
-        const latestDoc = snapshot.docs[0];
+        const latestDoc = snapshot.docs[0]; 
         if (latestDoc) {
             const latestMsgData = latestDoc.data();
-
             if (document.hidden && Notification.permission === "granted" && auth.currentUser && latestMsgData.senderId !== auth.currentUser.uid) {
                 try {
                     const senderDoc = await getDoc(doc(db, "users", latestMsgData.senderId));
                     const senderUsername = senderDoc.exists() ? senderDoc.data().username : "Someone";
 
-                    const raw = latestMsgData.text || "[image]";
-                    let filtered = raw;
-                    try {
-                        filtered = latestMsgData.text ? await filterMessage(raw) : raw;
-                    } catch (filterError) {
-                        console.error("Error filtering message for notification:", filterError);
-
+                    let notificationBody;
+                    if (latestMsgData.stickerUrl) {
+                        const stickerName = latestMsgData.stickerUrl.split('/').pop().split('.')[0] || "sticker";
+                        notificationBody = `Sent a sticker: ${stickerName}`;
+                    } else if (latestMsgData.text) {
+                        let filteredText = latestMsgData.text;
+                        try {
+                            filteredText = await filterMessage(latestMsgData.text);
+                        } catch (filterError) {
+                            console.error("Error filtering message for notification:", filterError);
+                        }
+                        notificationBody = replaceEmojis(filteredText);
+                    } else if (latestMsgData.image) {
+                        notificationBody = "[Sent an image]";
+                    } else {
+                        notificationBody = "[New message]";
                     }
-                    const body = replaceEmojis(filtered);
 
-                    new Notification(senderUsername, { body, tag: 'chat-message' });
+                    new Notification(senderUsername, { body: notificationBody, tag: 'chat-message' });
 
                 } catch (error) {
                     console.error("Error processing notification:", error);
-
-                    const raw = latestMsgData.text || "[image]";
-                     let filtered = raw;
-                    try {
-                        filtered = latestMsgData.text ? await filterMessage(raw) : raw;
-                    } catch (filterError) { /* Ignore inner error */ }
-                    const body = replaceEmojis(filtered);
-                    new Notification("Someone", { body, tag: 'chat-message' });
+                    const fallbackBody = latestMsgData.stickerUrl ? "[New Sticker]" : (latestMsgData.text ? await filterMessage(latestMsgData.text) : "[New Message]");
+                    new Notification("Someone", { body: fallbackBody, tag: 'chat-message' });
                 }
             }
         }
@@ -1153,13 +1236,11 @@
 
 
 
-
-
    const messagePromises = snapshot.docs.map(async d => {
      const m = d.data();
-     if (!m) return '';
+     if (!m) return ''; 
 
-     const ts = m.timestamp?.toDate() || new Date();
+     const ts = m.timestamp?.toDate() || new Date(); 
      const tstr = ts.toLocaleString("en-US", {
        year: "numeric", month: "short", day: "numeric",
        hour: "numeric", minute: "numeric", hour12: true 
@@ -1173,7 +1254,7 @@
             txt = replaceEmojis(txt);
          } catch (e) {
             console.error("Error processing message text:", e);
-            txt = "[Error processing message]";
+            txt = "[Error processing message]"; 
          }
      }
 
@@ -1191,12 +1272,11 @@
             }
         } catch (e) {
             console.error(`Error fetching username for senderId ${m.senderId}:`, e);
-
         }
      }
 
 
-     const del = isAdmin
+     const del = isAdmin 
        ? `<button class="delete-btn" data-message-id="${d.id}">Delete</button>`
        : "";
 
@@ -1211,6 +1291,7 @@
            <span class="author">${usr}:</span>
            ${txt ? `<span class="text">${txt}</span>` : ""}
            ${m.image ? `<img src="${m.image}" alt="Uploaded image" class="chat-image">` : ""}
+           ${m.stickerUrl ? `<img src="${m.stickerUrl}" alt="Sticker" class="chat-sticker">` : ""}  <!-- NEW: Display Sticker -->
          </div>
          <div class="message-actions">
            <span class="timestamp">${tstr}</span>
@@ -1219,7 +1300,7 @@
        </div>`;
    });
 
-   const html = (await Promise.all(messagePromises)).join('');
+   const html = (await Promise.all(messagePromises.reverse())).join(''); 
    chatMessages.innerHTML = html;
 
 
@@ -1234,8 +1315,7 @@
         });
     }
 
-
-    const shouldScroll = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 100; // Add tolerance
+    const shouldScroll = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 200; // Add more tolerance
     if (shouldScroll) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -1243,14 +1323,13 @@
 
 
  async function deleteMessage(id) {
-   if (!isAdmin) { alert("Not authorized to delete."); return; }
-   if (confirm(`Are you sure you want to delete message ID: ${id}?`)) {
+   if (!isAdmin) { alert("Not authorized to delete messages."); return; }
+   if (confirm(`Are you sure you want to delete message ID: ${id}? This action cannot be undone.`)) {
         try {
             await deleteDoc(doc(db, "chatrooms/general/messages", id));
-
-
+            console.log(`Message ${id} deleted by admin.`);
         }
-        catch (e) { console.error("Delete failed:", e); alert("Delete failed."); }
+        catch (e) { console.error("Delete message failed:", e); alert("Delete failed. See console for details."); }
    }
  }
 
@@ -1269,22 +1348,15 @@
    if (!auth.currentUser) { alert("Log in to chat."); return; }
 
    if (!auth.currentUser.emailVerified) {
-
-       const userDocRef = doc(db, "users", auth.currentUser.uid);
-       const userDocSnap = await getDoc(userDocRef);
-       if (!userDocSnap.exists()) {
-            alert("Please verify your email to chat.");
-            return;
-       }
+       console.warn("attemtping to send message with unverfied email");
 
    }
 
    const text = chatInput.value.trim();
    //COMMANDS HERE ---------------------------------
-   // commands check
    const cmds = {
         xanlack: "404.html",
-        death: null,
+        death: null, 
         encode: "encode.html",
         endtimes: "end.html",
         html: "test.html",
@@ -1292,50 +1364,84 @@
         stats: "404.html",
         kills: "torture1.html",
         tester: "banned.html"
-
    };
    // COMMANDS HERE ---------------------------------
    const cmd = text.toLowerCase();
    if (cmds.hasOwnProperty(cmd)) {
-        if (cmds[cmd]) {
+        if (cmds[cmd]) { 
             window.location.href = cmds[cmd];
-        } else if (cmd === "death") {
+        } else if (cmd === "death") { 
             applyDeathTheme();
         }
         chatInput.value = "";
-        return;
+        return; 
    }
 
-   if (text) {
-
-     lastSendTime = now;
+   if (text) { 
+     lastSendTime = now; 
      try {
-
         await addDoc(messagesCollectionRef, {
             senderId: auth.currentUser.uid,
-            text: text,
+            text: text, 
             timestamp: serverTimestamp()
-
         });
-        chatInput.value = "";
-        chatInput.focus();
+        chatInput.value = ""; 
+        chatInput.focus(); 
      } catch (error) {
          console.error("Error sending message:", error);
-         alert("Failed to send message.");
-
+         alert("Failed to send message. Please try again.");
      }
    }
  });
  chatInput.addEventListener("keypress", e => {
-   if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendBtn.click();
+   if (e.key === "Enter" && !e.shiftKey) { 
+        e.preventDefault(); 
+        sendBtn.click(); 
     }
  });
 
+ stickerBtn.addEventListener("click", () => {
+    if (stickerPanel.style.display === "flex") {
+        stickerPanel.style.display = "none";
+    } else {
+        stickerPanel.style.display = "flex";
+    }
+ });
+
+ stickerPanel.addEventListener("click", async (event) => {
+    if (event.target.tagName === "IMG" && event.target.dataset.stickerUrl) {
+        const stickerUrl = event.target.dataset.stickerUrl;
+
+        const now = Date.now();
+        if (now - lastSendTime < SEND_COOLDOWN) {
+            const wait = Math.ceil((SEND_COOLDOWN - (now - lastSendTime)) / 1000);
+            alert(`Please wait ${wait} more second${wait > 1 ? 's' : ''} before sending again.`);
+            return;
+        }
+
+        if (!auth.currentUser) { alert("Log in to send stickers."); return; }
+        
+ 
+
+        lastSendTime = now;
+        try {
+            await addDoc(messagesCollectionRef, {
+                senderId: auth.currentUser.uid,
+                stickerUrl: stickerUrl, 
+                timestamp: serverTimestamp()
+            });
+            stickerPanel.style.display = "none"; 
+        } catch (error) {
+            console.error("Error sending sticker:", error);
+            alert("Failed to send sticker. Please try again.");
+        }
+    }
+ });
+
+
  // admin panel
  async function loadUsersForAdmin() {
-   if (!isAdmin || !auth.currentUser) return;
+   if (!isAdmin || !auth.currentUser) return; 
    try {
      const usersSnapshot = await getDocs(collection(db, "users"));
      const list = document.getElementById("adminUserList");
@@ -1343,50 +1449,52 @@
          console.error("Admin user list element not found!");
          return;
      }
-     list.innerHTML = "";
+     list.innerHTML = ""; 
 
-     const currentUserUid = auth.currentUser.uid;
+     const currentUserUid = auth.currentUser.uid; 
 
      usersSnapshot.forEach(userDoc => {
        const userData = userDoc.data();
        const userId = userDoc.id;
 
-
        if (userId === currentUserUid) return;
 
        const item = document.createElement("div");
-       item.className = 'admin-user-item';
+       item.className = 'admin-user-item'; 
 
        const userInfo = document.createElement("span");
-       userInfo.textContent = `${userData.username || 'No Username'} (${userData.email}) ${userData.banned ? '[BANNED]' : ''} ${userData.isAdmin ? '[ADMIN]' : ''}`;
+       userInfo.textContent = `${userData.username || 'N/A'} (${userData.email || 'N/A'}) ${userData.banned ? '[BANNED]' : ''} ${userData.isAdmin ? '[ADMIN]' : ''}`;
        item.appendChild(userInfo);
 
        const banButton = document.createElement("button");
-       banButton.dataset.userId = userId;
+       banButton.dataset.userId = userId; 
        if (userData.banned) {
          banButton.textContent = "Unban";
-         banButton.onclick = () => unbanUserFromUI(userId);
-         banButton.classList.add('unban-button');
+         banButton.onclick = () => unbanUserFromUI(userId); 
+         banButton.classList.add('unban-button'); 
        } else {
          banButton.textContent = "Ban";
-         banButton.onclick = () => banUserFromUI(userId);
-         banButton.classList.add('ban-button');
+         banButton.onclick = () => banUserFromUI(userId); 
+         banButton.classList.add('ban-button'); 
        }
+       
+      
         if (userData.isAdmin) {
             banButton.disabled = true;
-            banButton.title = "Cannot ban/unban other admins.";
-            banButton.classList.add('disabled-button');
+            banButton.title = "Cannot ban or unban other admin users.";
+            banButton.classList.add('disabled-button'); 
         }
 
        item.appendChild(banButton);
        list.appendChild(item);
      });
-   } catch (e) { console.error("Error loading users for admin:", e); }
+   } catch (e) { console.error("Error loading users for admin panel:", e); }
  }
 
  async function banUserFromUI(id) {
    if (!isAdmin) { alert("Admin privileges required."); return; }
    if (auth.currentUser && id === auth.currentUser.uid) { alert("You cannot ban yourself idiot."); return; }
+
 
    const userToBanRef = doc(db, "users", id);
    const userToBanSnap = await getDoc(userToBanRef);
@@ -1395,35 +1503,34 @@
        return;
    }
 
-   if (confirm("Are you sure you want to ban this user?")) {
+   if (confirm("Are you sure you want to ban this user? They will be logged out and unable to log back in.")) {
         try {
-            await banUser(id);
+            await banUser(id); 
             alert("User banned successfully.");
-            loadUsersForAdmin();
+            loadUsersForAdmin(); 
         } catch (e) {
-            console.error("Ban failed:", e);
+            console.error("Ban failed from UI:", e);
             alert("Failed to ban user: " + e.message);
         }
    }
  }
- window.banUserFromUI = banUserFromUI;
+ window.banUserFromUI = banUserFromUI; 
 
  async function unbanUserFromUI(id) {
     if (!isAdmin) { alert("Admin privileges required."); return; }
    if (confirm("Are you sure you want to unban this user?")) {
         try {
-            await unbanUser(id);
+            await unbanUser(id); 
             alert("User unbanned successfully.");
-            loadUsersForAdmin();
+            loadUsersForAdmin(); 
         } catch (e) {
-             console.error("Unban failed:", e);
+             console.error("Unban failed from UI:", e);
             alert("Failed to unban user: " + e.message);
         }
    }
  }
- window.unbanUserFromUI = unbanUserFromUI; // expose
+ window.unbanUserFromUI = unbanUserFromUI; 
 
- // user counts
  async function updateRegisteredUsersCount() {
    try {
      const usersSnapshot = await getDocs(query(collection(db, "users")));
@@ -1434,21 +1541,26 @@
      }
    } catch (e) {
      console.error("Error getting user count:", e);
+
    }
  }
 
+
  window.addEventListener("beforeunload", () => {
     if (auth.currentUser && document.getElementById("authContainer").style.display === 'none') {
-        updateUserStatus(false);
+        updateUserStatus(false); 
     }
  });
 
  function applyDeathTheme(log = true) {
-    document.body.className = 'death-theme';
-    localStorage.setItem("theme", "death");
-    stopMatrixEffect();
-    if (log) console.log("Death theme activated.");
+    document.body.className = 'death-theme'; 
+    localStorage.setItem("theme", "death"); 
+    stopMatrixEffect(); 
+    if (log) console.log("Death theme activated. Prepare for eternal damnation.");
+    
+
     themeRadios.forEach(radio => radio.checked = false);
+    
     if (settingsPanel && settingsPanel.classList.contains("open")) {
         settingsPanel.classList.remove("open");
     }
@@ -1456,7 +1568,6 @@
 </script>
 </body>
 </html>
-
 
 <!--journal link: "aHR0cHM6Ly9tdXpkb2cxLmdpdGh1Yi5pby9wZWFrL3F3ZXJ0eQ=="
 beyond easy to decode, go nuts.-->
