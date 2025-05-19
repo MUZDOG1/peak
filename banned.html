@@ -9,9 +9,35 @@
     .error { color: #c00; }
     .success { color: #080; }
     button { margin-left: .5em; }
+     /* header stuff */
+    .header {
+      background: #222;
+      color: #fff;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .header a {
+      margin-right: 10px;
+      color: #bbb;
+      text-decoration: underline;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
+  <header class="header">
+    <div class="logo"><a href="index.html">Muzdog Chat</a></div>
+    <div>
+      <a href="index.html">Back to Chat</a>
+    </div>
+  </header>
 
   <h1>report banned words</h1>
   <a href="index.html">back to chat</a>
