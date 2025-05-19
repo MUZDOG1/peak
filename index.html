@@ -1,30 +1,1606 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Remain Patient...</title>
-    <link rel="stylesheet" href="test.css">
-    <link rel="shortcut icon" href="doglogo.ico" type="image/x-icon">
+  <meta charset="UTF-8">
+  <title>Muzdog Chat</title>
+  <link rel="shortcut icon" href="doglogo.ico" type="image/x-icon">
+
+  <!--==============================+TO DO+=================================================-->
+  <!--2) HIDE DISCORD WEBHOOK API KEYS AND GLOWING MESSAGE EMAILS, FOR SECURITY PURPOSES. -->
+  <!--3) PREVENT SQL INJECTIONS BY MAKING CHECKS ON WHETHER MESSAGES INCLUDE FORBIDDEN COMMANDS.-->
+  <!--4) ADD MORE EMOJIS AND REMEMBER TO ADD THEM TO HELP MENU.-->
+  <!--5) NEVER EVER ADD VOICE MESSAGES EVER PLEASE-->
+  <!--6) CLEAN UP GENERAL DIRECTORIES AND HTML PAGES FOR BETTER GITHUB PAGE-->
+  <!--7) ALSO REMOVE ALL TRACES OF OLD SITES/OLD CHALLENGES THAT HAVE EXPIRED-->
+  <!--8) IMPROVE SITE CENSORSHIP WITH CUSTOM DISCORD WEBHOOK BOT INTERGRATION, OR SOME OTHER METHOD.-->
+  <!--9) GET ON GOOGLE AND BING, USE CUSTOM SITE TOOLS-->
+  <!--10) ALSO IF WE GET BIGGER, TRY TO GET ON WIKIPEDIA FOR BETTER PUBLICITY-->
+  <!--11) ADD OMEGLE LIKE VIDEO CHAT FEATURES THOUGH? 2-3 MONTHS WORK(DO LATER)-->
+  <!--======================================================================================-->
+
+  <!--=========================+UNRELATED TO MD CHAT TO DO LIST+============================-->
+  <!--1) P.S PRACTICE YOUR HOCKEY HITS LATER (UNRELATED TO MD CHAT)-->
+  <!--======================================================================================-->
+
+  <!--===============================+BUG LIST+==============================================-->
+  <!--1) FIREFOX (SPECIFICALLY FIREFOX DEV EDITION) TOP MENU HAS A HIGHER HEIGHT VALUE THEN OTHER BROWSERS,
+         MAKE IT LOOK ASS, NOT SURE WHY AT ALL, I THINK BECAUSE OF DIFFERENT DEFAULT FONTS OR DIF FONTS IN
+         GENERAL, MIGHT FIX BUT ITS ALOT OF WORK FOR A SMALL VISUAL GLITCH-->
+  <!--=======================================================================================-->
+
+
+
+
+  <style>
+    /* white theme */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #000;
+      transition: all 0.3s;
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .muzdog-header {
+      background: #222;
+      color: #fff;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 100;
+    }
+    .muzdog-header .logo {
+      font-size: 24px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .muzdog-header .logo .subtitle {
+      font-family: inherit;
+      font-size: 16px;
+      color: #bbb;
+      margin-left: 5px;
+    }
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    #settingsBtn, #logoutBtn {
+      padding: 5px 10px;
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .auth-container {
+      background: #fff;
+      padding: 10px;
+      border: 1px solid #ccc;
+      width: 800px;
+      margin: 20px auto;
+      position: relative;
+      z-index: 100;
+    }
+    .auth-container button {
+      padding: 6px 12px;
+      margin: 5px 0;
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .auth-container input {
+      padding: 6px;
+      margin: 5px 0;
+      width: calc(100% - 20px);
+    }
+    .signup-btn-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      white-space: nowrap;
+    }
+    .signup-btn-row input[type="checkbox"] {
+      margin: 0;
+    }
+    .signup-btn-row label {
+      margin: 0;
+    }
+    .container {
+      width: 800px;
+      margin: 20px auto;
+      background: #fff;
+      border: 1px solid #ccc;
+      position: relative;
+      z-index: 100;
+    }
+    .chat-column {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-header {
+      background: #ddd;
+      padding: 10px;
+      font-weight: bold;
+      color: #ff4500;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #adminPanel {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border: 2px solid #f00;
+      padding: 10px;
+      display: none;
+      z-index: 1000;
+      margin-top: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    #settingsPanel {
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      display: none;
+      z-index: 2000;
+      width: 150px;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #settingsPanel.open {
+      display: flex;
+    }
+    #adminUserList {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    #adminUserList div {
+      margin-bottom: 5px;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #fff;
+      height: 400px;
+      margin-top: 10px;
+    }
+    .message {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 8px;
+      margin-bottom: 8px;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 5px; 
+      transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out; 
+    }
+    .message-content {
+      flex: 1;
+    }
+    .message img.chat-image,
+    .message img.chat-sticker {
+      max-width: 100%;
+      display: block;
+      margin-top: 5px;
+    }
+    .message img.chat-sticker {
+        max-width: 80px;
+        max-height: 80px;
+    }
+    .chat-input-area {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      background: #ddd;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid #ccc;
+      z-index: 1000;
+    }
+    .chat-input-area input[type="text"] {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #ccc;
+    }
+    .chat-input-area button {
+      padding: 6px 12px; /* here @@@@@@@@@@@@@@@@@@@@@@@@@@@2*/
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .chat-input-area button#sendBtn {
+      background: #ff4500;
+    }
+    .chat-input-area button#stickerBtn {
+      background: #ff4500; /* right here it is <<<<<<<<<<<<<<<<<< */ 
+      margin-left: 5px;
+      margin-right: 5px; /* why the fuck are the buttons not the same size*/
+      /* sendBtn and stickerBtn are not the same size even though they are quite legit the same, fml */
+    }
+
+    .sticker-panel {
+      display: none;
+      position: fixed;
+      bottom: 60px; 
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto; 
+      min-width: 200px;
+      max-width: 800px; 
+      background: #e0e0e0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-bottom: none; 
+      z-index: 1001; 
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
+    }
+
+    .sticker-panel img {
+      width: 60px; 
+      height: 60px; 
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+      object-fit: contain;
+    }
+   /* .sticker-panel img:hover {
+      border-color: black;
+      transform: scale(1.1);
+    }  ==removed for now==*/ 
+
+
+    .message-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-top: 5px;
+    }
+    .timestamp {
+      font-size: 12px;
+      color: gray;
+    }
+    .like-btn {
+      padding: 3px 6px;
+      background-color: #ff4500;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+    .like-count {
+      font-size: 12px;
+      color: #333;
+    }
+    .delete-btn {
+      padding: 3px 6px;
+      background-color: #c00;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    /* sex */
+    .matrix-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .matrix-column {
+      position: absolute;
+      top: -100px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: rgba(0, 255, 0, 0.7);
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+    }
+    .matrix-column span {
+      display: block;
+      animation: matrix-fall linear infinite;
+      animation-duration: calc(var(--duration) * 1s);
+    }
+    
+    .settings-moreinfo {
+      margin-left: 2px;
+      color: blue;
+    }
+    @keyframes matrix-fall {
+      0% { transform: translateY(-100px); }
+      100% { transform: translateY(calc(100vh + 100px)); }
+    }
+
+   
+    @keyframes pulse-glow-default {
+      from { box-shadow: 0 0 6px #ffd700, 0 0 12px #ffd700; }
+      to   { box-shadow: 0 0 12px #ffec8b, 0 0 24px #ffec8b; }
+    }
+    .glow-message {
+      animation: pulse-glow-default 1.5s infinite alternate;
+      border: 1px solid #ffd700 !important; 
+    }
+
+    /* dark mode */
+    body.dark-mode {
+      background: #222 !important;
+      color: #fff !important;
+    }
+    body.dark-mode .muzdog-header {
+      background: #111 !important;
+      border-bottom: 1px solid #333;
+    }
+    body.dark-mode .chat-header {
+      background: #111 !important;
+      color: #ff4500 !important;
+      border-bottom: 1px solid #333;
+    }
+    body.dark-mode .container,
+    body.dark-mode .auth-container,
+    body.dark-mode .chat-input-area {
+      background: #333 !important;
+      border: 1px solid #444 !important;
+    }
+    body.dark-mode #adminPanel {
+      background: #333 !important;
+      border: 2px solid #f00 !important;
+      color: #fff !important;
+    }
+    body.dark-mode #settingsPanel {
+      background: #333 !important;
+      border: 1px solid #444 !important;
+      color: #fff !important;
+    }
+    body.dark-mode input, 
+    body.dark-mode .auth-container button, 
+    body.dark-mode .chat-input-area button#sendBtn, 
+    body.dark-mode .chat-input-area button#stickerBtn 
+    {
+      background: #444 !important;
+      border: 1px solid #555 !important;
+      color: #fff !important;
+    }
+    body.dark-mode .chat-input-area button#sendBtn { background: #ff4500 !important; }
+    body.dark-mode .chat-input-area button#stickerBtn { background: #ff4500 !important; } 
+
+
+    body.dark-mode .delete-btn {
+      background: #c00 !important;
+      color: #fff !important;
+    }
+    body.dark-mode .chat-messages {
+      background: #222 !important;
+    }
+    body.dark-mode .message {
+      background: #444 !important;
+      border-color: #555 !important;
+    }
+    body.dark-mode .timestamp {
+      color: #bbb !important;
+    }
+    body.dark-mode .glow-message {
+      border: 1px solid #f8c300 !important;
+    }
+    body.dark-mode .sticker-panel {
+      background: #2a2a2a !important;
+      border-color: #444 !important;
+    }
+    body.dark-mode .sticker-panel img:hover {
+      border-color: #000000 !important;
+    }
+
+
+    /* haking */
+    body.hacker-mode {
+      background: #000 !important;
+      color: #0f0 !important;
+      font-family: 'Courier New', monospace;
+    }
+    body.hacker-mode .muzdog-header {
+      background: #000 !important;
+      border-bottom: 1px solid #0f0;
+    }
+    body.hacker-mode .chat-header {
+      background: #000 !important;
+      color: #0f0 !important;
+      border-bottom: 1px solid #0f0;
+    }
+    body.hacker-mode .container,
+    body.hacker-mode .auth-container,
+    body.hacker-mode .chat-input-area {
+      background: rgba(0, 20, 0, 0.7) !important;
+      border: 1px solid #0f0 !important;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+    body.hacker-mode #adminPanel {
+      background: rgba(0, 20, 0, 0.9) !important;
+      border: 1px solid #0f0 !important;
+      color: #0f0 !important;
+    }
+    body.hacker-mode #settingsPanel {
+      background: rgba(0, 20, 0, 0.9) !important;
+      border: 1px solid #0f0 !important;
+      color: #0f0 !important;
+    }
+    body.hacker-mode input,
+    body.hacker-mode button {
+      background: #000 !important;
+      border: 1px solid #0f0 !important;
+      color: #0f0 !important;
+    }
+    body.hacker-mode .delete-btn {
+      background: #0f0 !important;
+      color: #000 !important;
+    }
+    body.hacker-mode .chat-messages {
+      background: rgba(0, 10, 0, 0.8) !important;
+    }
+    body.hacker-mode .message {
+      background: rgba(0, 30, 0, 0.7) !important;
+      border-color: #0f0 !important;
+    }
+    @keyframes pulse-glow-hacker {
+      from { box-shadow: 0 0 6px #00cc00, 0 0 12px #00cc00; }
+      to   { box-shadow: 0 0 12px #00ff00, 0 0 24px #00ff00; }
+    }
+    body.hacker-mode .glow-message {
+      animation: pulse-glow-hacker 1.5s infinite alternate;
+      border: 1px solid #00ff00 !important; /* green border, maybe make it bigger */
+    }
+    body.hacker-mode .sticker-panel {
+      background: rgba(0, 10, 0, 0.9) !important;
+      border-color: #0f0 !important;
+    }
+    body.hacker-mode .sticker-panel img:hover {
+      border-color: #0f0 !important;
+    }
+
+
+    /* death theme */
+    body.death-theme {
+      background: #000;
+      color: #FF0000;
+    }
+    body.death-theme a {
+      color: #FF0000;
+    }
+    body.death-theme .muzdog-header,
+    body.death-theme .chat-header,
+    body.death-theme .auth-container,
+    body.death-theme .container,
+    body.death-theme .chat-input-area,
+    body.death-theme .chat-messages,
+    body.death-theme .message,
+    body.death-theme #adminPanel,
+    body.death-theme #settingsPanel {
+      background: #000;
+      border-color: #FF0000;
+      color: #FF0000;
+    }
+    body.death-theme .chat-input-area input[type="text"] {
+      background: #000;
+      border-color: #FF0000;
+      color: #FF0000;
+    }
+    body.death-theme .delete-btn,
+    body.death-theme .like-btn,
+    body.death-theme .chat-input-area button#sendBtn, 
+    body.death-theme .chat-input-area button#stickerBtn 
+    {
+      background: #FF0000;
+      color: #000;
+      border-color: #FF0000; 
+    }
+    @keyframes pulse-glow-death {
+      from { box-shadow: 0 0 6px #cc0000, 0 0 12px #cc0000; }
+      to   { box-shadow: 0 0 12px #ff0000, 0 0 24px #ff0000; }
+    }
+    body.death-theme .glow-message {
+      animation: pulse-glow-death 1.5s infinite alternate;
+      border: 1px solid #ff0000 !important;
+    }
+    body.death-theme .sticker-panel { 
+      background: #000 !important;
+      border-color: #FF0000 !important;
+    }
+    body.death-theme .sticker-panel img:hover { 
+      border-color: #FF0000 !important;
+    }
+  </style>
 </head>
-<body>
-    <style>
-        .email {
-            font-size: 10px;
-            text-align: center;
-            font-family: sans-serif, arial;
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-            color: white;
+<body class="light-mode">
+  <header class="muzdog-header">
+    <div class="logo">
+      <a href="index.html">Muzdog Chat</a>
+      <span class="subtitle">
+        <!--user count below >>>>>>-->
+        - <span id="userCount">?</span> users and counting! <!--PLEASE REMOVE THIS WHEN WE GET 1000+ USERS BECAUSE THIS SHIT IS NOT SUSTANIBLE 
+        ALSO I DONT KNOW HOW TO SPELL SUSTANIBLE OR WHATEVER PLEASE JUST REMOVE IT SOON BECAUSE IT IS GONNA 
+        LOOK SO ASS-->
+        <a href="tos.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Terms of Service</a>
+        <a href="banned.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Report Words</a>
+        <a href="help.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">Help</a>
+        <a href="more.html" style="margin-left: 10px; color: #bbb; text-decoration: underline; font-size: 14px;">More...</a>
+        <!--got rid of log because it is already in the top bit thingy ma jib-->
+      </span>
+    </div>
+    <div class="header-buttons">
+      <!--settings button below>>> if you change up logout remember to change this one aswell-->
+      <button id="settingsBtn">Settings</button>
+      <!--log out button bellow >>> change it up abit later-->
+      <button id="logoutBtn" style="display: none;">Logout</button>
+    </div>
+  </header>
+
+  <!-- modes -->
+  <div id="settingsPanel">
+    <!--settings panel-->
+    <h3>Settings</h3>
+    <label>
+      <!--light mode-->
+      <input type="radio" name="theme" value="light" id="lightModeRadio"> Light Mode
+    </label>
+    <label>
+      <!--dark-->
+      <input type="radio" name="theme" value="dark" id="darkModeRadio"> Dark Mode
+    </label>
+    <label>
+      <!--hacker, TO DO: make hacker switch smooth like switch from dark to light and light to dark-->
+      <input type="radio" name="theme" value="hacker" id="hackerModeRadio"> Hacker Mode
+    </label>
+    <a href="moreinfo.html" class="settings-moreinfo">More Info...</a> <!--CHANGE TO MOREINFO.HTML LATER ONCE DONE, done that -->
+    
+  </div>
+
+  <!-- auth + sign ups -->
+  <div class="auth-container" id="authContainer">
+    <!--sign up area-->
+    <h2>Sign Up</h2>
+    <input type="email" id="signupEmail" placeholder="Email">
+    <input type="password" id="signupPassword" placeholder="Password">
+    <input type="text" id="signupUsername" placeholder="Username">
+    <div class="signup-btn-row">
+      <button id="signupBtn">Sign Up</button>
+      <input type="checkbox" id="tosCheckbox">
+      <label for="tosCheckbox">
+        Click this box to agree to our
+        <a href="tos.html" target="_blank" style="color: darkblue;">Terms of Service</a>
+      </label>
+    </div>
+    <!--login area-->
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <!-- msg containers -->
+  <div class="container">
+    <div class="chat-column">
+      <div class="chat-header">
+        <!--live chat announcement tab below >>>>>>>>>-->
+        <span class="chat-title">Live Chat [VERSION 1.9.5 | <a href="log.html" style="color: blue;">LOG HERE</a>] </span>
+        <span class="visits">Total Visits: <span id="visitsCount">?</span></span>
+        <!--total visits above >>>>>> ps also remove when we gain 100000+ visits cuz it will look ass-->
+      </div>
+      <!--admin panel-->
+      <div id="adminPanel">
+        <h3>ban list</h3>
+        <hr style="color: 2px solid #f00; border-color: #f00;"> <!--in hacker mode this hr remains red, fix later
+        but its not a main concern ============================-->
+        <div id="adminUserList"></div>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+    </div>
+  </div>
+
+
+  <!-- cjat input -->
+  <div class="chat-input-area">
+    <input
+     type="text"
+     id="chatInput"
+     placeholder="Type your thoughts."
+     disabled
+     maxlength="200"
+     >
+     <!--buttons, TODO: change width of stickerbtn cuz it doesnt match sendbtn-->
+    <button id="stickerBtn" disabled>😀</button>
+    <button id="sendBtn" disabled>Send</button>
+  </div>
+
+  <!--stickers below >>>>>>>>>>>-->
+  <div id="stickerPanel" class="sticker-panel">
+    <img src="laughing.gif" alt="laughing sticker" data-sticker-url="laughing.gif" title="laughing sticker">
+    <img src="thumbsup.png" alt="thumbsup sticker" data-sticker-url="thumbsup.png" title="thumbsup sticker">
+    <img src="angry.png" alt="angry sticker" data-sticker-url="angry.png" title="angry sticker">
+    <img src="dog4.png" alt="muzdog chat dog sticker" data-sticker-url="dog4.png" title="muzdog chat dog">
+  </div>
+
+
+
+  <!--start of javascript-->
+  <script type="module">
+    import {
+   db, storage, auth, updateUserStatus, incrementSiteVisits, getSiteVisits,
+   logout, banUser, unbanUser
+ } from "./firebase.js";
+ import {
+   collection, addDoc, serverTimestamp, query, orderBy, onSnapshot,
+   updateDoc, doc, increment, getDoc, getDocs, where, limit, deleteDoc, setDoc 
+ } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+ import {
+   onAuthStateChanged,
+   signInWithEmailAndPassword,
+   createUserWithEmailAndPassword, 
+   sendEmailVerification        
+ } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+ // global variables
+ let isAdmin = false;
+ let bannedWords = [];
+ let bannedAlertShown = false;
+ let matrixInterval;
+ // throttle: only allow one send per 5 seconds,
+ let lastSendTime = 0;
+ const SEND_COOLDOWN = 5000; // ms
+ //EMAILS, hide later for security reasons!!!!!!! seriously get to work on ssh encryption or something because
+ // this is disgusting, FIX THIS SHIT!
+ //=============================
+ const GLOW_EMAILS = [  
+  "william.harkness@preshil.vic.ed",
+  "muzdog696969@gmail.com",
+  "williamharknes11@icloud.com",
+ ];
+ //==========================
+
+
+ // dom
+ const chatMessages    = document.getElementById("chatMessages");
+ const chatInput       = document.getElementById("chatInput");
+ const sendBtn         = document.getElementById("sendBtn");
+ const stickerBtn      = document.getElementById("stickerBtn");
+ const stickerPanel    = document.getElementById("stickerPanel");
+ const signupEmail     = document.getElementById("signupEmail");
+ const signupPassword  = document.getElementById("signupPassword");
+ const signupUsername  = document.getElementById("signupUsername");
+ const signupBtn       = document.getElementById("signupBtn");
+ const tosCheckbox     = document.getElementById("tosCheckbox");
+ const loginEmail      = document.getElementById("loginEmail");
+ const loginPassword   = document.getElementById("loginPassword");
+ const loginBtn        = document.getElementById("loginBtn");
+ const logoutBtn       = document.getElementById("logoutBtn");
+ const settingsBtn     = document.getElementById("settingsBtn");
+ const settingsPanel   = document.getElementById("settingsPanel");
+ const themeRadios     = document.querySelectorAll('input[name="theme"]');
+ const verificationMsg = document.getElementById("verificationMsg");
+
+ // ask for noti perms, maybe change to custom window showing click this when prompted? that will look 
+ // pretty awesome tbh but its alot of work and im lazy
+ document.addEventListener("DOMContentLoaded", async () => {
+   if ("Notification" in window) {
+     await Notification.requestPermission();
+   }
+   // init
+   await incrementSiteVisits();
+   const visits = await getSiteVisits();
+   document.getElementById("visitsCount").textContent = visits;
+   updateRegisteredUsersCount();
+   loadTheme();
+   // ensure that verification is sent
+   if (verificationMsg) verificationMsg.style.display = 'none';
+   stickerPanel.style.display = "none";
+ });
+
+ // tos box
+ signupBtn.disabled = true;
+ tosCheckbox.addEventListener("change", () => {
+   signupBtn.disabled = !tosCheckbox.checked;
+ });
+
+
+ // ones and zeros have sex on my screen
+ // aka matrix effect for hacker mode
+ function startMatrixEffect() {
+   const chars = "01";
+   const canvas = document.createElement("div");
+   canvas.className = "matrix-canvas";
+   document.body.appendChild(canvas);
+   const fontSize = 14;
+   const columns = Math.floor(window.innerWidth / fontSize);
+   for (let i = 0; i < columns; i++) {
+     const column = document.createElement("div");
+     column.className = "matrix-column";
+     column.style.left = (i * fontSize) + "px";
+     column.style.setProperty('--duration', Math.random() * 5 + 3);
+     canvas.appendChild(column);
+     animateColumn(column);
+   }
+   matrixInterval = setInterval(() => {
+     document.querySelectorAll(".matrix-column").forEach(col => {
+       if (Math.random() > 0.9) animateColumn(col);
+     });
+   }, 100);
+ }
+ function animateColumn(column) {
+   const chars = "01";
+   const length = Math.floor(Math.random() * 15) + 5;
+   let html = "";
+   for (let i = 0; i < length; i++) {
+     const char = chars[Math.floor(Math.random() * chars.length)];
+     const opacity = (length - i) / length;
+     const delay = i * 100;
+     html += `<span style="animation-delay:${delay}ms;opacity:${opacity}">${char}</span>`;
+   }
+   column.innerHTML = html;
+ }
+ function stopMatrixEffect() {
+   clearInterval(matrixInterval);
+   const canvas = document.querySelector(".matrix-canvas");
+   if (canvas) canvas.remove();
+ }
+
+ // theme toucher, switches themes. also if user clears cache it will reset so make that something in more info
+ // or the help page
+ function loadTheme() {
+   const theme = localStorage.getItem("theme") || "light";
+   document.body.className = theme + "-mode";
+   const radioElement = document.getElementById(theme + "ModeRadio");
+   if (radioElement) {
+        radioElement.checked = true;
+   } else {
+        if (theme !== 'death') {
+            console.warn(`Radio button for theme "${theme}" not found.`);
+        }
+   }
+   stopMatrixEffect(); 
+   if (theme === "hacker") startMatrixEffect();
+   else if (theme === "death") applyDeathTheme(false); 
+ }
+ themeRadios.forEach(radio => {
+   radio.addEventListener("change", () => {
+     const theme = radio.value;
+     document.body.className = theme + "-mode";
+     localStorage.setItem("theme", theme);
+     stopMatrixEffect();
+     if (theme === "hacker") startMatrixEffect();
+   });
+ });
+ settingsBtn.addEventListener("click", () => {
+   settingsPanel.classList.toggle("open");
+ });
+
+ // banned word loader, if error shown signal the doomsday alarm cuz we are fucckeeeeddddddddddd
+ // also if there is an error, switch it to "fixing.html" cuz we simply cannot let anyone send messages
+ // with no censorship
+ async function loadBannedWords() {
+   try {
+     if (bannedWords.length > 0) return;
+     const response = await fetch("banned_words.txt");
+     if (!response.ok) {
+         throw new Error(`HTTP error! status: ${response.status}`);
+     }
+     const text     = await response.text();
+     bannedWords     = text.split("\n").map(w => w.trim().toLowerCase()).filter(w => w); 
+     console.log(`Loaded ${bannedWords.length} banned words.`); 
+   } catch (e) {
+    // error to catch if banned words didnt load, please change index.html to redirect to "fixing.html"
+    // if this shows becuz we will be screwed.
+     console.error("Failed to load banned words(BAD!!! FIX NOW!):", e);
+     bannedWords = [];
+   }
+ }
+ async function filterMessage(msg) {
+  if (!bannedWords.length) await loadBannedWords();
+  if (!bannedWords.length) {
+    return msg;
+  }
+
+  let filteredMsg = msg;
+  for (const word of bannedWords) {
+   // escape fuckass special characters
+   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+   const re      = new RegExp(`\\b${escaped}\\b`, 'gi');
+   filteredMsg = filteredMsg.replace(re, match => '*'.repeat(match.length));
+  }
+
+  return filteredMsg;
+ }
+ // emojis
+ const emojiMap = {
+  laugh:    "😂",
+  happy:    "😄",
+  thumbsup: "👍",
+  heart:    "💔",
+  rose:     "🥀",
+  sad:      "😭",
+  angry:    "😡",
+  king:     "👑",
+  shocked:  "😱",
+  clown:    "🤡",
+  demon:    "👺",
+  devil:    "👿",
+  nerd:     "🤓",
+  poop:     "💩",
+  money:    "🤑",
+  peace:    "✌🏼",
+  //added more from below onwards
+  healedheart: "❤️‍🩹",
+  vomit:    "🤢",
+  swearing: "🤬",
+  unamused: "😒",
+  confused: "😕",
+  mdconfused: "🧐",
+  frown:    "🙁",
+  goober: "🤪",
+  // money: "🤑", removed repeat
+  okay: "👌",
+  // the dementia has kicked in they are no longer straight
+  cold: "🥶",
+  
+  // TODO: add more damn codes!!!! working on it rn as of 5/12/2025
+ };
+
+ // swapper to change emoji codes to the actual emojis
+ function replaceEmojis(str) {
+  return str.replace(/:([a-z0-9_]+):/gi, (match, code) =>
+    emojiMap[code.toLowerCase()] || match
+  );
+ }
+
+// sign up settings
+ signupBtn.addEventListener("click", async () => {
+  if (!tosCheckbox.checked) {
+    alert("Please agree to the TOS before signing up.");
+    return;
+  }
+
+  const email = signupEmail.value.trim();
+  const pw    = signupPassword.value;
+  const userDisplayName  = signupUsername.value.trim();
+  if (!email || !pw || !userDisplayName) {
+    alert("Please fill out all fields.");
+    return;
+  }
+  // check if their username is over 15 characters, if so block them.
+  if (userDisplayName.length > 15) {
+    alert("Username maximum length is 15 characters.");
+    return;
+  }
+  // checks if their password is under 6 characters, if so block them again 
+   if (pw.length < 6) {
+        alert("Password must be at least 6 characters long.");
+        return;
+    }
+  // banned words check
+  if (!bannedWords.length) await loadBannedWords();
+  if (bannedWords.length > 0) {
+      const usernameLower = userDisplayName.toLowerCase();
+      for (const w of bannedWords) {
+          if (usernameLower.includes(w)) {
+            alert("Username contains banned words. Please choose another."); // to profesh, going to change
+            return;
+          }
+      }
+  }
+
+
+  const uq = query(collection(db, "users"), where("email", "==", email), limit(1));
+  const us = await getDocs(uq);
+  if (!us.empty && us.docs[0].data().banned) {
+    alert("This email address is connected to a banned account.");
+    return;
+  }
+
+  signupBtn.disabled = true;
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pw);
+    const newUser = userCredential.user;
+
+
+
+    // verification email
+
+    await sendEmailVerification(newUser);
+    console.log("Verification email sent to:", email);
+    // sets the users properties, change to isadmin true if you want maxium chaos lolz
+    await setDoc(doc(db, "users", newUser.uid), {
+        username: userDisplayName,
+        email: email,
+        createdAt: serverTimestamp(),
+        online: false,
+        banned: false,
+        isAdmin: false
+    });
+
+
+
+    alert("Signup successful! Please check your email inbox (and spam folder) to verify your account before logging in.");
+    await logout();
+
+
+    signupEmail.value = "";
+    signupPassword.value = "";
+    signupUsername.value = "";
+    tosCheckbox.checked = false;
+  // gen errors
+  } catch (error) {
+    console.error("Signup Error:", error);
+    if (error.code === 'auth/email-already-in-use') {
+        alert("This email address is already registered. Please try logging in or use a different email.");
+    } else if (error.code === 'auth/weak-password') {
+        alert("Password is too weak. Please choose a stronger password (at least 6 characters).");
+    } else {
+        alert("Signup failed: " + error.message);
+    }
+  } finally {
+      signupBtn.disabled = !tosCheckbox.checked;
+  }
+ });
+
+
+ loginBtn.addEventListener("click", async () => {
+    const email = loginEmail.value.trim();
+    const pw = loginPassword.value;
+    if (!email || !pw) {
+        alert("Please fill out all fields.");
+        return;
+    }
+    loginBtn.disabled = true;
+    try {
+        const cred = await signInWithEmailAndPassword(auth, email, pw);
+        const user = cred.user;
+        const userDocRef = doc(db, "users", user.uid);
+        let userDocSnap = null;
+
+        if (!user.emailVerified) {
+            console.log(`User ${user.uid} not verified. Checking Firestore doc.`);
+            userDocSnap = await getDoc(userDocRef);
+
+            if (userDocSnap.exists()) {
+
+                try {
+                    await sendEmailVerification(user);
+                    alert("Verification email sent. Please check your inbox (and spam folder) soon to verify your account.");
+                } catch (verificationError) {
+                    console.error("Failed to send verification email:", verificationError);
+
+                }
+            } else {
+                // if users tries to login without verified email but the account has been registered
+                alert("Please verify your email address first. Check your inbox (and spam folder) for the verification email sent during signup.");
+            }
+            await logout(); // Log out unverified user in both cases (doc exists or not)
+            loginBtn.disabled = false;
+            return;
         }
 
-    </style>
-    <h1 style="color: red;">We'll be back soon!</h1>
-    <p>Please remain patient while we either fix Muzdog Chat, or implement some cool new changes!</p>
+        if (!userDocSnap) { // If user was verified, userDocSnap is still null
+             userDocSnap = await getDoc(userDocRef);
+        }
 
-    <div style="text-align: center;">
-        <img src="workingdog.png">
-    </div>
-    
+        if (userDocSnap && userDocSnap.exists() && userDocSnap.data().banned) {
+            if (!bannedAlertShown) {
+                alert("You are banned.");
+                bannedAlertShown = true;
+            }
+            await logout();
+            loginBtn.disabled = false;
+            return;
+        }
+
+        loginEmail.value = "";
+        loginPassword.value = "";
+        bannedAlertShown = false;
+     // errors
+    } catch (e) {
+        console.error("Login Error:", e);
+        bannedAlertShown = false;
+        if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+            alert("Login failed: Invalid email or password.");
+        } else if (e.code === 'auth/too-many-requests') {
+            alert("Sorry champ, your access is temporarily disabled due to too many failed login attempts. Please try again later.");
+        } else {
+            alert("Login failed: " + e.message);
+        }
+    } finally {
+        loginBtn.disabled = false;
+    }
+ });
+
+
+ logoutBtn.addEventListener("click", () => {
+    if (auth.currentUser) {
+        updateUserStatus(false);
+    }
+    logout();
+});
+
+
+ onAuthStateChanged(auth, async user => {
+    if (verificationMsg) verificationMsg.style.display = 'none';
+
+    if (user) {
+        const uref = doc(db, "users", user.uid);
+        let userDocSnap = null;
+
+        if (!user.emailVerified) {
+            try {
+                userDocSnap = await getDoc(uref);
+
+                if (userDocSnap.exists()) {
+                    if (verificationMsg) {
+                        verificationMsg.textContent = "Reminder: Please verify your email soon (check inbox/spam).";
+                        verificationMsg.style.display = 'block';
+                    }
+
+                } else { // User authenticated but no Firestore doc
+                    logoutBtn.style.display = "none";
+                    chatInput.disabled = true;
+                    sendBtn.disabled = true;
+                    stickerBtn.disabled = true;
+                    document.getElementById("authContainer").style.display = "block";
+                    document.getElementById("adminPanel").style.display = "none";
+                    stickerPanel.style.display = "none";
+                    isAdmin = false;
+                    if (verificationMsg) { // This block was original
+                        verificationMsg.textContent = "Please check your email to verify your account before proceeding.";
+                        verificationMsg.style.display = 'block';
+                    }
+                    // Consider logging out here as well if doc is missing
+                    // await logout(); // To be consistent with other missing doc scenarios
+                    return;
+                }
+            } catch (error) {
+                console.error("Error fetching user doc in onAuthStateChanged:", error);
+                logoutBtn.style.display = "none";
+                chatInput.disabled = true;
+                sendBtn.disabled = true;
+                stickerBtn.disabled = true;
+                document.getElementById("authContainer").style.display = "block";
+                document.getElementById("adminPanel").style.display = "none";
+                stickerPanel.style.display = "none";
+                isAdmin = false;
+                 if (verificationMsg) {
+                    verificationMsg.textContent = "Error checking account status. Please try again.";
+                    verificationMsg.style.display = 'block';
+                 }
+                 // await logout(); // Also consider logout here
+                 return;
+            }
+        }
+
+
+
+        if (!userDocSnap) { // If user was verified or path above didn't fetch
+            try {
+                userDocSnap = await getDoc(uref);
+            } catch (error) {
+                 console.error("Error fetching user doc, please report this to MD CHAT admins", error);
+                 alert("Error loading your user data. Please report this to MD CHAT admins.");
+                 await logout();
+                 return;
+            }
+        }
+
+        if (!userDocSnap || !userDocSnap.exists()) {
+            console.error(`User ${user.uid} is authenticated, but Firestore document missing! BAD!`);
+            alert("Error: Your user data could not be found. Logging out.");
+            await logout();
+            return;
+        }
+
+        const userData = userDocSnap.data();
+        if (userData.banned) {
+            if (!bannedAlertShown) {
+                alert("Your account is banned. Logging out.");
+                bannedAlertShown = true;
+            }
+            await logout();
+            return;
+        }
+
+        bannedAlertShown = false;
+        logoutBtn.style.display = "block";
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        stickerBtn.disabled = false;
+        updateUserStatus(true);
+        document.getElementById("authContainer").style.display = "none";
+        stickerPanel.style.display = "none";
+
+        const unsubscribe = onSnapshot(uref, (docSnap) => {
+            if (!docSnap.exists()) {
+                console.warn(`User document ${user.uid} no longer exists during snapshot listening.`);
+                if (auth.currentUser && auth.currentUser.uid === user.uid) {
+                    alert("Your account data seems to be missing. Logging out.");
+                    logout();
+                }
+                return;
+            }
+            const currentData = docSnap.data();
+            // ban check
+            if (currentData.banned && auth.currentUser && auth.currentUser.uid === user.uid && !bannedAlertShown) {
+                alert("You have been banned. Logging out.");
+                bannedAlertShown = true;
+                logout();
+            }
+            // admin check
+            const currentlyAdmin = currentData.isAdmin || false;
+            if (currentlyAdmin !== isAdmin) {
+                console.log(`Admin status changed for ${user.uid} to: ${currentlyAdmin}`);
+                isAdmin = currentlyAdmin;
+                document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
+                if (isAdmin) {
+                    loadUsersForAdmin();
+                }
+            }
+        }, error => {
+            console.error(`Error in Firestore listener for ${user.uid}:`, error);
+
+        });
+
+        isAdmin = userData.isAdmin || false;
+        document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
+        if (isAdmin) {
+            loadUsersForAdmin();
+        }
+
+    } else {
+
+        console.log("onAuthStateChanged: User logged out.");
+        logoutBtn.style.display = "none";
+        chatInput.disabled = true;
+        sendBtn.disabled = true;
+        stickerBtn.disabled = true;
+        document.getElementById("authContainer").style.display = "block";
+        document.getElementById("adminPanel").style.display = "none";
+        stickerPanel.style.display = "none";
+        isAdmin = false;
+        bannedAlertShown = false;
+        if (verificationMsg) verificationMsg.style.display = 'none';
+        stopMatrixEffect();
+    }
+ });
+
+
+
+ const messagesCollectionRef = collection(db, "chatrooms", "general", "messages");
+ const q = query(
+   messagesCollectionRef,
+   orderBy("timestamp", "desc"),
+   limit(100)
+ );
+
+ onSnapshot(q, async (snapshot) => {
+    if (snapshot.empty) {
+        chatMessages.innerHTML = '<div class="message info-message">No messages yet. Be the first!</div>';
+    }
+
+   if (snapshot.docChanges().some(change => change.type === 'added')) {
+        const latestDoc = snapshot.docs[0];
+        if (latestDoc) {
+            const latestMsgData = latestDoc.data();
+
+            if (document.hidden && Notification.permission === "granted" && auth.currentUser && latestMsgData.senderId !== auth.currentUser.uid) {
+                try {
+                    const senderDoc = await getDoc(doc(db, "users", latestMsgData.senderId));
+                    const senderUsername = senderDoc.exists() ? senderDoc.data().username : "Someone";
+
+                    let raw = "[New message]";
+                    if (latestMsgData.text) {
+                        raw = latestMsgData.text;
+                    } else if (latestMsgData.image) {
+                        raw = "[image]";
+                    } else if (latestMsgData.stickerUrl) {
+                        const stickerName = latestMsgData.stickerUrl.split('/').pop().split('.')[0] || "sticker";
+                        raw = `Sent a sticker: ${stickerName}`;
+                    }
+
+                    let filtered = raw;
+                    if (latestMsgData.text) { // Only filter if it's text
+                        try {
+                            filtered = await filterMessage(raw);
+                        } catch (filterError) {
+                            console.error("Error filtering message for notification:", filterError);
+                        }
+                    }
+                    const body = replaceEmojis(filtered); // replaceEmojis is safe for non-text too
+
+                    new Notification(senderUsername, { body, tag: 'chat-message' });
+
+                } catch (error) {
+                    console.error("Error processing notification:", error);
+                    let raw = latestMsgData.text || (latestMsgData.stickerUrl ? "[New Sticker]" : "[image]");
+                     let filtered = raw;
+                    if(latestMsgData.text) {
+                        try {
+                            filtered = await filterMessage(raw);
+                        } catch (filterError) { /* Ignore inner error */ }
+                    }
+                    const body = replaceEmojis(filtered);
+                    new Notification("Someone", { body, tag: 'chat-message' });
+                }
+            }
+        }
+   }
+
+   const messagePromises = snapshot.docs.map(async d => {
+     const m = d.data();
+     if (!m) return '';
+
+     const ts = m.timestamp?.toDate() || new Date();
+     const tstr = ts.toLocaleString("en-US", {
+       year: "numeric", month: "short", day: "numeric",
+       hour: "numeric", minute: "numeric", hour12: true 
+     });
+
+
+     let txt = '';
+     if (m.text) {
+         try {
+            txt = await filterMessage(m.text);
+            txt = replaceEmojis(txt);
+         } catch (e) {
+            console.error("Error processing message text:", e);
+            txt = "[Error processing message]";
+         }
+     }
+
+
+
+     let usr = "Unknown User";
+     let senderEmail = null; 
+     if (m.senderId) {
+        try {
+            const userDoc = await getDoc(doc(db, "users", m.senderId));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                usr = userData.username || "Unknown User";
+                senderEmail = userData.email; 
+            }
+        } catch (e) {
+            console.error(`Error fetching username for senderId ${m.senderId}:`, e);
+
+        }
+     }
+
+
+     const del = isAdmin
+       ? `<button class="delete-btn" data-message-id="${d.id}">Delete</button>`
+       : "";
+
+     let messageClasses = "message";
+     if (senderEmail && GLOW_EMAILS.includes(senderEmail.toLowerCase())) {
+         messageClasses += " glow-message"; 
+     }
+
+     return `
+       <div class="${messageClasses}" data-message-id="${d.id}">
+         <div class="message-content">
+           <span class="author">${usr}:</span>
+           ${txt ? `<span class="text">${txt}</span>` : ""}
+           ${m.image ? `<img src="${m.image}" alt="Uploaded image" class="chat-image">` : ""}
+           ${m.stickerUrl ? `<img src="${m.stickerUrl}" alt="Sticker" class="chat-sticker">` : ""}
+         </div>
+         <div class="message-actions">
+           <span class="timestamp">${tstr}</span>
+           ${del}
+         </div>
+       </div>`;
+   });
+
+   const html = (await Promise.all(messagePromises)).join('');
+   chatMessages.innerHTML = html;
+
+
+    if (isAdmin) {
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const messageId = event.target.getAttribute('data-message-id');
+                if (messageId) {
+                    deleteMessage(messageId);
+                }
+            });
+        });
+    }
+
+
+    const shouldScroll = chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 100; 
+    if (shouldScroll) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+ });
+
+
+ async function deleteMessage(id) {
+   if (!isAdmin) { alert("Not authorized to delete."); return; }
+   if (confirm(`Are you sure you want to delete message ID: ${id}?`)) {
+        try {
+            await deleteDoc(doc(db, "chatrooms/general/messages", id));
+        }
+        catch (e) { console.error("Delete failed:", e); alert("Delete failed."); }
+   }
+ }
+
+
+
+ // send buttons
+ sendBtn.addEventListener("click", async () => {
+  const now = Date.now();
+  if (now - lastSendTime < SEND_COOLDOWN) {
+    const wait = Math.ceil((SEND_COOLDOWN - (now - lastSendTime)) / 1000);
+    alert(`Please wait ${wait} more second${wait > 1 ? 's' : ''} before sending again.`);
+    return;
+  }
+
+   if (!auth.currentUser) { alert("Log in to chat."); return; }
+
+   if (!auth.currentUser.emailVerified) {
+       const userDocRef = doc(db, "users", auth.currentUser.uid);
+       const userDocSnap = await getDoc(userDocRef); // This check was original
+       if (!userDocSnap.exists()) {
+            alert("Please verify your email to chat.");
+            return;
+       }
+   }
+
+   const text = chatInput.value.trim();
+   //COMMANDS HERE ---------------------------------
+   const cmds = {
+        xanlack: "404.html",
+        death: null,
+        encode: "encode.html",
+        endtimes: "end.html",
+        html: "test.html",
+        wishlist: "404.html",
+        stats: "404.html",
+        kills: "torture1.html",
+        tester: "banned.html"
+   };
+   // COMMANDS HERE ---------------------------------
+   const cmd = text.toLowerCase();
+   if (cmds.hasOwnProperty(cmd)) {
+        if (cmds[cmd]) {
+            window.location.href = cmds[cmd];
+        } else if (cmd === "death") {
+            applyDeathTheme();
+        }
+        chatInput.value = "";
+        return;
+   }
+
+   if (text) {
+     lastSendTime = now;
+     try {
+        await addDoc(messagesCollectionRef, {
+            senderId: auth.currentUser.uid,
+            text: text,
+            timestamp: serverTimestamp()
+        });
+        chatInput.value = "";
+        chatInput.focus();
+     } catch (error) {
+         console.error("Error sending message:", error);
+         alert("Failed to send message.");
+     }
+   }
+ });
+ chatInput.addEventListener("keypress", e => {
+   if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
+    }
+ });
+
+ stickerBtn.addEventListener("click", () => {
+    if (stickerPanel.style.display === "flex") {
+        stickerPanel.style.display = "none";
+    } else {
+        stickerPanel.style.display = "flex";
+    }
+ });
+
+ stickerPanel.addEventListener("click", async (event) => {
+    if (event.target.tagName === "IMG" && event.target.dataset.stickerUrl) {
+        const stickerUrl = event.target.dataset.stickerUrl;
+
+        const now = Date.now();
+        if (now - lastSendTime < SEND_COOLDOWN) {
+            const wait = Math.ceil((SEND_COOLDOWN - (now - lastSendTime)) / 1000);
+            alert(`Please wait ${wait} more second${wait > 1 ? 's' : ''} before sending again.`);
+            return;
+        }
+
+        if (!auth.currentUser) { alert("Log in to send stickers."); return; }
+        
+        if (!auth.currentUser.emailVerified) {
+            const userDocRef = doc(db, "users", auth.currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (!userDocSnap.exists()) {
+                alert("Please verify your email to send stickers.");
+                return;
+            }
+        }
+
+        lastSendTime = now;
+        try {
+            await addDoc(messagesCollectionRef, {
+                senderId: auth.currentUser.uid,
+                stickerUrl: stickerUrl, 
+                timestamp: serverTimestamp()
+            });
+            stickerPanel.style.display = "none"; 
+        } catch (error) {
+            console.error("Error sending sticker:", error);
+            alert("Failed to send sticker. Please try again.");
+        }
+    }
+ });
+
+
+ // admin panel
+ async function loadUsersForAdmin() {
+   if (!isAdmin || !auth.currentUser) return;
+   try {
+     const usersSnapshot = await getDocs(collection(db, "users"));
+     const list = document.getElementById("adminUserList");
+     if (!list) {
+         console.error("Admin user list element not found!");
+         return;
+     }
+     list.innerHTML = "";
+
+     const currentUserUid = auth.currentUser.uid;
+
+     usersSnapshot.forEach(userDoc => {
+       const userData = userDoc.data();
+       const userId = userDoc.id;
+
+
+       if (userId === currentUserUid) return;
+
+       const item = document.createElement("div");
+       item.className = 'admin-user-item';
+
+       const userInfo = document.createElement("span");
+       userInfo.textContent = `${userData.username || 'No Username'} (${userData.email}) ${userData.banned ? '[BANNED]' : ''} ${userData.isAdmin ? '[ADMIN]' : ''}`;
+       item.appendChild(userInfo);
+
+       const banButton = document.createElement("button");
+       banButton.dataset.userId = userId;
+       if (userData.banned) {
+         banButton.textContent = "Unban";
+         banButton.onclick = () => unbanUserFromUI(userId);
+         banButton.classList.add('unban-button');
+       } else {
+         banButton.textContent = "Ban";
+         banButton.onclick = () => banUserFromUI(userId);
+         banButton.classList.add('ban-button');
+       }
+        if (userData.isAdmin) {
+            banButton.disabled = true;
+            banButton.title = "Cannot ban/unban other admins.";
+            banButton.classList.add('disabled-button');
+        }
+
+       item.appendChild(banButton);
+       list.appendChild(item);
+     });
+   } catch (e) { console.error("Error loading users for admin:", e); }
+ }
+
+ async function banUserFromUI(id) {
+   if (!isAdmin) { alert("Admin privileges required."); return; }
+   if (auth.currentUser && id === auth.currentUser.uid) { alert("You cannot ban yourself idiot."); return; }
+
+   const userToBanRef = doc(db, "users", id);
+   const userToBanSnap = await getDoc(userToBanRef);
+   if (userToBanSnap.exists() && userToBanSnap.data().isAdmin) {
+       alert("Cannot ban another admin user.");
+       return;
+   }
+
+   if (confirm("Are you sure you want to ban this user?")) {
+        try {
+            await banUser(id);
+            alert("User banned successfully.");
+            loadUsersForAdmin();
+        } catch (e) {
+            console.error("Ban failed:", e);
+            alert("Failed to ban user: " + e.message);
+        }
+   }
+ }
+ window.banUserFromUI = banUserFromUI;
+
+ async function unbanUserFromUI(id) {
+    if (!isAdmin) { alert("Admin privileges required."); return; }
+   if (confirm("Are you sure you want to unban this user?")) {
+        try {
+            await unbanUser(id);
+            alert("User unbanned successfully.");
+            loadUsersForAdmin();
+        } catch (e) {
+             console.error("Unban failed:", e);
+            alert("Failed to unban user: " + e.message);
+        }
+   }
+ }
+ window.unbanUserFromUI = unbanUserFromUI; // expose
+
+ // user counts
+ async function updateRegisteredUsersCount() {
+   try {
+     const usersSnapshot = await getDocs(query(collection(db, "users")));
+     const count = usersSnapshot.size;
+     const userCountElement = document.getElementById("userCount");
+     if (userCountElement) {
+        userCountElement.textContent = count;
+     }
+   } catch (e) {
+     console.error("Error getting user count:", e);
+   }
+ }
+
+ window.addEventListener("beforeunload", () => {
+    if (auth.currentUser && document.getElementById("authContainer").style.display === 'none') {
+        updateUserStatus(false);
+    }
+ });
+
+ function applyDeathTheme(log = true) {
+    document.body.className = 'death-theme';
+    localStorage.setItem("theme", "death");
+    stopMatrixEffect();
+    if (log) console.log("Death theme activated.");
+    themeRadios.forEach(radio => radio.checked = false);
+    if (settingsPanel && settingsPanel.classList.contains("open")) {
+        settingsPanel.classList.remove("open");
+    }
+ }
+</script>
 </body>
 </html>
-<!--switch index.html with this file name and make this file name index.html to initate fixing-->
+
+<!--journal link: "aHR0cHM6Ly9tdXpkb2cxLmdpdGh1Yi5pby9wZWFrL3F3ZXJ0eQ=="
+beyond easy to decode, go nuts.-->
+<!--ps, this is the old link as of 5/3/2025, the directory is the same so just go to it.-->
+<!--or just go into "more info..." in settings-->
