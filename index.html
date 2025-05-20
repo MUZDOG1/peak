@@ -376,6 +376,31 @@
       color: #DA70D6 !important;
     }
     /* >>>>> END OF THE PURPLE PAINT CODE <<<<< */
+    /* start of admin shit */
+    .admin-tag {
+      color: red;
+      font-size: 0.8em; 
+      font-weight: bold;
+      margin-left: 5px; 
+      background-color: #ffe0e0; 
+      padding: 1px 3px;
+      border-radius: 3px;
+    }
+
+    body.dark-mode .admin-tag {
+      color: #ff7b7b; 
+      background-color: #502020; 
+    }
+
+    body.hacker-mode .admin-tag {
+      color: #00ff00;
+      background-color: #003300; 
+    }
+
+    body.death-theme .admin-tag {
+      color: #ffdd00; 
+      background-color: #440000;
+    }
 
 
     /* dark mode */
@@ -1318,6 +1343,7 @@
 
      let usr = "Unknown User";
      let senderEmail = null; 
+     let senderIsAdmin = false;
      if (m.senderId) {
         try {
             const userDoc = await getDoc(doc(db, "users", m.senderId));
@@ -1325,6 +1351,7 @@
                 const userData = userDoc.data();
                 usr = userData.username || "Unknown User";
                 senderEmail = userData.email; 
+                senderIsAdmin = userData.isAdmin || false;
             }
         } catch (e) {
             console.error(`Error fetching username for senderId ${m.senderId}:`, e);
@@ -1335,6 +1362,11 @@
         let authorSpanClass = "author"; 
      if (senderEmail && PURPLE_USERNAME_EMAILS.includes(senderEmail.toLowerCase())) {
          authorSpanClass += " purple-username";
+     }
+      // admin badge
+        let adminTagHtml = ""; 
+     if (senderIsAdmin) {
+         adminTagHtml = ` <span class="admin-tag">[ADMIN]</span>`; 
      }
 
 
