@@ -706,6 +706,8 @@
   <!--fucking stupid gif background remover is ass, somebody just pull the trigger for me please-->
   <!--going to add more md chat related stickers and move away from emoticons-->
 
+  <!--FUCKIGN SHOOT ME-->
+
 
 
   <!--start of javascript-->
@@ -1383,7 +1385,7 @@
      return `
        <div class="${messageClasses}" data-message-id="${d.id}">
          <div class="message-content">
-          <span class="${authorSpanClass}">${usr}:</span>
+          <span class="${authorSpanClass}">${usr}:</span>${adminTagHtml} {/* <<<<< ADDED IT HERE! */}
            ${txt ? `<span class="text">${txt}</span>` : ""}
            ${m.image ? `<img src="${m.image}" alt="Uploaded image" class="chat-image">` : ""}
            ${m.stickerUrl ? `<img src="${m.stickerUrl}" alt="Sticker" class="chat-sticker">` : ""}
