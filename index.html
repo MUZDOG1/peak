@@ -744,6 +744,9 @@
  const PURPLE_USERNAME_EMAILS = [
   "muzdog696969@gmail.com", 
  ];
+ const ADMIN_TAG_EMAILS = [
+  "metallicfarts867@gmail.com",    
+];
  //==========================
 
 
@@ -1343,7 +1346,7 @@
 
      let usr = "Unknown User";
      let senderEmail = null; 
-     let senderIsAdmin = false;
+     // let senderIsAdmin = false; dont need anymore
      if (m.senderId) {
         try {
             const userDoc = await getDoc(doc(db, "users", m.senderId));
@@ -1351,7 +1354,7 @@
                 const userData = userDoc.data();
                 usr = userData.username || "Unknown User";
                 senderEmail = userData.email; 
-                senderIsAdmin = userData.isAdmin || false;
+               //  senderIsAdmin = userData.isAdmin || false; also dont need no more
             }
         } catch (e) {
             console.error(`Error fetching username for senderId ${m.senderId}:`, e);
@@ -1363,12 +1366,10 @@
      if (senderEmail && PURPLE_USERNAME_EMAILS.includes(senderEmail.toLowerCase())) {
          authorSpanClass += " purple-username";
      }
-      // admin badge
-        let adminTagHtml = ""; 
-     if (senderIsAdmin) {
-         adminTagHtml = ` <span class="admin-tag">[ADMIN]</span>`; 
+      let adminTagHtml = ""; 
+     if (senderEmail && ADMIN_TAG_EMAILS.includes(senderEmail.toLowerCase())) {
+         adminTagHtml = ` <span class="admin-tag">[ADMIN]</span>`;
      }
-
 
      const del = isAdmin
        ? `<button class="delete-btn" data-message-id="${d.id}">Delete</button>`
