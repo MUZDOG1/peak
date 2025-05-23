@@ -371,11 +371,24 @@
     }
 
     body.hacker-mode .purple-username {
-      color: #9400D3 !important; 
+        text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000 !important;
+        font-family: sans-serif !important;
+        animation: rainbow-color-change 3s linear infinite alternate !important;
     }
 
     body.death-theme .purple-username {
-      color: #DA70D6 !important;
+        text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000 !important;
+        font-family: sans-serif !important;
+        animation: rainbow-color-change 3s linear infinite alternate !important;
+    }
+    @keyframes rainbow-color-change {
+        0%, 100% { color: #ff0000; }
+        14% { color: #ff8b00; }
+        28% { color: #e8ff00; }
+        42% { color: #5dff00; } 
+        56% { color: #00b9ff; } 
+        70% { color: #5d00ff; } 
+        84% { color: #e800ff; } 
     }
     /* >>>>> END OF THE PURPLE PAINT CODE <<<<< */
     /* start of admin shit */
