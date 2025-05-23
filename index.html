@@ -361,13 +361,16 @@
     }
      
     .purple-username {
-      color: purple !important; 
-      font-weight: bold;
+        text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000 !important;
+        font-family: sans-serif !important;
+        animation: rainbow-color-change 3s linear infinite alternate !important;
     }
 
 
     body.dark-mode .purple-username {
-      color: #DA70D6 !important; 
+        text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000 !important;
+        font-family: sans-serif !important;
+        animation: rainbow-color-change 3s linear infinite alternate !important;
     }
 
     body.hacker-mode .purple-username {
