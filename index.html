@@ -685,10 +685,7 @@
     <div class="chat-column">
       <div class="chat-header">
         <!--live chat announcement tab below >>>>>>>>>-->
-        <span class="chat-title">
-          Live Chat [VERSION 1.9.5 | <a href="log.html" style="color: blue;">LOG HERE</a>] 
-          (<span id="onlineUsersDot" style="color: grey; font-size: 1.2em; vertical-align: middle;">•</span> <span id="onlineUsersCount">0</span> online)
-        </span>
+        <span class="chat-title">Live Chat [VERSION 1.9.5 | <a href="log.html" style="color: blue;">LOG HERE</a>] </span>
         <span class="visits">Total Visits: <span id="visitsCount">?</span></span>
         <!--total visits above >>>>>> ps also remove when we gain 100000+ visits cuz it will look ass-->
       </div>
@@ -766,7 +763,6 @@
  let matrixInterval;
  // throttle: only allow one send per 5 seconds,
  let lastSendTime = 0;
- let onlineUsersUnsubscribe = null;
  const SEND_COOLDOWN = 5000; // ms
  //EMAILS, hide later for security reasons!!!!!!! seriously get to work on ssh encryption or something because
  // this is disgusting, FIX THIS SHIT!
@@ -784,41 +780,6 @@
   "muzdog696969@gmail.com",
 ];
  //==========================
- function initializeOnlineUsersCounter() {
-    if (onlineUsersUnsubscribe) { // Just in case it's called more than once
-        onlineUsersUnsubscribe();
-    }
-
-    const onlineUsersDotEl = document.getElementById("onlineUsersDot");
-    const onlineUsersCountEl = document.getElementById("onlineUsersCount");
-
-    if (!onlineUsersCountEl || !onlineUsersDotEl) {
-        console.warn("Online users display elements not found. The counter won't work.");
-        return;
-    }
-
-    const usersRef = collection(db, "users");
-    // This query looks for all users that have "online: true" in their document
-    const qOnline = query(usersRef, where("online", "==", true));
-
-    onlineUsersUnsubscribe = onSnapshot(qOnline, (snapshot) => {
-        const count = snapshot.size; // This gives us the number of online users
-        if (onlineUsersCountEl) {
-            onlineUsersCountEl.textContent = count;
-        }
-        if (onlineUsersDotEl) {
-            onlineUsersDotEl.style.color = count > 0 ? "green" : "grey"; // Green if someone is online, grey if not
-        }
-    }, (error) => {
-        console.error("Error fetching online users count:", error);
-        if (onlineUsersCountEl) {
-            onlineUsersCountEl.textContent = "?"; // Show a question mark if there's an error
-        }
-        if (onlineUsersDotEl) {
-            onlineUsersDotEl.style.color = "red"; // Red dot for error
-        }
-    });
-}
 
 
  // dom
@@ -853,7 +814,6 @@
    document.getElementById("visitsCount").textContent = visits;
    updateRegisteredUsersCount();
    loadTheme();
-   initializeOnlineUsersCounter();
    // ensure that verification is sent
    if (verificationMsg) verificationMsg.style.display = 'none';
    stickerPanel.style.display = "none";
@@ -1740,3 +1700,8 @@
 </script>
 </body>
 </html>
+
+<!--journal link: "aHR0cHM6Ly9tdXpkb2cxLmdpdGh1Yi5pby9wZWFrL3F3ZXJ0eQ=="
+beyond easy to decode, go nuts.-->
+<!--ps, this is the old link as of 5/3/2025, the directory is the same so just go to it.-->
+<!--or just go into "more info..." in settings-->
