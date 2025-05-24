@@ -372,7 +372,17 @@
         font-family: sans-serif !important;
         animation: rainbow-color-change 3s linear infinite alternate !important;
     }
+        .online-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background-color: limegreen;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
 
+  
 
     body.dark-mode .purple-username {
         text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000 !important;
@@ -685,7 +695,13 @@
     <div class="chat-column">
       <div class="chat-header">
         <!--live chat announcement tab below >>>>>>>>>-->
-        <span class="chat-title">Live Chat [VERSION 1.9.5 | <a href="log.html" style="color: blue;">LOG HERE</a>] </span>
+        <span class="chat-title">
+          Live Chat [VERSION 1.9.5 | <a href="log.html" style="color: blue;">LOG HERE</a>]
+          <span id="onlineUserCountContainer" style="margin-left: 10px; white-space: nowrap;">
+            <span class="online-indicator"></span>
+            <span id="onlineUserCount">?</span> online
+          </span>
+        </span>
         <span class="visits">Total Visits: <span id="visitsCount">?</span></span>
         <!--total visits above >>>>>> ps also remove when we gain 100000+ visits cuz it will look ass-->
       </div>
@@ -781,6 +797,24 @@
 ];
  //==========================
 
+ async function listenToOnlineUsers() {
+  const usersCollectionRef = collection(db, "users");
+  const onlineUsersQuery = query(usersCollectionRef, where("online", "==", true));
+
+  onSnapshot(onlineUsersQuery, (snapshot) => {
+    const count = snapshot.size;
+    const onlineUserCountElement = document.getElementById("onlineUserCount");
+    if (onlineUserCountElement) {
+      onlineUserCountElement.textContent = count;
+    }
+  }, (error) => {
+    console.error("Error listening to online users:", error);
+    const onlineUserCountElement = document.getElementById("onlineUserCount");
+    if (onlineUserCountElement) {
+      onlineUserCountElement.textContent = "N/A"; 
+    }
+  });
+}
 
  // dom
  const chatMessages    = document.getElementById("chatMessages");
@@ -817,7 +851,24 @@
    // ensure that verification is sent
    if (verificationMsg) verificationMsg.style.display = 'none';
    stickerPanel.style.display = "none";
- });
+
+   listenToOnlineUsers();
+
+    // Attach focus and blur listeners here, once the DOM is ready
+  window.addEventListener('focus', () => {
+    if (auth.currentUser && document.getElementById("authContainer").style.display === 'none') {
+        updateUserStatus(true);
+    }
+  });
+
+  window.addEventListener('blur', () => {
+    if (auth.currentUser && document.getElementById("authContainer").style.display === 'none') {
+        updateUserStatus(false);
+    }
+  });
+});
+
+
 
  // tos box
  signupBtn.disabled = true;
